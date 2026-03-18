@@ -1,75 +1,151 @@
+// "use client"
+
+// import { useState } from "react"
+// import { useRouter } from "next/navigation"
+// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+// import { Input } from "@/components/ui/input"
+// import { Button } from "@/components/ui/button"
+
+// export default function LoginPage(){
+
+// const router = useRouter()
+// const [email,setEmail]=useState("")
+// const [password,setPassword]=useState("")
+
+// const handleLogin = (e:any)=>{
+// e.preventDefault()
+
+// // 🔐 HARDCODED USERS
+// const users = [
+//   { email: "admin@fm.com", password: "1234", role: "admin", name: "Admin" },
+//   { email: "md@fm.com", password: "1234", role: "admin", name: "MD" },
+//   { email: "nitesh@fm.com", password: "1234", role: "supervisor", name: "Nitesh" },
+//   { email: "naveen@fm.com", password: "1234", role: "supervisor", name: "Naveen" }
+// ]
+
+// // 🔍 CHECK USER
+// const foundUser = users.find(
+//   (u) => u.email === email && u.password === password
+// )
+
+// if(foundUser){
+
+//   // ✅ STORE USER SESSION
+//   sessionStorage.setItem("user", JSON.stringify(foundUser))
+
+//   router.push("/home")
+
+// }else{
+//   alert("Invalid email or password")
+// }
+// }
+
+// return(
+
+// <div className="min-h-screen flex items-center justify-center bg-gray-50">
+
+// <Card className="w-full max-w-md shadow-xl rounded-2xl">
+
+// <CardHeader>
+// <CardTitle className="text-center text-2xl">
+// FM Operations
+// </CardTitle>
+// </CardHeader>
+
+// <CardContent>
+
+// <form onSubmit={handleLogin} className="space-y-4">
+
+// <Input placeholder="Email" value={email} onChange={(e)=>setEmail(e.target.value)}/>
+// <Input placeholder="Password" type="password" value={password} onChange={(e)=>setPassword(e.target.value)}/>
+
+// <Button className="w-full">
+// Login
+// </Button>
+
+// </form>
+
+// </CardContent>
+
+// </Card>
+
+// </div>
+
+// )
+// }
+
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
-export default function LoginPage(){
+export default function LoginPage() {
 
-const router = useRouter()
-const [email,setEmail]=useState("")
-const [password,setPassword]=useState("")
+  const router = useRouter()
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [mounted, setMounted] = useState(false)
 
-const handleLogin = (e:any)=>{
-e.preventDefault()
+  // ✅ FIX: ensure client render
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
-// 🔐 HARDCODED USERS
-const users = [
-  { email: "admin@fm.com", password: "1234", role: "admin", name: "Admin" },
-  { email: "md@fm.com", password: "1234", role: "admin", name: "MD" },
-  { email: "nitesh@fm.com", password: "1234", role: "supervisor", name: "Nitesh" },
-  { email: "naveen@fm.com", password: "1234", role: "supervisor", name: "Naveen" }
-]
+  if (!mounted) return null
 
-// 🔍 CHECK USER
-const foundUser = users.find(
-  (u) => u.email === email && u.password === password
-)
+  const handleLogin = (e: any) => {
+    e.preventDefault()
 
-if(foundUser){
+    const users = [
+      { email: "admin@fm.com", password: "1234", role: "admin", name: "Admin" },
+      { email: "md@fm.com", password: "1234", role: "admin", name: "MD" },
+      { email: "nitesh@fm.com", password: "1234", role: "supervisor", name: "Nitesh" },
+      { email: "naveen@fm.com", password: "1234", role: "supervisor", name: "Naveen" }
+    ]
 
-  // ✅ STORE USER SESSION
-  sessionStorage.setItem("user", JSON.stringify(foundUser))
+    const foundUser = users.find(
+      (u) => u.email === email && u.password === password
+    )
 
-  router.push("/home")
+    if (foundUser) {
+      sessionStorage.setItem("user", JSON.stringify(foundUser))
+      router.push("/home")
+    } else {
+      alert("Invalid email or password")
+    }
+  }
 
-}else{
-  alert("Invalid email or password")
-}
-}
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
 
-return(
+      <Card className="w-full max-w-md shadow-xl rounded-2xl">
 
-<div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <CardHeader>
+          <CardTitle className="text-center text-2xl">
+            FM Operations
+          </CardTitle>
+        </CardHeader>
 
-<Card className="w-full max-w-md shadow-xl rounded-2xl">
+        <CardContent>
 
-<CardHeader>
-<CardTitle className="text-center text-2xl">
-FM Operations
-</CardTitle>
-</CardHeader>
+          <form onSubmit={handleLogin} className="space-y-4">
 
-<CardContent>
+            <Input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
 
-<form onSubmit={handleLogin} className="space-y-4">
+            <Button className="w-full">
+              Login
+            </Button>
 
-<Input placeholder="Email" value={email} onChange={(e)=>setEmail(e.target.value)}/>
-<Input placeholder="Password" type="password" value={password} onChange={(e)=>setPassword(e.target.value)}/>
+          </form>
 
-<Button className="w-full">
-Login
-</Button>
+        </CardContent>
 
-</form>
+      </Card>
 
-</CardContent>
-
-</Card>
-
-</div>
-
-)
+    </div>
+  )
 }
