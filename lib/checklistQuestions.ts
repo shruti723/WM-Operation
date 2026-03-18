@@ -14,7 +14,7 @@ export const checklistQuestions = {
             id: "pendingEmails",
             question: "Are there any emails pending more than 24 hours?",
             type: "yesno",
-            requireReasonOnNo: true
+            requireReasonOnYes: true
         },
         {
             id: "clientCalls",
@@ -30,35 +30,77 @@ export const checklistQuestions = {
             id: "repeatComplaint",
             question: "Any repeat complaint from same site?",
             type: "yesno",
-            requireReasonOnNo: true
+            requireReasonOnYes: true
         },
         {
             id: "complaintResolved",
             question: "Complaint resolved?",
             type: "yesno",
             requireReasonOnNo: true
+        },
+        {
+            id: "tasksPerformed",
+            question: "Tasks performed today",
+            type: "longtext",
+            required: true
         }
     ],
 
-    manpower: [
+    "site visit telephonic": [
         {
-            id: "sanctionedManpower",
-            question: "What is total sanctioned manpower for the site?",
-            type: "number"
+            id: "telephonicCalling",
+            question: "Was telephonic calling done today?",
+            type: "yesno"
         },
         {
-            id: "staffPresent",
-            question: "How many staff are present today?",
-            type: "number"
+            id: "telephonicSiteName",
+            question: "Select Site",
+            type: "dropdown"
         },
         {
-            id: "staffAbsent",
-            question: "How many staff are absent?",
-            type: "number"
+            id: "telephonicIncharge",
+            question: "Site Incharge Name",
+            type: "text"
+        },
+
+        {
+            id: "manpowerShortage",
+            question: "Is manpower shortage affecting operations?",
+            type: "yesno",
+            requireReasonOnYes: true
         },
         {
-            id: "shortageAffecting",
-            question: "Is shortage affecting operations?",
+            id: "replacementArranged",
+            question: "Is replacement arranged?",
+            type: "yesno",
+            requireReasonOnNo: true
+        },
+        {
+            id: "hiringRequest",
+            question: "Is hiring request raised?",
+            type: "yesno"
+        },
+        {
+            id: "cleaningScheduleFollowed",
+            question: "Is cleaning schedule followed?",
+            type: "yesno",
+            requireReasonOnNo: true
+        },
+        {
+            id: "toiletsCleaned",
+            question: "Are toilets cleaned as per frequency?",
+            type: "yesno",
+            requireReasonOnNo: true
+        },
+        {
+            id: "garbageDisposal",
+            question: "Is garbage disposal done on time?",
+            type: "yesno",
+            requireReasonOnNo: true
+        },
+        {
+            id: "machinesWorking",
+            question: "Are machines functioning properly?",
             type: "yesno",
             requireReasonOnNo: true
         }
@@ -85,7 +127,7 @@ export const checklistQuestions = {
             id: "safetyRisk",
             question: "Any safety risk observed?",
             type: "yesno",
-            requireReasonOnNo: true
+            requireReasonOnYes: true
         }
     ]
 }

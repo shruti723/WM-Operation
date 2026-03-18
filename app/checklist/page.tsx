@@ -27,9 +27,9 @@ export default function ChecklistPage() {
 
     const steps = [
         "Basic Details",
-        "Communication",
-        "Site Visit",
-        "Manpower",
+        "Email And Calling",
+        "Site Visit In Person",
+        "Site Visit Telephonic",
         "Store"
     ]
 
@@ -75,27 +75,6 @@ export default function ChecklistPage() {
 
     /* ---------------- VALIDATION ---------------- */
 
-    // function validate() {
-    //     for (const section of Object.values(checklistQuestions)) {
-    //         for (const q of section as any[]) {
-    //             const ans = form[q.id]
-
-    //             if (!ans || !ans.value) {
-    //                 alert(`${q.question} is required`)
-    //                 return false
-    //             }
-
-    //             if (
-    //                 q.type === "yesno" &&
-    //                 q.requireReasonOnNo &&
-    //                 ans.value === "No" &&
-    //                 !ans.reason
-    //             ) {
-    //                 alert(`Reason required for: ${q.question}`)
-    //                 return false
-    //             }
-    //         }
-    //     }
     function validate() {
 
         /* ✅ EXISTING CHECKLIST VALIDATION */
@@ -108,6 +87,7 @@ export default function ChecklistPage() {
                     return false
                 }
 
+                // 🔥 REASON ON NO
                 if (
                     q.type === "yesno" &&
                     q.requireReasonOnNo &&
@@ -117,8 +97,54 @@ export default function ChecklistPage() {
                     alert(`Reason required for: ${q.question}`)
                     return false
                 }
+
+
+                // 🔥 REASON ON YES
+                if (
+                    q.type === "yesno" &&
+                    q.requireReasonOnYes &&
+                    ans.value === "Yes" &&
+                    !ans.reason
+                ) {
+                    alert(`Reason required for: ${q.question}`)
+                    return false
+                }
             }
         }
+        if (form.hiringRequest?.value === "Yes") {
+            if (!form.hiringRequestDetails?.value) {
+                alert("Please enter to whom hiring request was raised")
+                return false
+            }
+        }
+        // 🔥 TELEPHONIC VALIDATION
+        if (form.telephonicCalling?.value === "Yes") {
+
+            if (!form.telephonicSiteName?.value) {
+                alert("Select telephonic site")
+                return false
+            }
+
+            if (!form.telephonicIncharge?.value) {
+                alert("Enter incharge name")
+                return false
+            }
+        }
+
+        // ✅ REPEAT COMPLAINT VALIDATION
+        if (form.repeatComplaint?.value === "Yes") {
+
+            if (!form.repeatComplaintSite?.value) {
+                alert("Please select complaint site")
+                return false
+            }
+
+            if (!form.repeatComplaintCount?.value) {
+                alert("Please enter number of repeat complaints")
+                return false
+            }
+        }
+
 
         /* ✅ ADD THIS BLOCK HERE (SITE VALIDATION) */
         if (form.siteVisit?.value === "Yes" && form.siteName?.value) {
@@ -127,7 +153,7 @@ export default function ChecklistPage() {
 
             for (const q of siteQs) {
 
-                const ans = form[q.question]
+                const ans = form[q.id]
 
                 if (!ans || !ans.value) {
                     alert(`${q.question} is required`)
@@ -152,28 +178,46 @@ export default function ChecklistPage() {
     // }
 
     function validateStep() {
-        let questions: any[] = []
 
-        if (step === 1) questions = checklistQuestions.communication
-        if (step === 3) questions = checklistQuestions.manpower
-        if (step === 4) questions = checklistQuestions.store
+        if (step === 1) {
+            for (const q of checklistQuestions.communication) {
+                const ans = form[q.id]
 
-        for (const q of questions) {
-            const ans = form[q.id]
+                if (!ans || !ans.value) {
+                    alert(`${q.question} is required`)
+                    return false
+                }
+            }
+        }
 
-            if (!ans || !ans.value) {
-                alert(`${q.question} is required`)
+        if (step === 3) {
+            if (!form.telephonicCalling?.value) {
+                alert("Please select telephonic calling")
                 return false
             }
 
-            if (
-                q.type === "yesno" &&
-                q.requireReasonOnNo &&
-                ans.value === "No" &&
-                !ans.reason
-            ) {
-                alert(`Reason required for: ${q.question}`)
-                return false
+            if (form.telephonicCalling.value === "Yes") {
+
+                if (!form.telephonicSiteName?.value) {
+                    alert("Please select site")
+                    return false
+                }
+
+                if (!form.telephonicIncharge?.value) {
+                    alert("Please enter incharge name")
+                    return false
+                }
+            }
+        }
+
+        if (step === 4) {
+            for (const q of checklistQuestions.store) {
+                const ans = form[q.id]
+
+                if (!ans || !ans.value) {
+                    alert(`${q.question} is required`)
+                    return false
+                }
             }
         }
 
@@ -250,14 +294,42 @@ export default function ChecklistPage() {
                 />
             )
         }
-
+        if (q.type === "longtext") {
+            return (
+                <textarea
+                    className="w-full border rounded p-2 min-h-[100px]"
+                    placeholder="Enter detailed tasks performed..."
+                    value={form[q.id]?.value || ""}
+                    onChange={(e) => update(q.id, e.target.value)}
+                />
+            )
+        }
         if (q.type === "yesno") {
             return (
                 <div className="space-y-2">
 
                     <Select
                         value={form[q.id]?.value || ""}
-                        onValueChange={(v) => update(q.id, v)}
+                        onValueChange={(v) => {
+                            update(q.id, v)
+
+                            if (q.id === "hiringRequest" && v === "No") {
+                                setForm((prev: any) => ({
+                                    ...prev,
+                                    hiringRequestDetails: undefined
+                                }))
+                            }
+
+
+                            // 🔥 CLEAR DEPENDENT FIELDS
+                            if (q.id === "repeatComplaint" && v === "No") {
+                                setForm((prev: any) => ({
+                                    ...prev,
+                                    repeatComplaintSite: undefined,
+                                    repeatComplaintCount: undefined
+                                }))
+                            }
+                        }}
                     >
                         <SelectTrigger>
                             <SelectValue placeholder="Select option" />
@@ -269,6 +341,8 @@ export default function ChecklistPage() {
                         </SelectContent>
                     </Select>
 
+                    {/* ✅ REASON (FOR NO) */}
+                    {/* 🔥 REASON ON NO */}
                     {q.requireReasonOnNo && form[q.id]?.value === "No" && (
                         <Input
                             placeholder="Enter reason (mandatory)"
@@ -279,9 +353,97 @@ export default function ChecklistPage() {
                         />
                     )}
 
+                    {/* 🔥 NEW: REASON ON YES */}
+                    {q.requireReasonOnYes && form[q.id]?.value === "Yes" && (
+                        <Input
+                            placeholder="Enter reason (mandatory)"
+                            value={form[q.id]?.reason || ""}
+                            onChange={(e) =>
+                                updateReason(q.id, e.target.value)
+                            }
+                        />
+                    )}
+                    {/* 🔥 HIRING REQUEST EXTRA FIELD */}
+                    {q.id === "hiringRequest" && form[q.id]?.value === "Yes" && (
+                        <Input
+                            placeholder="To whom request was raised?"
+                            value={form.hiringRequestDetails?.value || ""}
+                            onChange={(e) =>
+                                update("hiringRequestDetails", e.target.value)
+                            }
+                        />
+                    )}
+                    {/* 🔥 SPECIAL CASE: REPEAT COMPLAINT */}
+                    {q.id === "repeatComplaint" && form[q.id]?.value === "Yes" && (
+                        <div className="space-y-2 mt-2 border p-3 rounded">
+
+                            {/* SITE NAME */}
+                            <label className="text-sm">Select Complaint Site</label>
+                            <Select
+                                value={form.repeatComplaintSite?.value || ""}
+                                onValueChange={(v) => update("repeatComplaintSite", v)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Site" />
+                                </SelectTrigger>
+
+                                <SelectContent>
+                                    {Object.keys(siteQuestions).map((site) => (
+                                        <SelectItem key={site} value={site}>
+                                            {site}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            {/* NUMBER OF COMPLAINTS */}
+                            <label className="text-sm">Number of repeat complaints</label>
+                            <Input
+                                type="number"
+                                min={1}
+                                value={form.repeatComplaintCount?.value || ""}
+                                onChange={(e) =>
+                                    update("repeatComplaintCount", String(Math.max(1, Number(e.target.value))))
+                                }
+                            />
+
+                        </div>
+                    )}
+
                 </div>
             )
         }
+        // if (q.type === "yesno") {
+        //     return (
+        //         <div className="space-y-2">
+
+        //             <Select
+        //                 value={form[q.id]?.value || ""}
+        //                 onValueChange={(v) => update(q.id, v)}
+        //             >
+        //                 <SelectTrigger>
+        //                     <SelectValue placeholder="Select option" />
+        //                 </SelectTrigger>
+
+        //                 <SelectContent>
+        //                     <SelectItem value="Yes">Yes</SelectItem>
+        //                     <SelectItem value="No">No</SelectItem>
+        //                 </SelectContent>
+        //             </Select>
+
+        //             {q.requireReasonOnNo && form[q.id]?.value === "No" && (
+        //                 <Input
+        //                     placeholder="Enter reason (mandatory)"
+        //                     value={form[q.id]?.reason || ""}
+        //                     onChange={(e) =>
+        //                         updateReason(q.id, e.target.value)
+        //                     }
+        //                 />
+        //             )}
+
+        //         </div>
+        //     )
+        // }
     }
 
     /* ---------------- SUCCESS SCREEN ---------------- */
@@ -374,7 +536,27 @@ export default function ChecklistPage() {
 
                             <Select
                                 value={form.siteVisit?.value || ""}
-                                onValueChange={(v) => update("siteVisit", v)}
+                                onValueChange={(v) => {
+                                    update("siteVisit", v)
+
+                                    // 🔥 CLEAR SITE DATA WHEN NO
+                                    if (v === "No") {
+                                        setForm((prev: any) => {
+                                            const newForm = { ...prev }
+
+                                            delete newForm.siteName
+
+                                            // 🔥 also remove all site questions
+                                            Object.keys(newForm).forEach((key) => {
+                                                if (siteQuestions[prev.siteName?.value]?.some((q: any) => q.question === key)) {
+                                                    delete newForm[key]
+                                                }
+                                            })
+
+                                            return newForm
+                                        })
+                                    }
+                                }}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select option" />
@@ -462,7 +644,19 @@ export default function ChecklistPage() {
                                                     </SelectContent>
                                                 </Select>
 
-                                                {form[q.question]?.value === "No" && (
+                                                {/* 🔥 REASON ON NO */}
+                                                {q.requireReasonOnNo && form[q.question]?.value === "No" && (
+                                                    <Input
+                                                        placeholder="Enter reason (mandatory)"
+                                                        value={form[q.question]?.reason || ""}
+                                                        onChange={(e) =>
+                                                            updateReason(q.question, e.target.value)
+                                                        }
+                                                    />
+                                                )}
+
+                                                {/* 🔥 REASON ON YES */}
+                                                {q.requireReasonOnYes && form[q.question]?.value === "Yes" && (
                                                     <Input
                                                         placeholder="Enter reason (mandatory)"
                                                         value={form[q.question]?.reason || ""}
@@ -474,6 +668,18 @@ export default function ChecklistPage() {
 
                                             </div>
                                         )}
+                                        {/* 🔥 HIRING REQUEST FIELD */}
+                                        {
+                                            q.id === "hiringRequest" && form[q.id]?.value === "Yes" && (
+                                                <Input
+                                                    placeholder="To whom request was raised?"
+                                                    value={form.hiringRequestDetails?.value || ""}
+                                                    onChange={(e) =>
+                                                        update("hiringRequestDetails", e.target.value)
+                                                    }
+                                                />
+                                            )
+                                        }
 
                                         {/* ✅ NUMBER */}
                                         {q.type === "number" && (
@@ -504,15 +710,79 @@ export default function ChecklistPage() {
                         </>
                     )}
 
-                    {/* MANPOWER */}
+
+                    {/* 🔥 SITE VISIT TELEPHONIC */}
                     {step === 3 && (
                         <>
-                            {checklistQuestions.manpower.map((q: any) => (
-                                <div key={q.id}>
-                                    <label>{q.question}</label>
-                                    {renderQuestion(q)}
-                                </div>
-                            ))}
+
+                            {/* STEP 1: CALLING */}
+                            <label>Was telephonic calling done today?</label>
+                            <Select
+                                value={form.telephonicCalling?.value || ""}
+                                onValueChange={(v) => update("telephonicCalling", v)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select option" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Yes">Yes</SelectItem>
+                                    <SelectItem value="No">No</SelectItem>
+                                </SelectContent>
+                            </Select>
+
+                            {/* STEP 2: SITE */}
+                            {form.telephonicCalling?.value === "Yes" && (
+                                <>
+                                    <label>Select Site</label>
+                                    <Select
+                                        value={form.telephonicSiteName?.value || ""}
+                                        onValueChange={(v) => update("telephonicSiteName", v)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select Site" />
+                                        </SelectTrigger>
+
+                                        <SelectContent>
+                                            {Object.keys(siteQuestions).map((site) => (
+                                                <SelectItem key={site} value={site}>
+                                                    {site}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </>
+                            )}
+
+                            {/* STEP 3: INCHARGE */}
+                            {form.telephonicCalling?.value === "Yes" &&
+                                form.telephonicSiteName?.value && (
+                                    <>
+                                        <label>Site Incharge Name</label>
+                                        <Input
+                                            placeholder="Enter name"
+                                            value={form.telephonicIncharge?.value || ""}
+                                            onChange={(e) =>
+                                                update("telephonicIncharge", e.target.value)
+                                            }
+                                        />
+                                    </>
+                                )}
+
+                            {/* STEP 4: QUESTIONS */}
+                            {form.telephonicCalling?.value === "Yes" &&
+                                form.telephonicSiteName?.value && (
+                                    checklistQuestions["site visit telephonic"]
+                                        .filter((q: any) =>
+                                            !["telephonicCalling", "telephonicSiteName", "telephonicIncharge"].includes(q.id)
+                                        )
+                                        .map((q: any, index: number) => (
+                                            <div key={index}>
+                                                <label>{q.question}</label>
+                                                {renderQuestion(q)}
+                                            </div>
+                                        ))
+                                )}
+
                         </>
                     )}
 
