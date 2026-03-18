@@ -100,16 +100,23 @@ export default function Home() {
     const router = useRouter()
     const [user, setUser] = useState<any>(null)
     const [mounted, setMounted] = useState(false)
+    console.log("HOME PAGE LOADED")
 
     useEffect(() => {
-        setMounted(true)
+        console.log("useEffect running")
 
-        const u = sessionStorage.getItem("user")
+        try {
+            const u = sessionStorage.getItem("user")
+            console.log("USER:", u)
 
-        if (!u) {
-            setTimeout(() => router.push("/"), 100)
-        } else {
-            setUser(JSON.parse(u))
+            if (!u) {
+                console.log("No user → redirect")
+                router.push("/")
+            } else {
+                setUser(JSON.parse(u))
+            }
+        } catch (err) {
+            console.error("ERROR:", err)
         }
     }, [])
 
