@@ -6,72 +6,72 @@
 // import { Input } from "@/components/ui/input"
 // import { Button } from "@/components/ui/button"
 
-// export default function LoginPage(){
+// export default function LoginPage() {
 
-// const router = useRouter()
-// const [email,setEmail]=useState("")
-// const [password,setPassword]=useState("")
+//   const router = useRouter()
+//   const [email, setEmail] = useState("")
+//   const [password, setPassword] = useState("")
 
-// const handleLogin = (e:any)=>{
-// e.preventDefault()
+//   const handleLogin = (e: any) => {
+//     e.preventDefault()
 
-// // 🔐 HARDCODED USERS
-// const users = [
-//   { email: "admin@fm.com", password: "1234", role: "admin", name: "Admin" },
-//   { email: "md@fm.com", password: "1234", role: "admin", name: "MD" },
-//   { email: "nitesh@fm.com", password: "1234", role: "supervisor", name: "Nitesh" },
-//   { email: "naveen@fm.com", password: "1234", role: "supervisor", name: "Naveen" }
-// ]
+//     // 🔐 HARDCODED USERS
+//     const users = [
+//       { email: "admin@fm.com", password: "1234", role: "admin", name: "Admin" },
+//       { email: "md@fm.com", password: "1234", role: "admin", name: "MD" },
+//       { email: "nitesh@fm.com", password: "1234", role: "supervisor", name: "Nitesh" },
+//       { email: "naveen@fm.com", password: "1234", role: "supervisor", name: "Naveen" }
+//     ]
 
-// // 🔍 CHECK USER
-// const foundUser = users.find(
-//   (u) => u.email === email && u.password === password
-// )
+//     // 🔍 CHECK USER
+//     const foundUser = users.find(
+//       (u) => u.email === email && u.password === password
+//     )
 
-// if(foundUser){
+//     if (foundUser) {
 
-//   // ✅ STORE USER SESSION
-//   sessionStorage.setItem("user", JSON.stringify(foundUser))
+//       // ✅ STORE USER SESSION
+//       sessionStorage.setItem("user", JSON.stringify(foundUser))
 
-//   router.push("/home")
+//       router.push("/home")
 
-// }else{
-//   alert("Invalid email or password")
-// }
-// }
+//     } else {
+//       alert("Invalid email or password")
+//     }
+//   }
 
-// return(
+//   return (
 
-// <div className="min-h-screen flex items-center justify-center bg-gray-50">
+//     <div className="min-h-screen flex items-center justify-center bg-gray-50">
 
-// <Card className="w-full max-w-md shadow-xl rounded-2xl">
+//       <Card className="w-full max-w-md shadow-xl rounded-2xl">
 
-// <CardHeader>
-// <CardTitle className="text-center text-2xl">
-// FM Operations
-// </CardTitle>
-// </CardHeader>
+//         <CardHeader>
+//           <CardTitle className="text-center text-2xl">
+//             FM Operations
+//           </CardTitle>
+//         </CardHeader>
 
-// <CardContent>
+//         <CardContent>
 
-// <form onSubmit={handleLogin} className="space-y-4">
+//           <form onSubmit={handleLogin} className="space-y-4">
 
-// <Input placeholder="Email" value={email} onChange={(e)=>setEmail(e.target.value)}/>
-// <Input placeholder="Password" type="password" value={password} onChange={(e)=>setPassword(e.target.value)}/>
+//             <Input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+//             <Input placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
 
-// <Button className="w-full">
-// Login
-// </Button>
+//             <Button className="w-full">
+//               Login
+//             </Button>
 
-// </form>
+//           </form>
 
-// </CardContent>
+//         </CardContent>
 
-// </Card>
+//       </Card>
 
-// </div>
+//     </div>
 
-// )
+//   )
 // }
 
 "use client"
