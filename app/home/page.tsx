@@ -2,210 +2,188 @@
 
 // import { useEffect,useState } from "react"
 // import { useRouter } from "next/navigation"
-
-// import { Card,CardContent,CardTitle,CardDescription } from "@/components/ui/card"
+// import { Card } from "@/components/ui/card"
 // import { ClipboardList,FileText,BarChart3 } from "lucide-react"
 
-// export default function HomePage(){
+// export default function Home(){
 
 // const router = useRouter()
-
 // const [user,setUser]=useState<any>(null)
 
 // useEffect(()=>{
-
-// const userData=sessionStorage.getItem("user")
-
-// if(userData){
-// setUser(JSON.parse(userData))
-// }else{
-// router.push("/")
-// }
-
+// const u=sessionStorage.getItem("user")
+// if(!u) router.push("/")
+// else setUser(JSON.parse(u))
 // },[])
 
 // if(!user) return null
 
 // return(
 
-// <div className="max-w-5xl mx-auto p-6 space-y-6">
+// <div className="max-w-5xl mx-auto p-8 space-y-6">
 
-// <h1 className="text-2xl font-bold">
-// FM Operations
+// <h1 className="text-3xl font-bold">
+// Welcome, {user.name}
 // </h1>
+
+// {/* ADMIN */}
+// {user.role==="admin" && (
+
+// <Card
+// onClick={()=>router.push("/dashboard")}
+// className="p-10 rounded-2xl cursor-pointer bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:scale-[1.02] transition"
+// >
+
+// <div className="flex justify-between items-center">
+
+// <div>
+// <h2 className="text-2xl font-semibold">
+// Operations Dashboard
+// </h2>
+// <p className="opacity-80">
+// Analytics, performance & reports
+// </p>
+// </div>
+
+// <BarChart3 size={40}/>
+
+// </div>
+
+// </Card>
+
+// )}
+
+// {/* SUPERVISOR */}
+// {user.role==="supervisor" && (
 
 // <div className="space-y-4">
 
-// {/* START CHECKLIST */}
-
-// <Card
-// className="cursor-pointer"
-// onClick={()=>router.push("/checklist")}
-// >
-
-// <CardContent className="p-6 flex justify-between items-center">
-
+// <Card className="p-6 cursor-pointer" onClick={()=>router.push("/checklist")}>
+// <div className="flex justify-between">
 // <div>
-
-// <CardTitle>Start New Checklist</CardTitle>
-
-// <CardDescription>
-// Begin a new site visit checklist
-// </CardDescription>
-
+// <h3 className="font-semibold">Start Checklist</h3>
+// <p className="text-sm text-gray-500">New site visit</p>
 // </div>
-
 // <ClipboardList/>
-
-// </CardContent>
-
+// </div>
 // </Card>
 
-
-// {/* SUBMISSIONS */}
-
-// <Card
-// className="cursor-pointer"
-// onClick={()=>router.push("/submissions")}
-// >
-
-// <CardContent className="p-6 flex justify-between items-center">
-
+// <Card className="p-6 cursor-pointer" onClick={()=>router.push("/submissions")}>
+// <div className="flex justify-between">
 // <div>
-
-// <CardTitle>View My Submissions</CardTitle>
-
-// <CardDescription>
-// Review submitted checklists
-// </CardDescription>
-
+// <h3 className="font-semibold">My Submissions</h3>
+// <p className="text-sm text-gray-500">View records</p>
 // </div>
-
 // <FileText/>
-
-// </CardContent>
-
-// </Card>
-
-
-// {/* DASHBOARD */}
-
-// <Card
-// className="cursor-pointer"
-// onClick={()=>router.push("/dashboard")}
-// >
-
-// <CardContent className="p-6 flex justify-between items-center">
-
-// <div>
-
-// <CardTitle>Operations Dashboard</CardTitle>
-
-// <CardDescription>
-// View analytics and site performance
-// </CardDescription>
-
 // </div>
-
-// <BarChart3/>
-
-// </CardContent>
-
 // </Card>
 
 // </div>
+
+// )}
 
 // </div>
 
 // )
-
 // }
+
 
 "use client"
 
-import { useEffect,useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
-import { ClipboardList,FileText,BarChart3 } from "lucide-react"
+import { ClipboardList, FileText, BarChart3 } from "lucide-react"
 
-export default function Home(){
+export default function Home() {
 
-const router = useRouter()
-const [user,setUser]=useState<any>(null)
+    const router = useRouter()
+    const [user, setUser] = useState<any>(null)
+    const [mounted, setMounted] = useState(false)
 
-useEffect(()=>{
-const u=sessionStorage.getItem("user")
-if(!u) router.push("/")
-else setUser(JSON.parse(u))
-},[])
+    useEffect(() => {
+        setMounted(true)
 
-if(!user) return null
+        const u = sessionStorage.getItem("user")
 
-return(
+        if (!u) {
+            setTimeout(() => router.push("/"), 100)
+        } else {
+            setUser(JSON.parse(u))
+        }
+    }, [])
 
-<div className="max-w-5xl mx-auto p-8 space-y-6">
+    if (!mounted) return null
 
-<h1 className="text-3xl font-bold">
-Welcome, {user.name}
-</h1>
+    if (!user) {
+        return <div className="p-10 text-center">Loading...</div>
+    }
 
-{/* ADMIN */}
-{user.role==="admin" && (
+    return (
 
-<Card
-onClick={()=>router.push("/dashboard")}
-className="p-10 rounded-2xl cursor-pointer bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:scale-[1.02] transition"
->
+        <div className="max-w-5xl mx-auto p-8 space-y-6">
 
-<div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold">
+                Welcome, {user.name}
+            </h1>
 
-<div>
-<h2 className="text-2xl font-semibold">
-Operations Dashboard
-</h2>
-<p className="opacity-80">
-Analytics, performance & reports
-</p>
-</div>
+            {/* ADMIN */}
+            {user.role === "admin" && (
 
-<BarChart3 size={40}/>
+                <Card
+                    onClick={() => router.push("/dashboard")}
+                    className="p-10 rounded-2xl cursor-pointer bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:scale-[1.02] transition"
+                >
 
-</div>
+                    <div className="flex justify-between items-center">
 
-</Card>
+                        <div>
+                            <h2 className="text-2xl font-semibold">
+                                Operations Dashboard
+                            </h2>
+                            <p className="opacity-80">
+                                Analytics, performance & reports
+                            </p>
+                        </div>
 
-)}
+                        <BarChart3 size={40} />
 
-{/* SUPERVISOR */}
-{user.role==="supervisor" && (
+                    </div>
 
-<div className="space-y-4">
+                </Card>
 
-<Card className="p-6 cursor-pointer" onClick={()=>router.push("/checklist")}>
-<div className="flex justify-between">
-<div>
-<h3 className="font-semibold">Start Checklist</h3>
-<p className="text-sm text-gray-500">New site visit</p>
-</div>
-<ClipboardList/>
-</div>
-</Card>
+            )}
 
-<Card className="p-6 cursor-pointer" onClick={()=>router.push("/submissions")}>
-<div className="flex justify-between">
-<div>
-<h3 className="font-semibold">My Submissions</h3>
-<p className="text-sm text-gray-500">View records</p>
-</div>
-<FileText/>
-</div>
-</Card>
+            {/* SUPERVISOR */}
+            {user.role === "supervisor" && (
 
-</div>
+                <div className="space-y-4">
 
-)}
+                    <Card className="p-6 cursor-pointer" onClick={() => router.push("/checklist")}>
+                        <div className="flex justify-between">
+                            <div>
+                                <h3 className="font-semibold">Start Checklist</h3>
+                                <p className="text-sm text-gray-500">New site visit</p>
+                            </div>
+                            <ClipboardList />
+                        </div>
+                    </Card>
 
-</div>
+                    <Card className="p-6 cursor-pointer" onClick={() => router.push("/submissions")}>
+                        <div className="flex justify-between">
+                            <div>
+                                <h3 className="font-semibold">My Submissions</h3>
+                                <p className="text-sm text-gray-500">View records</p>
+                            </div>
+                            <FileText />
+                        </div>
+                    </Card>
 
-)
+                </div>
+
+            )}
+
+        </div>
+
+    )
 }
