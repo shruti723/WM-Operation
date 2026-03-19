@@ -5,25 +5,11 @@ import "@fontsource/geist";
 
 
 export const metadata: Metadata = {
-  title: 'FM Operations Digital Checklist',
-  description: 'Digital checklist application for facility management operations',
+  title: 'FM Operations',
+  description: 'FM Operations Management System',
   generator: 'v0.app',
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
+    icon: '/logo.png',
   },
 }
 

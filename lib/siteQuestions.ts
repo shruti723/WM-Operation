@@ -1,6 +1,7 @@
 export const siteQuestions: any = {
 
     "Collector Office": [
+
         { question: "Cleanliness and maintenance of the entry and parking area", type: "rating" },
         { question: "Cleanliness and maintenance of the main garden", type: "rating" },
         { question: "Cleanliness and maintenance of the DM office and attached washroom", type: "rating" },
@@ -15,6 +16,7 @@ export const siteQuestions: any = {
         { question: "Manpower discipline and attendance", type: "rating" },
         { question: "Adequacy of manpower at the site", type: "rating" },
         { question: "Any urgent issue observed at the site", type: "text" }
+
     ],
     "MPSeDC": [
         { question: "Cleanliness and maintenance of the outer area", type: "rating" },
@@ -52,8 +54,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
 
@@ -78,8 +80,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
     "crystal IT Park": [
@@ -103,8 +105,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
     ],
     "Anik industry": [
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
@@ -127,8 +129,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
     "HMS  Office": [
@@ -152,8 +154,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
     "Solaris Office": [
@@ -177,8 +179,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
     "Ida Pro": [
@@ -202,8 +204,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
     "kgajaran Ganesh Mandir": [
@@ -227,8 +229,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
     "Ida Indore": [
@@ -252,8 +254,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
 
@@ -278,8 +280,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
     "MPSED Gwalior ": [
@@ -303,8 +305,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
     "MPSED Gwalior": [
@@ -328,8 +330,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
     "MOSED Bhopal": [
@@ -353,8 +355,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
     "dewas munsipal co.": [
@@ -378,8 +380,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
     "MPSED Lift": [
@@ -403,8 +405,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
     "22 Janni Surksha Yojana": [
@@ -428,8 +430,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
     "24 ISBT Raipur": [
@@ -453,8 +455,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
     "ADM House।": [
@@ -478,8 +480,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
     "MPSEDC indore": [
@@ -503,8 +505,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
     "Daily college": [
@@ -528,8 +530,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
     "MRF Kabir khedi": [
@@ -553,8 +555,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
     "ICICI Banks": [
@@ -578,8 +580,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
     "Hotel Sundar van": [
@@ -603,8 +605,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
     "MD  sahab resi": [
@@ -628,8 +630,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
     "county walk": [
@@ -653,8 +655,8 @@ export const siteQuestions: any = {
         { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
         { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
         { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "text" },
-        { question: "Any plumbing leakage observed?", type: "text" }
+        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
+        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
 }
