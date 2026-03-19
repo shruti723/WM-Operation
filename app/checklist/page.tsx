@@ -78,11 +78,36 @@ export default function ChecklistPage() {
     function validate() {
 
         /* ✅ EXISTING CHECKLIST VALIDATION */
-        for (const section of Object.values(checklistQuestions)) {
+        for (const [sectionName, section] of Object.entries(checklistQuestions)) {
+
+            // ✅ SKIP TELEPHONIC SECTION COMPLETELY
+            if (
+                sectionName === "site visit telephonic" &&
+                form.telephonicCalling?.value !== "Yes"
+            ) {
+                continue
+            }
+
+
             for (const q of section as any[]) {
-                const ans = form[q.id]
+                // 🔥 SKIP SITE VISIT FIELD
+                if (
+                    q.id === "siteName" &&
+                    form.siteVisit?.value !== "Yes"
+                ) {
+                    continue
+                }
+
+                const ans = form[q.id] || form[q.question]
 
                 if (!ans || !ans.value) {
+                    console.log("❌ Failed Question:", {
+                        id: q.id,
+                        question: q.question,
+                        value: form[q.id],
+                        fullForm: form
+                    })
+
                     alert(`${q.question} is required`)
                     return false
                 }
@@ -97,7 +122,6 @@ export default function ChecklistPage() {
                     alert(`Reason required for: ${q.question}`)
                     return false
                 }
-
 
                 // 🔥 REASON ON YES
                 if (
@@ -156,6 +180,13 @@ export default function ChecklistPage() {
                 const ans = form[q.id]
 
                 if (!ans || !ans.value) {
+                    console.log("❌ Failed Question:", {
+                        id: q.id,
+                        question: q.question,
+                        value: form[q.id],
+                        fullForm: form
+                    })
+
                     alert(`${q.question} is required`)
                     return false
                 }
@@ -223,7 +254,20 @@ export default function ChecklistPage() {
 
         return true
     }
+    const questionMap: any = {}
 
+    Object.values(checklistQuestions).forEach((section: any) => {
+        section.forEach((q: any) => {
+            questionMap[q.id] = q.question
+        })
+    })
+    Object.values(siteQuestions).forEach((site: any) => {
+        site.forEach((q: any) => {
+            if (q.id) {
+                questionMap[q.id] = q.question
+            }
+        })
+    })
     /* ---------------- SUBMIT ---------------- */
 
     async function submit() {
@@ -239,14 +283,24 @@ export default function ChecklistPage() {
             const formattedData: any = {}
 
             Object.keys(form).forEach((key) => {
+
                 if (form[key]?.value !== undefined) {
-                    formattedData[key] = form[key].value
-                    if (form[key]?.reason) {
-                        formattedData[`${key} (Reason)`] = form[key].reason
-                    }
+
+                    // ✅ get question text
+                    const questionText =
+                        questionMap[key] || key
+
+                    // ✅ store answer
+                    formattedData[questionText] = form[key].value
+
+                    // ✅ ALWAYS create reason column (clean)
+                    formattedData[`${questionText} (Reason)`] =
+                        form[key]?.reason || ""
+
                 } else {
                     formattedData[key] = form[key]
                 }
+
             })
 
             await fetch("/api/checklist", {
@@ -364,15 +418,16 @@ export default function ChecklistPage() {
                         />
                     )}
                     {/* 🔥 HIRING REQUEST EXTRA FIELD */}
-                    {q.id === "hiringRequest" && form[q.id]?.value === "Yes" && (
-                        <Input
-                            placeholder="To whom request was raised?"
-                            value={form.hiringRequestDetails?.value || ""}
-                            onChange={(e) =>
-                                update("hiringRequestDetails", e.target.value)
-                            }
-                        />
-                    )}
+                    {q.id === "hiringRequest" &&
+                        (form[q.id]?.value === "Yes" || form[q.question]?.value === "Yes") && (
+                            <Input
+                                placeholder="To whom request was raised?"
+                                value={form.hiringRequestDetails?.value || ""}
+                                onChange={(e) =>
+                                    update("hiringRequestDetails", e.target.value)
+                                }
+                            />
+                        )}
                     {/* 🔥 SPECIAL CASE: REPEAT COMPLAINT */}
                     {q.id === "repeatComplaint" && form[q.id]?.value === "Yes" && (
                         <div className="space-y-2 mt-2 border p-3 rounded">
@@ -612,7 +667,7 @@ export default function ChecklistPage() {
                                         {q.type === "rating" && (
                                             <Select
                                                 value={form[q.question]?.value || ""}
-                                                onValueChange={(v) => update(q.question, v)}
+                                                onValueChange={(v) => update(q.id, v)}
                                             >
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Select rating" />
@@ -632,7 +687,7 @@ export default function ChecklistPage() {
 
                                                 <Select
                                                     value={form[q.question]?.value || ""}
-                                                    onValueChange={(v) => update(q.question, v)}
+                                                    onValueChange={(v) => update(q.id, v)}
                                                 >
                                                     <SelectTrigger>
                                                         <SelectValue placeholder="Select option" />

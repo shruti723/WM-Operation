@@ -78,7 +78,8 @@ export const checklistQuestions = {
         {
             id: "hiringRequest",
             question: "Is hiring request raised?",
-            type: "yesno"
+            type: "yesno",
+            requireReasonOnYes: true
         },
         {
             id: "cleaningScheduleFollowed",
