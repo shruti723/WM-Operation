@@ -12,5 +12,3 @@ services:
         value: 10.2.4
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3000
