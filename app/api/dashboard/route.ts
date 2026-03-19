@@ -7,7 +7,7 @@ export async function GET() {
   const data = await res.json()
 
   const allData = Array.isArray(data) ? data : []
-
+  console.log("TOTAL RECORDS:", allData.length)
   // ✅ LOCAL DATE FIX (IMPORTANT)
   const todayDate = new Date(
     new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
