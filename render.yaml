@@ -4,12 +4,12 @@ services:
     runtime: node
     plan: free
     buildCommand: npm ci && npm run build
-    startCommand: npm start
+    startCommand: node .next/standalone/server.js
     envVars:
       - key: NODE_VERSION
-        value: 20.19.5
+        value: 20.11.1
       - key: NPM_VERSION
-        value: 10.7.0
+        value: 10.2.4
       - key: NODE_ENV
         value: production
       - key: PORT
