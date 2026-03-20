@@ -14,16 +14,45 @@ export async function GET() {
   function normalizeKey(key: string) {
     return key
       .toLowerCase()
-      .replace(/\(.*?\)/g, "") // remove (Reason)
+      .replace(/\(reason\)/gi, "") // only remove reason
       .replace(/[^a-z0-9]/g, "_")
+      .replace(/_+/g, "_")        // remove double underscore
+      .replace(/^_|_$/g, "")      // remove starting/ending _
+  }
+
+  const FIELD_MAP: any = {
+    // ✅ SITE
+    sitename: "site",
+    telephonicsitename: "site",
+
+    // ✅ BASIC FLAGS
+    sitevisit: "site_visit",
+    telephoniccalling: "telephonic_calling",
+    repeatcomplaint: "repeat_complaint",
+
+    // ✅ URGENT ISSUE
+    any_urgent_issue_observed_at_the_site_site_visit: "urgent_issue",
+
+    // ✅ MANPOWER
+    is_manpower_shortage_affecting_operations_site_visit: "manpower_issue",
+    is_manpower_shortage_affecting_operations_telephonic: "manpower_issue",
   }
 
   const allData = data.map((row: any) => {
     let obj: any = {}
 
     Object.entries(row).forEach(([key, value]) => {
-      const cleanKey = normalizeKey(key)
-      obj[cleanKey] = value
+      let cleanKey = normalizeKey(key)
+
+      if (FIELD_MAP[cleanKey]) {
+        cleanKey = FIELD_MAP[cleanKey]
+      }
+
+      if (cleanKey === "site") {
+        obj.site = obj.site || value
+      } else {
+        obj[cleanKey] = value
+      }
     })
 
     return obj
@@ -41,14 +70,26 @@ export async function GET() {
   // ============================
   // 📊 TODAY / WEEK
   // ============================
-  const today = allData.filter((d: any) => d.date === todayDate).length
+  const today = allData.filter((d: any) => {
+    if (!d.date) return false
+
+    const parsedDate = new Date(d.date)
+    if (isNaN(parsedDate.getTime())) return false
+
+    return parsedDate.toISOString().split("T")[0] === todayDate
+  }).length
 
   const now = new Date()
 
   const week = allData.filter((d: any) => {
     if (!d.date) return false
+
+    const parsedDate = new Date(d.date)
+
+    if (isNaN(parsedDate.getTime())) return false
+
     const diff =
-      (now.getTime() - new Date(d.date).getTime()) /
+      (now.getTime() - parsedDate.getTime()) /
       (1000 * 60 * 60 * 24)
 
     return diff <= 7
@@ -58,7 +99,7 @@ export async function GET() {
   // 🏢 UNIQUE SITES
   // ============================
   const sites = new Set(
-    allData.map((d: any) => d.sitename || d.site_name || d.site).filter(Boolean)
+    allData.map((d: any) => d.site).filter(Boolean)
   ).size
 
   // ============================
@@ -85,7 +126,7 @@ export async function GET() {
 
     })
   })
-
+  console.log("SAMPLE:", allData[0])
   // ============================
   // 📦 RECENT DATA
   // ============================
