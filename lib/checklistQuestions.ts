@@ -49,7 +49,7 @@ export const checklistQuestions = {
     "site visit telephonic": [
         {
             id: "telephonicCalling",
-            question: "Was telephonic calling done today?",
+            question: "Was any site contact made today?",
             type: "yesno"
         },
         {

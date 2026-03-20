@@ -15,7 +15,7 @@ export const siteQuestions: any = {
         { question: "Hygiene and cleanliness of the canteen area", type: "rating" },
         { question: "Manpower discipline and attendance", type: "rating" },
         { question: "Adequacy of manpower at the site", type: "rating" },
-        { question: "Any urgent issue observed at the site", type: "text" }
+        { question: "Any urgent issue observed at the site", type: "yesno", requireReasonOnYes: true }
 
     ],
     "MPSeDC": [
@@ -31,7 +31,7 @@ export const siteQuestions: any = {
         { question: "Cleanliness and maintenance of the CGM office", type: "rating" },
         { question: "Cleanliness and maintenance of the coffee area (Second Floor)", type: "rating" },
         { question: "Cleanliness and maintenance of the coffee area (Third Floor)", type: "rating" },
-        { question: "Any urgent issue observed at the site", type: "text" }
+        { question: "Any urgent issue observed at the site", type: "yesno", requireReasonOnYes: true }
     ],
     "Pitampur Municipal Corporation": [
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },

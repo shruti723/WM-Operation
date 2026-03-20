@@ -30,7 +30,7 @@ export default function ChecklistPage() {
         "Basic Details",
         "Email And Calling",
         "Site Visit In Person",
-        "Site Visit Telephonic",
+        "Outstation site contact",
         "Store"
     ]
 
@@ -68,7 +68,7 @@ export default function ChecklistPage() {
 
             Object.values(siteQuestions).forEach((site: any) => {
                 site.forEach((q: any) => {
-                    delete updated[q.question]
+                    delete updated[`site_${q.question}`]
                 })
             })
 
@@ -84,7 +84,7 @@ export default function ChecklistPage() {
                 if (
                     !["telephonicCalling", "telephonicSiteName", "telephonicIncharge"].includes(q.id)
                 ) {
-                    delete updated[q.id || q.question]
+                    delete updated[`telephonic_${q.question}`]
                 }
             })
 
@@ -105,76 +105,55 @@ export default function ChecklistPage() {
     }, [])
 
     /* ---------------- VALIDATION ---------------- */
-
     function validate() {
 
-        /* ✅ EXISTING CHECKLIST VALIDATION */
+        // ✅ EXISTING CHECKLIST
         for (const [sectionName, section] of Object.entries(checklistQuestions)) {
 
-            // ✅ SKIP TELEPHONIC SECTION COMPLETELY
             if (
-                sectionName === "site visit telephonic" &&
-                form.telephonicCalling?.value !== "Yes"
-            ) {
-                continue
-            }
-
+                sectionName === "site visit telephonic" ||
+                sectionName === "site visit"
+            ) continue
 
             for (const q of section as any[]) {
-                // 🔥 SKIP SITE VISIT FIELD
-                if (
-                    q.id === "siteName" &&
-                    form.siteVisit?.value !== "Yes"
-                ) {
-                    continue
-                }
 
-                const ans = form[q.id] || form[q.question]
+                if (q.id === "siteName" && form.siteVisit?.value !== "Yes") continue
+
+                const key = q.customKey || q.id || q.question
+                const ans = form[key]
 
                 if (!ans || !ans.value) {
-                    console.log("❌ Failed Question:", {
-                        id: q.id,
-                        question: q.question,
-                        value: form[q.id],
-                        fullForm: form
-                    })
-
                     alert(`${q.question} is required`)
                     return false
                 }
 
-                // 🔥 REASON ON NO
-                if (
-                    q.type === "yesno" &&
-                    q.requireReasonOnNo &&
-                    ans.value === "No" &&
-                    !ans.reason
-                ) {
+                if (q.requireReasonOnNo && ans.value === "No" && !ans.reason) {
                     alert(`Reason required for: ${q.question}`)
                     return false
                 }
 
-                // 🔥 REASON ON YES
-                if (
-                    q.type === "yesno" &&
-                    q.requireReasonOnYes &&
-                    ans.value === "Yes" &&
-                    !ans.reason
-                ) {
+                if (q.requireReasonOnYes && ans.value === "Yes" && !ans.reason) {
                     alert(`Reason required for: ${q.question}`)
                     return false
                 }
             }
         }
+
+        // ✅ HIRING
         if (form.hiringRequest?.value === "Yes") {
-            if (!form.hiringRequestDetails?.value) {
+            const detailKey =
+                form.siteVisit?.value === "Yes"
+                    ? "site_hiringRequestDetails"
+                    : "telephonic_hiringRequestDetails"
+
+            if (!form[detailKey]?.value) {
                 alert("Please enter to whom hiring request was raised")
                 return false
             }
         }
-        // 🔥 TELEPHONIC VALIDATION
-        if (form.telephonicCalling?.value === "Yes") {
 
+        // ✅ TELEPHONIC
+        if (form.telephonicCalling?.value === "Yes") {
             if (!form.telephonicSiteName?.value) {
                 alert("Select telephonic site")
                 return false
@@ -186,9 +165,8 @@ export default function ChecklistPage() {
             }
         }
 
-        // ✅ REPEAT COMPLAINT VALIDATION
+        // ✅ REPEAT COMPLAINT
         if (form.repeatComplaint?.value === "Yes") {
-
             if (!form.repeatComplaintSite?.value) {
                 alert("Please select complaint site")
                 return false
@@ -200,33 +178,24 @@ export default function ChecklistPage() {
             }
         }
 
-
-        /* ✅ ADD THIS BLOCK HERE (SITE VALIDATION) */
+        // ✅ SITE VALIDATION
         if (form.siteVisit?.value === "Yes" && form.siteName?.value) {
 
             const siteQs = siteQuestions[form.siteName.value] || []
 
             for (const q of siteQs) {
-
-                const ans = form[q.question]
+                const key = `site_${q.question}`
+                const ans = form[key]
 
                 if (!ans || !ans.value) {
-                    console.log("❌ Failed Question:", {
-                        id: q.id,
-                        question: q.question,
-                        value: form[q.id],
-                        fullForm: form
-                    })
-
                     alert(`${q.question} is required`)
                     return false
                 }
 
-                /* OPTIONAL: reason validation for site yes/no */
                 if (
-                    q.type === "yesno" &&
+                    q.requireReasonOnNo &&
                     ans.value === "No" &&
-                    !ans.reason
+                    !ans.reason?.trim()
                 ) {
                     alert(`Reason required for: ${q.question}`)
                     return false
@@ -236,15 +205,21 @@ export default function ChecklistPage() {
 
         return true
     }
-    //     return true
-    // }
 
     function validateStep() {
 
+        // BASIC DETAILS
+        if (step === 0) {
+            if (!form.supervisorName?.value) {
+                alert("Supervisor name required")
+                return false
+            }
+        }
+
+        // COMMUNICATION
         if (step === 1) {
             for (const q of checklistQuestions.communication) {
                 const ans = form[q.id]
-
                 if (!ans || !ans.value) {
                     alert(`${q.question} is required`)
                     return false
@@ -252,30 +227,98 @@ export default function ChecklistPage() {
             }
         }
 
+        // SITE VISIT
+        if (step === 2) {
+
+            if (!form.siteVisit?.value) {
+                alert("Please select site visit")
+                return false
+            }
+
+            if (form.siteVisit.value === "No" && !form.siteVisit.reason) {
+                alert("Reason required for no site visit")
+                return false
+            }
+
+            if (form.siteVisit.value === "Yes") {
+
+                if (!form.siteName?.value) {
+                    alert("Please select site")
+                    return false
+                }
+
+                const siteQs = siteQuestions[form.siteName.value] || []
+
+                for (const q of siteQs) {
+                    const key = `site_${q.question}`
+                    const ans = form[key]
+
+                    if (!ans || !ans.value) {
+                        alert(`${q.question} is required`)
+                        return false
+                    }
+
+                    if (
+                        q.type === "yesno" &&
+                        q.requireReasonOnNo &&
+                        ans.value === "No" &&
+                        !ans.reason?.trim()
+                    ) {
+                        alert(`Reason required for ${q.question}`)
+                        return false
+                    } if (
+                        q.type === "yesno" &&
+                        q.requireReasonOnYes &&
+                        ans.value === "Yes" &&
+                        !ans.reason?.trim()
+                    ) {
+                        alert(`Reason required for ${q.question}`)
+                        return false
+                    }
+                }
+            }
+        }
+
+        // TELEPHONIC
         if (step === 3) {
+
             if (!form.telephonicCalling?.value) {
-                alert("Please select telephonic calling")
+                alert("Select telephonic calling")
                 return false
             }
 
             if (form.telephonicCalling.value === "Yes") {
 
                 if (!form.telephonicSiteName?.value) {
-                    alert("Please select site")
+                    alert("Select telephonic site")
                     return false
                 }
 
                 if (!form.telephonicIncharge?.value) {
-                    alert("Please enter incharge name")
+                    alert("Enter incharge name")
                     return false
+                }
+
+                const teleQs = checklistQuestions["site visit telephonic"]
+
+                for (const q of teleQs) {
+                    if (["telephonicCalling", "telephonicSiteName", "telephonicIncharge"].includes(q.id)) continue
+
+                    const key = `telephonic_${q.question}`
+                    const ans = form[key]
+
+                    if (!ans || !ans.value) {
+                        alert(`${q.question} is required`)
+                        return false
+                    }
                 }
             }
         }
 
+        // STORE
         if (step === 4) {
             for (const q of checklistQuestions.store) {
                 const ans = form[q.id]
-
                 if (!ans || !ans.value) {
                     alert(`${q.question} is required`)
                     return false
@@ -317,16 +360,25 @@ export default function ChecklistPage() {
 
                 if (form[key]?.value !== undefined) {
 
-                    // ✅ get question text
-                    const questionText =
-                        questionMap[key] || key
+                    let baseKey = key
+                        .replace("site_", "")
+                        .replace("telephonic_", "")
 
-                    // ✅ store answer
-                    formattedData[questionText] = form[key].value
+                    let finalKey = baseKey
 
-                    // ✅ ALWAYS create reason column (clean)
-                    formattedData[`${questionText} (Reason)`] =
-                        form[key]?.reason || ""
+                    // 🔥 CLEAN + LABEL
+                    if (key.startsWith("site_")) {
+                        finalKey = baseKey + " (Site Visit)"
+                    }
+                    else if (key.startsWith("telephonic_")) {
+                        finalKey = baseKey + " (Telephonic)"
+                    }
+
+                    // ✅ store clean column
+                    formattedData[finalKey] = form[key].value
+
+                    // ✅ reason
+                    formattedData[`${finalKey} (Reason)`] = form[key]?.reason || ""
 
                 } else {
                     formattedData[key] = form[key]
@@ -366,7 +418,7 @@ export default function ChecklistPage() {
     /* ---------------- QUESTION RENDER ---------------- */
 
     function renderQuestion(q: any) {
-        const key = q.id || q.question
+        const key = q.customKey || q.id || q.question
 
         if (q.type === "rating") {
             return (
@@ -474,9 +526,22 @@ export default function ChecklistPage() {
                         form[key]?.value === "Yes" && (
                             <Input
                                 placeholder="To whom request was raised?"
-                                value={form.hiringRequestDetails?.value || ""}
+                                value={
+                                    key.startsWith("site_")
+                                        ? form.site_hiringRequestDetails?.value || ""
+                                        : key.startsWith("telephonic_")
+                                            ? form.telephonic_hiringRequestDetails?.value || ""
+                                            : form.hiringRequestDetails?.value || ""
+                                }
                                 onChange={(e) =>
-                                    update("hiringRequestDetails", e.target.value)
+                                    update(
+                                        key.startsWith("site_")
+                                            ? "site_hiringRequestDetails"
+                                            : key.startsWith("telephonic_")
+                                                ? "telephonic_hiringRequestDetails"
+                                                : "hiringRequestDetails",
+                                        e.target.value
+                                    )
                                 }
                             />
                         )}
@@ -668,7 +733,10 @@ export default function ChecklistPage() {
                                 siteQuestions[form.siteName.value]?.map((q: any) => (
                                     <div key={q.question}>
                                         <label>{q.question}</label>
-                                        {renderQuestion(q)}
+                                        {renderQuestion({
+                                            ...q,
+                                            customKey: `site_${q.question}`
+                                        })}
                                     </div>
                                 ))}
                         </>
@@ -680,7 +748,7 @@ export default function ChecklistPage() {
                         <>
 
                             {/* STEP 1: CALLING */}
-                            <label>Was telephonic calling done today?</label>
+                            <label>Was any site contact made today?</label>
                             <Select
                                 value={form.telephonicCalling?.value || ""}
                                 onValueChange={(v) => {
@@ -756,7 +824,10 @@ export default function ChecklistPage() {
                                         .map((q: any, index: number) => (
                                             <div key={index}>
                                                 <label>{q.question}</label>
-                                                {renderQuestion(q)}
+                                                {renderQuestion({
+                                                    ...q,
+                                                    customKey: `telephonic_${q.question}`
+                                                })}
                                             </div>
                                         ))
                                 )}
