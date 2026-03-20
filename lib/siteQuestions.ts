@@ -208,7 +208,7 @@ export const siteQuestions: any = {
         { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
-    "kgajaran Ganesh Mandir": [
+    "khagaran Mandir": [
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
