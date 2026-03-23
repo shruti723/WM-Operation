@@ -6,15 +6,28 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ClipboardList, FileText, BarChart3, LogOut, User } from "lucide-react"
 
-export default function Home() {
+export default function SupervisorPage() {
 
     const router = useRouter()
     const [user, setUser] = useState<any>(null)
 
     useEffect(() => {
         const u = sessionStorage.getItem("user")
-        if (!u) router.push("/")
-        else setUser(JSON.parse(u))
+
+        if (!u) {
+            router.push("/")
+            return
+        }
+
+        const parsedUser = JSON.parse(u)
+
+        // 🔐 BLOCK HR ACCESS
+        if (parsedUser.role === "hr") {
+            router.push("/hr")
+            return
+        }
+
+        setUser(parsedUser)
     }, [])
 
     function handleLogout() {
@@ -22,7 +35,9 @@ export default function Home() {
         router.push("/")
     }
 
-    if (!user) return null
+    if (!user) {
+        return <div className="p-10">Loading...</div>
+    }
 
     return (
 
