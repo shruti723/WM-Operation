@@ -1,0 +1,15 @@
+export const sites = [
+    "Aaron",
+    "Crystal IT Park",
+    "Daily Collage",
+    "Dewas Muncipal Corporation",
+    "Dist. Collector",
+    "IDA",
+    "ISBT Raipur",
+    "MGM",
+    "MPIDC Gwalior",
+    "MPSEDC Bhopal",
+    "Pithampur Muncipal Corporation",
+    "Ruchi Reality",
+    "Shri Ganpati Khajrana",
+]

@@ -132,14 +132,27 @@ function ModuleCard({ mod, onClick }: { mod: any; onClick: () => void }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function Home() {
+export default function SupervisorPage() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
 
   useEffect(() => {
     const u = sessionStorage.getItem("user")
-    if (!u) router.push("/")
-    else setUser(JSON.parse(u))
+
+    if (!u) {
+      router.push("/")
+      return
+    }
+
+    const parsedUser = JSON.parse(u)
+
+    // Block HR access - redirect to HR module
+    if (parsedUser.role === "hr") {
+      router.push("/hr")
+      return
+    }
+
+    setUser(parsedUser)
   }, [])
 
   if (!user) return null

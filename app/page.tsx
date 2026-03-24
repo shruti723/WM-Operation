@@ -27,9 +27,9 @@ export default function LoginPage() {
 
     const users = [
       { email: "admin@fm.com", password: "1234", role: "admin", name: "Admin" },
-      { email: "md@fm.com", password: "1234", role: "admin", name: "MD" },
       { email: "nitesh@fm.com", password: "1234", role: "supervisor", name: "Nitesh" },
-      { email: "naveen@fm.com", password: "1234", role: "supervisor", name: "Naveen" }
+      { email: "naveen@fm.com", password: "1234", role: "supervisor", name: "Naveen" },
+      { email: "hr@fm.com", password: "1234", role: "hr", name: "HR Executive" }
     ]
 
     const foundUser = users.find(
@@ -38,8 +38,14 @@ export default function LoginPage() {
 
     if (foundUser) {
       sessionStorage.setItem("user", JSON.stringify(foundUser))
-      router.push("/home")
-    } else {
+
+      if (foundUser.role === "hr") {
+        router.push("/hr") // 👉 HR dashboard
+      } else {
+        router.push("/supervisor") // 👉 supervisor/admin dashboard
+      }
+    }
+    else {
       setError("Invalid email or password")
     }
   }
@@ -70,7 +76,10 @@ export default function LoginPage() {
               <Input
                 placeholder="Enter your email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  setError("")
+                }}
                 className="h-11 rounded-xl focus:ring-2 focus:ring-blue-400"
               />
             </div>
@@ -83,7 +92,10 @@ export default function LoginPage() {
                   placeholder="Enter password"
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    setError("")
+                  }}
                   className="h-11 rounded-xl pr-10 focus:ring-2 focus:ring-blue-400"
                 />
 
