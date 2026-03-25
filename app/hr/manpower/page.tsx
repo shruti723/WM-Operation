@@ -1,280 +1,421 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { sites } from "@/lib/siteList"
 
+/* ✅ TYPES */
+type ManpowerItem = {
+    designation: string
+    authorised: number
+    deployed?: number
+    shortage?: number
+}
+
+type FormType = {
+    siteName: string
+    startDate: string
+    lastRenewalDate: string
+    nextRenewalDate: string
+    manpowerList: ManpowerItem[]
+    recruitmentProcess: string
+    responsible: string
+    cutoffDate: string
+    total: number
+    remarks: string
+}
+
 export default function ManpowerPage() {
 
-    const [form, setForm] = useState({
+    const [form, setForm] = useState<FormType>({
         siteName: "",
-
         startDate: "",
         lastRenewalDate: "",
         nextRenewalDate: "",
-
-        designation: "",
-        authorised: "",
-        deployed: "",
-        shortage: "",
-        needed: "",
-
+        manpowerList: [{ designation: "", authorised: 0 }],
         recruitmentProcess: "",
         responsible: "",
         cutoffDate: "",
-
-        total: "",
+        total: 0,
         remarks: ""
     })
 
+    const [user, setUser] = useState<any>(null)
+
+    /* ✅ LOAD USER */
+    useEffect(() => {
+        const storedUser = sessionStorage.getItem("user")
+        if (storedUser) setUser(JSON.parse(storedUser))
+    }, [])
+
+    /* ✅ AUTO TOTAL */
+    useEffect(() => {
+        if (user?.role === "level2") {
+            const total = form.manpowerList.reduce(
+                (sum, item) => sum + (item.shortage || 0),
+                0
+            )
+
+            setForm(prev => ({ ...prev, total }))
+        }
+    }, [form.manpowerList, user])
+
+    /* ✅ NORMAL CHANGE */
     function handleChange(e: any) {
+        setForm({ ...form, [e.target.name]: e.target.value })
+    }
+
+    /* ✅ MANPOWER CHANGE */
+    function handleManpowerChange(
+        index: number,
+        field: keyof ManpowerItem,
+        value: any
+    ) {
+        const updated = [...form.manpowerList]
+
+        if (field === "authorised") {
+            updated[index].authorised = Number(value)
+        } else if (field === "designation") {
+            updated[index].designation = value
+        }
+
+        setForm({ ...form, manpowerList: updated })
+    }
+
+    /* ✅ ADD ROW */
+    function addRow() {
         setForm({
             ...form,
-            [e.target.name]: e.target.value
+            manpowerList: [
+                ...form.manpowerList,
+                { designation: "", authorised: 0 }
+            ]
         })
     }
 
+    /* ✅ REMOVE ROW */
+    function removeRow(index: number) {
+        if (form.manpowerList.length === 1) return
+        const updated = form.manpowerList.filter((_, i) => i !== index)
+        setForm({ ...form, manpowerList: updated })
+    }
+
+    /* ✅ FETCH DATA */
+    async function fetchSiteData(siteName: string) {
+        try {
+            const res = await fetch(`YOUR_GOOGLE_SCRIPT_URL?siteName=${siteName}`)
+            const data = await res.json()
+
+            if (data) {
+                setForm(prev => ({
+                    ...prev,
+                    ...data,
+                    manpowerList: data.manpowerList
+                        ? JSON.parse(data.manpowerList)
+                        : prev.manpowerList
+                }))
+            }
+        } catch (err) {
+            console.error(err)
+        }
+    }
+
+    /* ✅ ROLE CONTROL */
+    function isVisible(field: string) {
+        if (!user) return false
+
+        if (user.role === "level1") {
+            return ["siteName", "startDate", "lastRenewalDate", "nextRenewalDate"].includes(field)
+        }
+
+        if (user.role === "level2") {
+            return ["deployed", "shortage", "needed"].includes(field)
+        }
+
+        if (user.role === "level3") {
+            return ["recruitmentProcess", "responsible", "cutoffDate", "total", "remarks"].includes(field)
+        }
+
+        return false
+    }
+
+    /* ✅ SUBMIT */
     async function handleSubmit(e: any) {
         e.preventDefault()
 
-        const data = {
-            updatedOn: new Date().toISOString(),
-            ...form
+        if (user?.role === "level1") {
+            const invalid = form.manpowerList.some(
+                item => !item.designation || !item.authorised
+            )
+
+            if (!form.siteName || !form.startDate) {
+                alert("Fill basic details")
+                return
+            }
+
+            if (invalid) {
+                alert("Fill all designation rows")
+                return
+            }
         }
 
-        console.log(data)
-        alert("Manpower submitted ✅")
+        try {
+            await fetch("YOUR_GOOGLE_SCRIPT_URL", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ...form, role: user?.role })
+            })
+
+            alert("Submitted ✅")
+
+            setForm({
+                siteName: "",
+                startDate: "",
+                lastRenewalDate: "",
+                nextRenewalDate: "",
+                manpowerList: [{ designation: "", authorised: 0 }],
+                recruitmentProcess: "",
+                responsible: "",
+                cutoffDate: "",
+                total: 0,
+                remarks: ""
+            })
+
+        } catch {
+            alert("Error ❌")
+        }
     }
 
     return (
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
 
-            {/* HEADER */}
-            <h1 className="text-2xl font-bold">Manpower Details</h1>
+            <h1 className="text-2xl font-bold mb-1">Manpower Details</h1>
             <p className="text-gray-500 mb-6">
                 Submit manpower details for a site.
             </p>
 
-            {/* CARD */}
-            <div className="bg-white rounded-2xl shadow-sm border p-6">
+            <div className="bg-white rounded-2xl shadow border p-6">
 
                 <form onSubmit={handleSubmit} className="space-y-6">
 
-                    {/* SITE */}
-                    <div>
-                        <label className="block text-sm font-medium mb-1">
-                            Site Name
-                        </label>
-                        <select
-                            name="siteName"
-                            value={form.siteName}
-                            onChange={handleChange}
-                            className="w-full border rounded-lg px-3 py-2"
-                        >
-                            <option value="">Select site</option>
+                    {/* 🔹 GRID LIKE FINANCE FORM */}
+                    <div className="grid grid-cols-2 gap-4">
 
-                            {sites.map((site) => (
-                                <option key={site} value={site}>
-                                    {site}
-                                </option>
+                        {/* SITE NAME → TEXT FIELD ✅ */}
+                        <div className="col-span-2">
+                            <label className="text-sm font-medium">Site Name</label>
+                            <input
+                                name="siteName"
+                                value={form.siteName}
+                                onChange={handleChange}
+                                placeholder="Enter site name"
+                                className="w-full border rounded-lg px-3 py-2 mt-1"
+                            />
+                        </div>
+
+                        {isVisible("startDate") && (
+                            <div>
+                                <label className="text-sm font-medium">Start Date</label>
+                                <input type="date" name="startDate"
+                                    value={form.startDate}
+                                    onChange={handleChange}
+                                    className="w-full border rounded-lg px-3 py-2 mt-1" />
+                            </div>
+                        )}
+
+                        {isVisible("lastRenewalDate") && (
+                            <div>
+                                <label className="text-sm font-medium">Last Renewal Date</label>
+                                <input type="date" name="lastRenewalDate"
+                                    value={form.lastRenewalDate}
+                                    onChange={handleChange}
+                                    className="w-full border rounded-lg px-3 py-2 mt-1" />
+                            </div>
+                        )}
+
+                        {isVisible("nextRenewalDate") && (
+                            <div>
+                                <label className="text-sm font-medium">Next Renewal Due</label>
+                                <input type="date" name="nextRenewalDate"
+                                    value={form.nextRenewalDate}
+                                    onChange={handleChange}
+                                    className="w-full border rounded-lg px-3 py-2 mt-1" />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* 🔥 LEVEL 1 TABLE */}
+                    {user?.role === "level1" && (
+                        <div>
+                            <label className="font-medium mb-3 block">
+                                Manpower Details
+                            </label>
+
+                            {/* HEADER */}
+                            <div className="grid grid-cols-12 text-sm font-semibold mb-2 text-gray-600">
+                                <div className="col-span-6">Designation</div>
+                                <div className="col-span-4 text-center">Authorised</div>
+                                <div className="col-span-2"></div>
+                            </div>
+
+                            {form.manpowerList.map((item, index) => (
+                                <div key={index} className="grid grid-cols-12 gap-2 mb-2">
+
+                                    <input
+                                        placeholder="Designation"
+                                        value={item.designation}
+                                        onChange={(e) =>
+                                            handleManpowerChange(index, "designation", e.target.value)
+                                        }
+                                        className="col-span-6 border rounded-lg px-3 py-2"
+                                    />
+
+                                    <input
+                                        type="number"
+                                        value={item.authorised}
+                                        onChange={(e) =>
+                                            handleManpowerChange(index, "authorised", e.target.value)
+                                        }
+                                        className="col-span-4 border rounded-lg px-3 py-2"
+                                    />
+
+                                    <button
+                                        type="button"
+                                        onClick={() => removeRow(index)}
+                                        className="col-span-2 text-red-500"
+                                    >
+                                        ❌
+                                    </button>
+
+                                </div>
                             ))}
-                        </select>
-                    </div>
 
-                    {/* GRID */}
-                    <div className="grid md:grid-cols-2 gap-4">
-
-                        {/* START DATE */}
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Start Date
-                            </label>
-                            <input
-                                type="date"
-                                name="startDate"
-                                value={form.startDate}
-                                onChange={handleChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                            />
-                        </div>
-
-                        {/* LAST RENEWAL */}
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Last Renewal Date
-                            </label>
-                            <input
-                                type="date"
-                                name="lastRenewalDate"
-                                value={form.lastRenewalDate}
-                                onChange={handleChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                            />
-                        </div>
-
-                        {/* NEXT RENEWAL */}
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Next Renewal Due
-                            </label>
-                            <input
-                                type="date"
-                                name="nextRenewalDate"
-                                value={form.nextRenewalDate}
-                                onChange={handleChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                            />
-                        </div>
-
-                        {/* DESIGNATION */}
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Designation
-                            </label>
-                            <input
-                                name="designation"
-                                value={form.designation}
-                                onChange={handleChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                            />
-                        </div>
-
-                        {/* AUTHORISED */}
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Manpower Authorised
-                            </label>
-                            <input
-                                name="authorised"
-                                value={form.authorised}
-                                onChange={handleChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                            />
-                        </div>
-
-                        {/* DEPLOYED */}
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Manpower Deployed
-                            </label>
-                            <input
-                                name="deployed"
-                                value={form.deployed}
-                                onChange={handleChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                            />
-                        </div>
-
-                        {/* SHORTAGE */}
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Shortage
-                            </label>
-                            <input
-                                name="shortage"
-                                value={form.shortage}
-                                onChange={handleChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                            />
-                        </div>
-
-                        {/* NEEDED */}
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Manpower Needed
-                            </label>
-                            <input
-                                name="needed"
-                                value={form.needed}
-                                onChange={handleChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                            />
-                        </div>
-
-                        {/* RECRUITMENT */}
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Recruitment Process
-                            </label>
-                            <select
-                                name="recruitmentProcess"
-                                value={form.recruitmentProcess}
-                                onChange={handleChange}
-                                className="w-full border rounded-lg px-3 py-2"
+                            <button
+                                type="button"
+                                onClick={addRow}
+                                className="mt-2 text-blue-600 font-medium"
                             >
-                                <option value="">Select</option>
-                                <option value="Ongoing">Ongoing</option>
-                                <option value="Completed">Completed</option>
-                                <option value="Not Started">Not Started</option>
-                            </select>
+                                ➕ Add Row
+                            </button>
                         </div>
+                    )}
 
-                        {/* RESPONSIBLE */}
+                    {/* 🔥 LEVEL 2 TABLE */}
+                    {user?.role === "level2" && (
                         <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Person Responsible
+                            <label className="font-medium mb-3 block">
+                                Manpower Deployment
                             </label>
-                            <input
-                                name="responsible"
-                                value={form.responsible}
-                                onChange={handleChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                            />
+
+                            <div className="grid grid-cols-12 text-sm font-semibold mb-2 text-gray-600">
+                                <div className="col-span-4">Designation</div>
+                                <div className="col-span-2 text-center">Auth</div>
+                                <div className="col-span-3 text-center">Deployed</div>
+                                <div className="col-span-3 text-center">Shortage</div>
+                            </div>
+
+                            {form.manpowerList.map((item, index) => (
+                                <div key={index} className="grid grid-cols-12 gap-2 mb-2 items-center">
+
+                                    <div className="col-span-4">{item.designation}</div>
+                                    <div className="col-span-2 text-center">{item.authorised}</div>
+
+                                    <input
+                                        type="number"
+                                        value={item.deployed || ""}
+                                        onChange={(e) => {
+                                            const updated = [...form.manpowerList]
+
+                                            updated[index].deployed = Number(e.target.value)
+
+                                            updated[index].shortage = Math.max(
+                                                item.authorised - Number(e.target.value || 0),
+                                                0
+                                            )
+
+                                            setForm({ ...form, manpowerList: updated })
+                                        }}
+                                        className="col-span-3 border rounded-lg px-2 py-2"
+                                    />
+
+                                    <div className="col-span-3 text-center text-red-500 font-medium">
+                                        {item.shortage || 0}
+                                    </div>
+
+                                </div>
+                            ))}
                         </div>
+                    )}
 
-                        {/* CUTOFF DATE */}
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Cutoff Date
-                            </label>
-                            <input
-                                type="date"
-                                name="cutoffDate"
-                                value={form.cutoffDate}
-                                onChange={handleChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                            />
+                    {/* 🔥 LEVEL 3 */}
+                    {user?.role === "level3" && (
+                        <div className="grid grid-cols-2 gap-4">
+
+                            <div>
+                                <label>Recruitment Process</label>
+                                <select
+                                    name="recruitmentProcess"
+                                    value={form.recruitmentProcess}
+                                    onChange={handleChange}
+                                    className="w-full border rounded-lg px-3 py-2 mt-1"
+                                >
+                                    <option value="">Select</option>
+                                    <option>Ongoing</option>
+                                    <option>Completed</option>
+                                    <option>Not Started</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label>Responsible</label>
+                                <input
+                                    name="responsible"
+                                    value={form.responsible}
+                                    onChange={handleChange}
+                                    className="w-full border rounded-lg px-3 py-2 mt-1"
+                                />
+                            </div>
+
+                            <div>
+                                <label>Cutoff Date</label>
+                                <input
+                                    type="date"
+                                    name="cutoffDate"
+                                    value={form.cutoffDate}
+                                    onChange={handleChange}
+                                    className="w-full border rounded-lg px-3 py-2 mt-1"
+                                />
+                            </div>
+
+                            <div>
+                                <label>Total Shortage</label>
+                                <input
+                                    value={form.total}
+                                    readOnly
+                                    className="w-full border rounded-lg px-3 py-2 mt-1 bg-gray-100"
+                                />
+                            </div>
+
+                            <div className="col-span-2">
+                                <label>Remarks</label>
+                                <textarea
+                                    name="remarks"
+                                    value={form.remarks}
+                                    onChange={handleChange}
+                                    className="w-full border rounded-lg px-3 py-2 mt-1"
+                                />
+                            </div>
+
                         </div>
+                    )}
 
-                        {/* TOTAL */}
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Total
-                            </label>
-                            <input
-                                name="total"
-                                value={form.total}
-                                onChange={handleChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                            />
-                        </div>
-
-                    </div>
-
-                    {/* REMARKS */}
-                    <div>
-                        <label className="block text-sm font-medium mb-1">
-                            Remarks
-                        </label>
-                        <textarea
-                            name="remarks"
-                            value={form.remarks}
-                            onChange={handleChange}
-                            className="w-full border rounded-lg px-3 py-2"
-                        />
-                    </div>
-
-                    <Button
-                        type="submit"
-                        className="w-full h-11 text-lg rounded-lg"
-                    >
+                    {/* BUTTON */}
+                    <Button className="w-full h-11 text-lg rounded-lg bg-blue-600">
                         Submit Report
                     </Button>
 
                 </form>
-
             </div>
-
         </div>
     )
 }

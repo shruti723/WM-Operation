@@ -10,13 +10,12 @@ import {
 import Header from "@/components/hr/Header"
 
 export default function HRDashboard() {
-
     return (
         <div>
             <Header />
 
             {/* HEADER */}
-            <h1 className="text-2xl font-bold">HR Dashboard</h1>
+            <h1 className="text-2xl font-bold">Dashboard</h1>
             <p className="text-gray-500 mb-6">
                 Overview of all sites and form submissions
             </p>

@@ -18,7 +18,7 @@ export default function Sidebar() {
     return (
         <div className="w-64 h-screen bg-white border-r p-4">
 
-            <h1 className="text-lg font-bold mb-6">FM Ops HR</h1>
+            <h1 className="text-lg font-bold mb-6">FM Operation</h1>
 
             {menu.map((item, i) => {
                 const Icon = item.icon
