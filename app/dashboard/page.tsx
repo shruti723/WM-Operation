@@ -1,7 +1,7 @@
 "use client"
-import { Progress } from "@/components/ui/progress"
+
 import { useEffect, useState } from "react"
-import { Card, CardContent, CardTitle } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
 import {
   Select,
   SelectTrigger,
@@ -10,483 +10,408 @@ import {
   SelectItem,
 } from "@/components/ui/select"
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
+  LineChart, Line,
+  BarChart, Bar, Cell,
+  XAxis, YAxis, Tooltip,
+  ResponsiveContainer, CartesianGrid,
 } from "recharts"
+import {
+  ClipboardList, TrendingUp, MapPin, RotateCcw,
+  AlertCircle, Phone, Trophy, AlertTriangle, Users,
+  Loader2, ArrowUpRight, ArrowDownRight,
+} from "lucide-react"
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+
+function calcScore(item: any) {
+  let total = 0, good = 0
+  Object.entries(item).forEach(([key, v]: any) => {
+    if (key.toLowerCase().includes("reason")) return
+    if (["Yes","No"].includes(v))                         { total++; if (v === "Yes")  good++ }
+    if (["Good","Satisfactory","Poor"].includes(v))       { total++; if (v === "Good") good++ }
+  })
+  return total ? Math.round((good / total) * 100) : 0
+}
+
+function statusLabel(s: number) {
+  return s >= 80 ? "Good" : s >= 50 ? "Average" : "Critical"
+}
+
+function statusClass(s: number) {
+  if (s >= 80) return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+  if (s >= 50) return "bg-amber-50  text-amber-700  ring-1 ring-amber-200"
+  return              "bg-red-50    text-red-700    ring-1 ring-red-200"
+}
+
+// ─── Custom chart tooltip ─────────────────────────────────────────────────────
+
+function ChartTip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl shadow-lg px-3 py-2 text-xs">
+      <p className="text-slate-500 mb-0.5">{label}</p>
+      <p className="text-slate-900 font-bold text-sm">{payload[0].value}%</p>
+    </div>
+  )
+}
+
+// ─── KPI card ─────────────────────────────────────────────────────────────────
+
+function Kpi({
+  label, value, icon: Icon, color, barValue, danger,
+}: {
+  label: string; value: string | number; icon: any
+  color: string; barValue?: number; danger?: boolean
+}) {
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 p-5 flex flex-col gap-3 hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${color}`}>
+          <Icon size={15} className="text-white" />
+        </div>
+      </div>
+      <p className={`text-3xl font-bold tracking-tight ${danger ? "text-red-600" : "text-slate-900"}`}>
+        {value}
+      </p>
+      {barValue !== undefined && (
+        <div className="space-y-1">
+          <Progress value={barValue} className="h-1.5" />
+          <p className="text-[11px] text-slate-400">{barValue}% compliance rate</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Section heading ──────────────────────────────────────────────────────────
+
+function Section({ title, sub }: { title: string; sub?: string }) {
+  return (
+    <div className="mb-4">
+      <h2 className="text-sm font-semibold text-slate-700">{title}</h2>
+      {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
+    </div>
+  )
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardOverview() {
-  const [data, setData] = useState<any>({})
-  const [site, setSite] = useState("all")
-  const [range, setRange] = useState("7")
-
+  const [data,    setData]    = useState<any>({})
+  const [site,    setSite]    = useState("all")
+  const [range,   setRange]   = useState("7")
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetch("/api/dashboard")
-      .then((res) => res.json())
-      .then((res) => {
-        setData(res)
-        setLoading(false)
-      })
+      .then(r => r.json())
+      .then(r => { setData(r); setLoading(false) })
   }, [])
 
   if (loading) {
     return (
-      <div className="p-10 text-center text-gray-500">
-        Loading dashboard...
+      <div className="flex items-center justify-center h-full gap-2 text-slate-400 text-sm">
+        <Loader2 size={16} className="animate-spin" />
+        Loading dashboard…
       </div>
     )
   }
 
-  const allData = data.allData || []
+  const allData: any[] = data.allData || []
 
-  // =====================
-  // FILTER
-  // =====================
+  // Filter
   const filtered = allData.filter((d: any) => {
     if (!d.date) return false
-
-    const parsedDate = new Date(d.date)
-
-    if (isNaN(parsedDate.getTime())) return false
-
-    const diff =
-      (Date.now() - parsedDate.getTime()) /
-      (1000 * 60 * 60 * 24)
-
-    return diff <= Number(range) &&
-      (site === "all" || d.site === site)
+    const parsed = new Date(d.date)
+    if (isNaN(parsed.getTime())) return false
+    const days = (Date.now() - parsed.getTime()) / 86_400_000
+    return days <= Number(range) && (site === "all" || d.site === site)
   })
 
-  // =====================
-  // SITES
-  // =====================
-  const sites = Array.from(
-    new Set(allData.map((d: any) => d.site).filter(Boolean))
-  )
+  const sites: string[] = Array.from(new Set(allData.map((d: any) => d.site).filter(Boolean)))
 
-  function getStatus(score: number) {
-    if (score >= 80) return "good"
-    if (score >= 50) return "average"
-    return "critical"
-  }
-
-  // =====================
-  // SCORE
-  // =====================
-  function score(item: any) {
-    let total = 0, good = 0
-
-    Object.entries(item).forEach(([key, v]: any) => {
-      if (key.toLowerCase().includes("reason")) return
-
-      if (["Yes", "No"].includes(v)) {
-        total++
-        if (v === "Yes") good++
-      }
-
-      if (["Good", "Satisfactory", "Poor"].includes(v)) {
-        total++
-        if (v === "Good") good++
-      }
-    })
-
-    return total ? Math.round((good / total) * 100) : 0
-  }
-  // =====================
-  // EXTRA INSIGHTS (FIXED)
-  // =====================
-
-  // 1. Site Visit
-  const siteVisitCount = filtered.filter(
-    (d: any) => d.site_visit === "Yes"
-  ).length
-
-  // 2. Telephonic
-  const telephonicCount = filtered.filter(
-    (d: any) => d.telephonic_calling === "Yes"
-  ).length
-
-  // 3. Repeat Complaint
-  const totalRepeat = filtered.filter(
-    (d: any) => d.repeat_complaint === "Yes"
-  ).length
-
-  // 4. Urgent Issue (CORRECT FIELD)
-  const urgentIssues = filtered.filter(
-    (d: any) =>
-      d.urgent_issue === "Yes"
-  ).length
-
-  // 5. Manpower Shortage (CORRECT FIELD)
-  const manpowerIssues = filtered.filter(
-    (d: any) =>
-      d.manpower_issue === "Yes"
-  )
-
-
-  // =====================
   // KPIs
-  // =====================
-  const avgScore = filtered.length
-    ? Math.round(filtered.reduce((a: any, b: any) => a + score(b), 0) / filtered.length)
-    : 0
+  const avgScore     = filtered.length
+    ? Math.round(filtered.reduce((a, b) => a + calcScore(b), 0) / filtered.length) : 0
+  const siteVisits   = filtered.filter((d: any) => d.site_visit        === "Yes").length
+  const repeatComps  = filtered.filter((d: any) => d.repeat_complaint  === "Yes").length
+  const urgentCount  = filtered.filter((d: any) => d.urgent_issue      === "Yes").length
+  const callCount    = filtered.filter((d: any) => d.telephonic_calling=== "Yes").length
+  const manpower     = filtered.filter((d: any) => d.manpower_issue    === "Yes")
 
-  // =====================
-  // DAILY TREND
-  // =====================
-  const dailyMap: any = {}
-
+  // Daily trend
+  const dayMap: Record<string, {total:number;count:number}> = {}
   filtered.forEach((d: any) => {
     if (!d.date) return
-
-    if (!dailyMap[d.date]) {
-      dailyMap[d.date] = { total: 0, count: 0 }
-    }
-
-    dailyMap[d.date].total += score(d)
-    dailyMap[d.date].count += 1
+    if (!dayMap[d.date]) dayMap[d.date] = {total:0,count:0}
+    dayMap[d.date].total += calcScore(d)
+    dayMap[d.date].count += 1
   })
-
-  const dailyData = Object.keys(dailyMap)
-    .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
-    .map((d) => ({
-      date: d,
-      count: Math.round(dailyMap[d].total / dailyMap[d].count),
+  const trendData = Object.keys(dayMap)
+    .sort((a,b) => new Date(a).getTime()-new Date(b).getTime())
+    .map(d => ({
+      date:  d.slice(5),          // MM-DD only
+      score: Math.round(dayMap[d].total / dayMap[d].count),
     }))
 
-  // =====================
-  // SITE PERFORMANCE
-  // =====================
-  const siteMap: any = {}
-
+  // Site performance
+  const siteMap: Record<string,number[]> = {}
   allData.forEach((d: any) => {
-    const site = d.site
-    if (!site) return
-
-    if (!siteMap[site]) siteMap[site] = []
-    siteMap[site].push(score(d))
+    if (!d.site) return
+    if (!siteMap[d.site]) siteMap[d.site] = []
+    siteMap[d.site].push(calcScore(d))
   })
+  const sitePerf = Object.keys(siteMap).map(s => ({
+    site:  s,
+    score: Math.round(siteMap[s].reduce((a,b)=>a+b,0) / siteMap[s].length),
+  })).sort((a,b)=>b.score-a.score)
 
-  const siteData = Object.keys(siteMap).map((s) => ({
-    site: s,
-    score: Math.round(
-      siteMap[s].reduce((a: any, b: any) => a + b, 0) /
-      siteMap[s].length
-    ),
-  }))
+  const topSite   = sitePerf[0]
+  const worstSite = sitePerf[sitePerf.length - 1]
 
-  // 6. Top Performing Site
-  const rankedSites = [...siteData].sort((a, b) => b.score - a.score)
-  const topSite = rankedSites[0]
-  const worstSite = rankedSites[rankedSites.length - 1]
-
-  // =====================
-  // ISSUES
-  // =====================
-  const issueMap: any = {}
-
+  // Top issues
+  const issueMap: Record<string,number> = {}
   filtered.forEach((d: any) => {
-    Object.entries(d).forEach(([key, value]) => {
-      if (value === "No" || value === "Poor") {
-        issueMap[key] = (issueMap[key] || 0) + 1
-      }
+    Object.entries(d).forEach(([k,v]) => {
+      if (v === "No" || v === "Poor") issueMap[k] = (issueMap[k]||0) + 1
     })
   })
-
   const topIssues = Object.keys(issueMap)
-    .map((k) => ({
-      question: k,
-      issues: issueMap[k],
-    }))
-    .sort((a, b) => b.issues - a.issues)
-    .slice(0, 3)
+    .map(k => ({ label: k.replaceAll("_"," ").replace(/\b\w/g, l=>l.toUpperCase()), count: issueMap[k] }))
+    .sort((a,b) => b.count-a.count)
+    .slice(0,5)
+  const maxIssue = topIssues[0]?.count || 1
 
-  // =====================
-  // UI
-  // =====================
+  // Bar colors — single-family progression
+  const barScore = (s: number) => s >= 80 ? "#4f46e5" : s >= 50 ? "#818cf8" : "#e0e7ff"
+
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen max-w-7xl mx-auto">
+    <div className="p-6 space-y-8 max-w-7xl mx-auto">
 
-      {/* 🔥 HEADER */}
-      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+      {/* ── Filters ── */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
-          <p className="text-gray-500 text-sm">
-            Monitor performance, trends & issues
-          </p>
+          <h1 className="text-lg font-semibold text-slate-900">Operations Overview</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Real-time performance across all sites</p>
         </div>
-
-        <div className="flex gap-3 items-center flex-wrap">
-
-          <input type="date" className="border rounded px-3 py-2 text-sm" />
-          <span className="text-gray-500">to</span>
-          <input type="date" className="border rounded px-3 py-2 text-sm" />
-
-          <button className="bg-blue-600 text-white px-4 py-2 rounded shadow">
-            Show Performance
-          </button>
-
+        <div className="flex gap-2">
           <Select value={site} onValueChange={setSite}>
-            <SelectTrigger className="w-[180px] bg-white shadow-sm">
-              <SelectValue placeholder="Site" />
+            <SelectTrigger className="w-40 h-9 text-sm bg-white border-slate-200 shadow-none">
+              <SelectValue placeholder="All Sites" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Sites</SelectItem>
-              {sites.map((s: any) => (
-                <SelectItem key={s} value={s}>{s}</SelectItem>
-              ))}
+              {sites.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
             </SelectContent>
           </Select>
 
           <Select value={range} onValueChange={setRange}>
-            <SelectTrigger className="w-[150px] bg-white shadow-sm">
+            <SelectTrigger className="w-36 h-9 text-sm bg-white border-slate-200 shadow-none">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="1">Today</SelectItem>
-              <SelectItem value="7">7 Days</SelectItem>
-              <SelectItem value="30">30 Days</SelectItem>
+              <SelectItem value="7">Last 7 Days</SelectItem>
+              <SelectItem value="30">Last 30 Days</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
 
-      {/* 🔥 KPI CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-
-        <Card className="p-5 border rounded-xl shadow-sm hover:shadow-md transition">
-          <p className="text-xs text-gray-500">Total Submissions</p>
-          <h2 className="text-2xl font-bold">{filtered.length}</h2>
-        </Card>
-
-        <Card className="p-5 border rounded-xl shadow-sm hover:shadow-md transition">
-          <p className="text-xs text-gray-500">Avg Score</p>
-          <h2 className="text-2xl font-bold">{avgScore}%</h2>
-          <Progress value={avgScore} className="mt-2" />
-        </Card>
-
-        <Card className="p-5 border rounded-xl shadow-sm hover:shadow-md transition">
-          <p className="text-xs text-gray-500">Site Visits</p>
-          <h2 className="text-2xl font-bold">{siteVisitCount}</h2>
-        </Card>
-
-        <Card className="p-5 border rounded-xl shadow-sm hover:shadow-md transition">
-          <p className="text-xs text-gray-500">Repeat Complaints</p>
-          <h2 className="text-2xl font-bold">{totalRepeat}</h2>
-        </Card>
-
-        <Card className="p-5 border rounded-xl shadow-sm hover:shadow-md transition">
-          <p className="text-xs text-gray-500">Urgent Issues</p>
-          <h2 className="text-2xl font-bold text-red-600">{urgentIssues}</h2>
-        </Card>
-
-        <Card className="p-5 border rounded-xl shadow-sm hover:shadow-md transition">
-          <p className="text-xs text-gray-500">Outstation Calls</p>
-          <h2 className="text-2xl font-bold">{telephonicCount}</h2>
-        </Card>
-
-      </div>
-
-
+      {/* ── Critical banner ── */}
       {worstSite && worstSite.score < 50 && (
-        <Card className="p-4 bg-red-100 border border-red-300">
-          <p className="text-red-700 font-semibold">
-            ⚠️ Critical Alert: {worstSite.site} needs immediate attention ({worstSite.score}%)
+        <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+          <AlertTriangle size={16} className="text-red-500 shrink-0" />
+          <p className="text-sm text-red-700">
+            <span className="font-semibold">{worstSite.site}</span> is critically underperforming at{" "}
+            <span className="font-semibold">{worstSite.score}%</span> — immediate action required.
           </p>
-        </Card>
+        </div>
       )}
 
-      {/* 🔥 CHARTS */}
-      {/* 🔥 CHARTS - ROW 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* ── KPI row ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
+        <Kpi label="Submissions"       value={filtered.length} icon={ClipboardList} color="bg-slate-700"    />
+        <Kpi label="Avg Score"         value={`${avgScore}%`}  icon={TrendingUp}    color="bg-indigo-600"   barValue={avgScore} />
+        <Kpi label="Site Visits"       value={siteVisits}      icon={MapPin}        color="bg-violet-600"   />
+        <Kpi label="Repeat Complaints" value={repeatComps}     icon={RotateCcw}     color="bg-amber-500"    />
+        <Kpi label="Urgent Issues"     value={urgentCount}     icon={AlertCircle}   color="bg-red-500"      danger={urgentCount > 0} />
+        <Kpi label="Outstation Calls"  value={callCount}       icon={Phone}         color="bg-cyan-600"     />
+      </div>
 
-        {/* TABLE */}
-        <Card className="p-5 rounded-xl shadow-sm border">
-          <CardTitle className="mb-4 text-lg font-semibold">Recent Activity</CardTitle>
+      {/* ── Charts row ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-gray-500">
-                  <th className="py-3 text-left">Site</th>
-                  <th>Date</th>
-                  <th>Score</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {filtered.slice(0, 5).map((d: any, i: number) => {
-                  const s = score(d)
-                  return (
-                    <tr key={i} className="border-b">
-                      <td className="py-2">{d.site}</td>
-                      <td>{d.date}</td>
-                      <td>{s}%</td>
-                      <td>
-                        <span className={`px-2 py-1 rounded text-white ${s > 80 ? "bg-green-500" :
-                          s > 50 ? "bg-yellow-500" :
-                            "bg-red-500"
-                          }`}>
-                          {getStatus(s)}
-                        </span>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
-        {/* DAILY TREND */}
-        <Card className="p-5 rounded-xl shadow-sm border">
-          <CardTitle className="mb-4 text-lg font-semibold">
-            Daily Performance Trend
-          </CardTitle>
-
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={dailyData}>
-              <XAxis dataKey="date" stroke="#888" />
-              <YAxis />
-              <Tooltip />
-              <Line type="monotone" dataKey="count" strokeWidth={3} />
+        {/* Trend — wider */}
+        <div className="lg:col-span-3 bg-white rounded-xl border border-slate-200 p-5">
+          <Section title="Daily Performance Trend" sub="Average score per day across filtered submissions" />
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={trendData} margin={{ left: -20, right: 10, top: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#94a3b8" }} stroke="none" tickLine={false} />
+              <YAxis domain={[0,100]} tick={{ fontSize: 11, fill: "#94a3b8" }} stroke="none" tickLine={false} />
+              <Tooltip content={<ChartTip />} cursor={{ stroke: "#e2e8f0" }} />
+              <Line
+                type="monotone" dataKey="score"
+                stroke="#6366f1" strokeWidth={2}
+                dot={{ fill: "#6366f1", r: 3, strokeWidth: 0 }}
+                activeDot={{ r: 5, strokeWidth: 0, fill: "#4f46e5" }}
+              />
             </LineChart>
           </ResponsiveContainer>
-        </Card>
+        </div>
 
-      </div>
-
-      {/* 🔥 CHARTS - ROW 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        {/* SITE PERFORMANCE */}
-        <Card className="p-5 rounded-xl shadow-sm border">
-          <CardTitle className="mb-4 text-lg font-semibold">
-            Site Performance
-          </CardTitle>
-
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={siteData}>
-              <XAxis dataKey="site" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="score" radius={[6, 6, 0, 0]} />
+        {/* Site performance — narrower */}
+        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-5">
+          <Section title="Site Performance" sub="Overall score by site" />
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={sitePerf} margin={{ left: -20, right: 0, top: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+              <XAxis dataKey="site" tick={{ fontSize: 10, fill: "#94a3b8" }} stroke="none" tickLine={false} />
+              <YAxis domain={[0,100]} tick={{ fontSize: 11, fill: "#94a3b8" }} stroke="none" tickLine={false} />
+              <Tooltip content={<ChartTip />} cursor={{ fill: "#f8fafc" }} />
+              <Bar dataKey="score" radius={[4,4,0,0]}>
+                {sitePerf.map((s, i) => (
+                  <Cell key={i} fill={barScore(s.score)} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
-        </Card>
-
-        {/* ✅ ADD THIS NEW CARD */}
-        <Card className="p-5 rounded-xl shadow-sm border">
-          <CardTitle>Performance Summary</CardTitle>
-
-          <div className="mt-4 space-y-3">
-
-            <div className="flex justify-between">
-              <span>Best Site</span>
-              <span className="text-green-600 font-semibold">
-                {topSite?.site || "N/A"}
-              </span>
-            </div>
-
-            <div className="flex justify-between">
-              <span>Worst Site</span>
-              <span className="text-red-600 font-semibold">
-                {worstSite?.site || "N/A"}
-              </span>
-            </div>
-
-            <div className="flex justify-between">
-              <span>Urgent Issues</span>
-              <span className="text-red-500 font-semibold">
-                {urgentIssues}
-              </span>
-            </div>
-
-            <div className="flex justify-between">
-              <span>Avg Score</span>
-              <span className="font-semibold">{avgScore}%</span>
-            </div>
-
-          </div>
-        </Card>
+        </div>
 
       </div>
 
-      {/* 🔥 SITE HIGHLIGHTS */}
-      <div className="grid md:grid-cols-2 gap-4">
+      {/* ── Table + Summary row ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
 
-        <Card className="p-5 rounded-2xl bg-green-50 border border-green-200">
-          <CardTitle>🏆 Best Performing Site</CardTitle>
-          {topSite ? (
-            <div className="mt-3">
-              <p className="text-lg font-bold">{topSite.site}</p>
-              <p
-                className={`font-semibold ${getStatus(topSite.score) === "good"
-                  ? "text-green-600"
-                  : getStatus(topSite.score) === "average"
-                    ? "text-yellow-600"
-                    : "text-red-600"
-                  }`}
-              >
-                {topSite.score}% ({getStatus(topSite.score)})
+        {/* Recent activity table */}
+        <div className="lg:col-span-3 bg-white rounded-xl border border-slate-200 p-5">
+          <Section title="Recent Activity" sub={`Showing latest ${Math.min(filtered.length,8)} submissions`} />
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-100">
+                {["Site","Date","Score","Status"].map(h => (
+                  <th key={h} className={`pb-2.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wide ${h==="Score"||h==="Status"?"text-right":"text-left"}`}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {filtered.slice(0,8).map((d: any, i: number) => {
+                const s = calcScore(d)
+                return (
+                  <tr key={i} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-2.5 font-medium text-slate-800">{d.site}</td>
+                    <td className="py-2.5 text-slate-400 text-xs">{d.date}</td>
+                    <td className="py-2.5 text-right font-semibold text-slate-700">{s}%</td>
+                    <td className="py-2.5 text-right">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${statusClass(s)}`}>
+                        {statusLabel(s)}
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="py-10 text-center text-slate-400 text-xs">
+                    No submissions found for selected filters
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Right column */}
+        <div className="lg:col-span-2 flex flex-col gap-4">
+
+          {/* Best / Worst */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white rounded-xl border border-slate-200 p-4">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Trophy size={13} className="text-emerald-500" />
+                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Best</span>
+              </div>
+              <p className="text-sm font-bold text-slate-800">{topSite?.site || "—"}</p>
+              <p className="text-xs text-emerald-600 font-semibold mt-0.5 flex items-center gap-0.5">
+                <ArrowUpRight size={12}/>{topSite?.score ?? "—"}%
               </p>
             </div>
-          ) : <p>No Data</p>}
-        </Card>
-
-        <Card className="p-5 rounded-2xl bg-red-50 border border-red-200">
-          <CardTitle>⚠️ Needs Attention</CardTitle>
-          {worstSite ? (
-            <div className="mt-3">
-              <p className="text-lg font-bold">{worstSite.site}</p>
-              <p className="text-red-600 font-semibold">{worstSite.score}% Score</p>
+            <div className="bg-white rounded-xl border border-slate-200 p-4">
+              <div className="flex items-center gap-1.5 mb-2">
+                <AlertTriangle size={13} className="text-red-400" />
+                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Worst</span>
+              </div>
+              <p className="text-sm font-bold text-slate-800">{worstSite?.site || "—"}</p>
+              <p className="text-xs text-red-500 font-semibold mt-0.5 flex items-center gap-0.5">
+                <ArrowDownRight size={12}/>{worstSite?.score ?? "—"}%
+              </p>
             </div>
-          ) : <p>No Data</p>}
-        </Card>
+          </div>
 
+          {/* Manpower */}
+          <div className="bg-white rounded-xl border border-slate-200 p-4 flex-1">
+            <div className="flex items-center gap-2 mb-3">
+              <Users size={14} className="text-slate-400" />
+              <p className="text-sm font-semibold text-slate-700">Manpower Shortages</p>
+              {manpower.length > 0 && (
+                <span className="ml-auto text-[11px] font-semibold bg-red-50 text-red-600 ring-1 ring-red-200 rounded-full px-2 py-0.5">
+                  {manpower.length}
+                </span>
+              )}
+            </div>
+            {manpower.length === 0 ? (
+              <p className="text-xs text-slate-400">No shortages in selected period</p>
+            ) : (
+              <div className="space-y-1.5">
+                {manpower.slice(0,5).map((d: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
+                    <span className="text-sm text-slate-700">{d.site}</span>
+                    <span className="text-[11px] font-semibold text-red-500">Shortage</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+        </div>
       </div>
 
-
-      {/* 🔥 MANPOWER ISSUES */}
-      <Card className="p-5 rounded-xl shadow-sm border hover:shadow-md transition">
-        <CardTitle>👷 Manpower Shortage</CardTitle>
-
-        <div className="mt-3 space-y-2">
-          {manpowerIssues.map((d: any, i: number) => (
-            <div key={i} className="flex justify-between bg-gray-100 p-3 rounded">
-              <span>{d.site}</span>
-              <span className="text-red-500 font-semibold">Issue</span>
-            </div>
-          ))}
+      {/* ── Top issues ── */}
+      <div className="bg-white rounded-xl border border-slate-200 p-5">
+        <div className="flex items-center gap-2 mb-5">
+          <AlertCircle size={15} className="text-red-400" />
+          <h2 className="text-sm font-semibold text-slate-700">Top Recurring Issues</h2>
+          <span className="ml-auto text-xs text-slate-400">{filtered.length} submissions analysed</span>
         </div>
-      </Card>
 
-      {/* 🔥 TOP ISSUES */}
-      <Card className="p-5 rounded-xl shadow-sm border hover:shadow-md transition">
-        <CardTitle className="mb-4 text-lg font-semibold">
-          Top Issues 🚨
-        </CardTitle>
-
-        <div className="space-y-3">
-          {topIssues.map((i, index) => (
-            <div
-              key={index}
-              className="flex justify-between items-center bg-gray-100 rounded-lg px-4 py-3 hover:bg-gray-200 transition"
-            >
-              <span className="text-sm font-medium">{i.question.replaceAll("_", " ").replace(/\b\w/g, l => l.toUpperCase())}</span>
-              <span className="text-red-600 font-bold">{i.issues}</span>
-            </div>
-          ))}
-        </div>
-      </Card>
+        {topIssues.length === 0 ? (
+          <p className="text-xs text-slate-400">No issues found in selected range</p>
+        ) : (
+          <div className="space-y-3">
+            {topIssues.map((item, i) => {
+              const pct = Math.round((item.count / maxIssue) * 100)
+              return (
+                <div key={i} className="flex items-center gap-4">
+                  <span className="w-5 text-xs text-slate-400 font-medium text-right shrink-0">{i+1}</span>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm text-slate-700 font-medium">{item.label}</span>
+                      <span className="text-xs font-bold text-red-500">{item.count}</span>
+                    </div>
+                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
 
     </div>
   )

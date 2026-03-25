@@ -3,44 +3,38 @@
 import { useRouter, usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import {
-  LayoutDashboard,
-  MessageSquare,
-  MapPin,
-  Users,
-  ShoppingBag,
-  AlertTriangle,
-  FileBarChart,
-  Building2,
-  LogOut,
-  ChevronRight,
-  Bell,
-  Home,
+  Building2, LogOut, ChevronRight, Bell, Home,
+  type LucideIcon,
 } from "lucide-react"
 
-const menu = [
-  { name: "Overview",      path: "/dashboard",               icon: LayoutDashboard },
-  { name: "Communication", path: "/dashboard/communication", icon: MessageSquare   },
-  { name: "Site",          path: "/dashboard/site",          icon: MapPin          },
-  { name: "Manpower",      path: "/dashboard/manpower",      icon: Users           },
-  { name: "Store",         path: "/dashboard/store",         icon: ShoppingBag     },
-  { name: "Issues",        path: "/dashboard/issues",        icon: AlertTriangle   },
-  { name: "Reports",       path: "/dashboard/reports",       icon: FileBarChart    },
-]
-
-const pageTitles: Record<string, string> = {
-  "/dashboard":               "Overview",
-  "/dashboard/communication": "Communication",
-  "/dashboard/site":          "Site",
-  "/dashboard/manpower":      "Manpower",
-  "/dashboard/store":         "Store",
-  "/dashboard/issues":        "Issues",
-  "/dashboard/reports":       "Reports",
+export interface NavItem {
+  name: string
+  path: string
+  icon: LucideIcon
 }
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+interface Props {
+  title:    string
+  subtitle: string
+  accent:   string          // e.g. "indigo", "emerald", "amber"
+  menu:     NavItem[]
+  children: React.ReactNode
+}
+
+const accentMap: Record<string, { bg: string; text: string; ring: string; sidebar: string }> = {
+  indigo:  { bg: "bg-indigo-600",  text: "text-indigo-600",  ring: "ring-indigo-200",  sidebar: "bg-indigo-600"  },
+  emerald: { bg: "bg-emerald-600", text: "text-emerald-600", ring: "ring-emerald-200", sidebar: "bg-emerald-600" },
+  amber:   { bg: "bg-amber-600",   text: "text-amber-600",   ring: "ring-amber-200",   sidebar: "bg-amber-600"   },
+  rose:    { bg: "bg-rose-600",    text: "text-rose-600",    ring: "ring-rose-200",    sidebar: "bg-rose-600"    },
+  sky:     { bg: "bg-sky-600",     text: "text-sky-600",     ring: "ring-sky-200",     sidebar: "bg-sky-600"     },
+  violet:  { bg: "bg-violet-600",  text: "text-violet-600",  ring: "ring-violet-200",  sidebar: "bg-violet-600"  },
+}
+
+export default function ModuleLayout({ title, subtitle, accent, menu, children }: Props) {
   const router   = useRouter()
   const pathname = usePathname()
   const [user, setUser] = useState<any>(null)
+  const colors = accentMap[accent] ?? accentMap.indigo
 
   useEffect(() => {
     const u = sessionStorage.getItem("user")
@@ -51,7 +45,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     ? user.name.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2)
     : "FM"
 
-  const pageTitle = pageTitles[pathname] ?? "Dashboard"
+  // Build page title from menu
+  const pageTitles: Record<string, string> = {}
+  menu.forEach(m => { pageTitles[m.path] = m.name })
+  const pageTitle = pageTitles[pathname] ?? menu[0]?.name ?? title
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
@@ -61,12 +58,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Brand */}
         <div className="flex items-center gap-2.5 px-5 h-16 border-b border-slate-800">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
+          <div className={`w-8 h-8 rounded-lg ${colors.sidebar} flex items-center justify-center`}>
             <Building2 size={15} className="text-white" />
           </div>
           <div>
-            <p className="text-white text-sm font-semibold leading-none">FM Operations</p>
-            <p className="text-slate-500 text-[11px] mt-0.5">Admin Panel</p>
+            <p className="text-white text-sm font-semibold leading-none">{title}</p>
+            <p className="text-slate-500 text-[11px] mt-0.5">{subtitle}</p>
           </div>
         </div>
 
@@ -94,7 +91,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 onClick={() => router.push(path)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
                   active
-                    ? "bg-indigo-600 text-white"
+                    ? `${colors.sidebar} text-white`
                     : "text-slate-400 hover:text-white hover:bg-slate-800"
                 }`}
               >
@@ -109,7 +106,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* User + logout */}
         <div className="p-3 border-t border-slate-800">
           <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-slate-800 transition group">
-            <div className="w-8 h-8 rounded-full bg-indigo-700 flex items-center justify-center text-white text-xs font-bold shrink-0">
+            <div className={`w-8 h-8 rounded-full ${colors.sidebar} flex items-center justify-center text-white text-xs font-bold shrink-0`}>
               {initials}
             </div>
             <div className="flex-1 min-w-0">
@@ -134,31 +131,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <header className="h-16 bg-white border-b border-slate-200 flex items-center px-6 gap-4 shrink-0">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-400">Dashboard</span>
-            {pageTitle !== "Overview" && (
-              <>
-                <ChevronRight size={14} className="text-slate-300" />
-                <span className="text-slate-700 font-medium">{pageTitle}</span>
-              </>
-            )}
-            {pageTitle === "Overview" && (
-              <span className="text-slate-700 font-medium">/ Overview</span>
-            )}
+            <span className="text-slate-400">{title}</span>
+            <ChevronRight size={14} className="text-slate-300" />
+            <span className="text-slate-700 font-medium">{pageTitle}</span>
           </div>
 
           <div className="ml-auto flex items-center gap-3">
-            {/* Date */}
             <span className="text-xs text-slate-400 hidden md:block">
               {new Date().toLocaleDateString("en-IN", { weekday: "short", year: "numeric", month: "short", day: "numeric" })}
             </span>
-
-            {/* Bell */}
             <button className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:border-slate-300 transition">
               <Bell size={14} />
             </button>
-
-            {/* Avatar */}
-            <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
+            <div className={`w-8 h-8 rounded-full ${colors.sidebar} flex items-center justify-center text-white text-xs font-bold`}>
               {initials}
             </div>
           </div>
@@ -169,7 +154,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </main>
       </div>
-
     </div>
   )
 }

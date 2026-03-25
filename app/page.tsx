@@ -22,16 +22,21 @@ export default function LoginPage() {
       { email: "admin@fm.com", password: "1234", role: "admin", name: "Admin" },
       { email: "nitesh@fm.com", password: "1234", role: "supervisor", name: "Nitesh" },
       { email: "naveen@fm.com", password: "1234", role: "supervisor", name: "Naveen" },
+<<<<<<< HEAD
       { email: "hr@fm.com", password: "1234", role: "hr", name: "HR Executive" },
       { email: "vikash@fm.com", password: "1234", role: "level1", name: "Vikash" },
       { email: "anjali@fm.com", password: "1234", role: "level2", name: "Anjali" },
       { email: "atul@fm.com", password: "1234", role: "level3", name: "Atul" }
+=======
+      { email: "hr@fm.com", password: "1234", role: "hr", name: "HR Executive" }
+>>>>>>> origin/feature/dashboard-hr-merge-25mar2025
     ]
     const foundUser = users.find(
       (u) => u.email === email && u.password === password
     )
     if (foundUser) {
       sessionStorage.setItem("user", JSON.stringify(foundUser))
+<<<<<<< HEAD
       // ✅ All HR workflow users go to same dashboard
       if (["level1", "level2", "level3", "hr"].includes(foundUser.role)) {
         router.push("/hr")
@@ -39,6 +44,16 @@ export default function LoginPage() {
         router.push("/supervisor")
       }
     } else {
+=======
+
+      if (foundUser.role === "hr") {
+        router.push("/hr") // 👉 HR dashboard
+      } else {
+        router.push("/supervisor") // 👉 supervisor/admin dashboard
+      }
+    }
+    else {
+>>>>>>> origin/feature/dashboard-hr-merge-25mar2025
       setError("Invalid email or password")
     }
   }

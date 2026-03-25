@@ -415,7 +415,7 @@ export default function ManpowerPage() {
                     </Button>
 
                 </form>
-            </div>
-        </div>
+            </div >
+        </div >
     )
 }
