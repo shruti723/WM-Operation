@@ -606,7 +606,7 @@ export default function ChecklistPage() {
 
                     <Button
                         variant="outline"
-                        onClick={() => router.push("/home")}
+                        onClick={() => router.push("/supervisor")}
                     >
                         Back to Home
                     </Button>
