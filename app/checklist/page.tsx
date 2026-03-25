@@ -391,7 +391,10 @@ export default function ChecklistPage() {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify(formattedData)
+                body: JSON.stringify({
+                    type: "checklist",
+                    ...formattedData
+                })
             })
 
             const existing = JSON.parse(localStorage.getItem("submissions") || "[]")

@@ -1,7 +1,7 @@
 export async function GET() {
 
   const scriptURL =
-    "https://script.google.com/macros/s/AKfycbxw6kqPgI31dwnYChFFRAbqdcJO4RtZj7i3ELN3qH0-MAaD72icnQ2XpU3Zwt2Vv6NH/exec"
+    "https://script.google.com/macros/s/AKfycbw8SDSvKxBr0H7SMYZespI2p1mjhuAVcFddhtzFXuOYMWqlqxxt-qwRv5cvroAjldC2/exec"
 
   const res = await fetch(scriptURL, { cache: "no-store" })
   const raw = await res.json()
