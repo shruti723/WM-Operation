@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { PieChart, Pie } from "recharts"
 import { Progress } from "@/components/ui/progress"
 import {
   Select,
@@ -20,16 +21,58 @@ import {
   AlertCircle, Phone, Trophy, AlertTriangle, Users,
   Loader2, ArrowUpRight, ArrowDownRight,
 } from "lucide-react"
+function CountTip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="bg-white border rounded-xl px-3 py-2 text-xs shadow">
+      <p>{label}</p>
+      <p className="font-bold">{payload[0].value} submissions</p>
+    </div>
+  )
+}
+function normalizeValue(v: any) {
+  if (!v) return ""
+
+  const val = v.toString().trim().toLowerCase()
+
+  if (["yes", "1", "done", "completed"].includes(val)) return "yes"
+  if (["no", "0", "not done"].includes(val)) return "no"
+
+  if (["good", "satisfactory"].includes(val)) return "good"
+  if (["poor", "bad"].includes(val)) return "poor"
+
+  // ❗ IGNORE random text like "busy at event"
+  return ""
+}
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
+function getValue(obj: any, key: string) {
+  if (!obj) return ""
+
+  return normalizeValue(
+    obj[key] ||
+    obj[key.toLowerCase()] ||
+    obj[key.replaceAll(" ", "_")] ||
+    ""
+  )
+}
+
 function calcScore(item: any) {
   let total = 0, good = 0
+
   Object.entries(item).forEach(([key, v]: any) => {
-    if (key.toLowerCase().includes("reason")) return
-    if (["Yes","No"].includes(v))                         { total++; if (v === "Yes")  good++ }
-    if (["Good","Satisfactory","Poor"].includes(v))       { total++; if (v === "Good") good++ }
+    const val = normalizeValue(v)
+
+    if (!val) return // ✅ ignore invalid
+
+    total++
+
+    if (val === "yes" || val === "good") {
+      good++
+    }
   })
+
   return total ? Math.round((good / total) * 100) : 0
 }
 
@@ -40,7 +83,7 @@ function statusLabel(s: number) {
 function statusClass(s: number) {
   if (s >= 80) return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
   if (s >= 50) return "bg-amber-50  text-amber-700  ring-1 ring-amber-200"
-  return              "bg-red-50    text-red-700    ring-1 ring-red-200"
+  return "bg-red-50    text-red-700    ring-1 ring-red-200"
 }
 
 // ─── Custom chart tooltip ─────────────────────────────────────────────────────
@@ -55,6 +98,7 @@ function ChartTip({ active, payload, label }: any) {
   )
 }
 
+
 // ─── KPI card ─────────────────────────────────────────────────────────────────
 
 function Kpi({
@@ -64,7 +108,7 @@ function Kpi({
   color: string; barValue?: number; danger?: boolean
 }) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5 flex flex-col gap-3 hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-xl border border-slate-200 p-5 flex flex-col gap-3 hover:shadow-lg transition-all duration-300">
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${color}`}>
@@ -98,9 +142,9 @@ function Section({ title, sub }: { title: string; sub?: string }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardOverview() {
-  const [data,    setData]    = useState<any>({})
-  const [site,    setSite]    = useState("all")
-  const [range,   setRange]   = useState("7")
+  const [data, setData] = useState<any>({})
+  const [site, setSite] = useState("all")
+  const [range, setRange] = useState("7")
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -111,9 +155,10 @@ export default function DashboardOverview() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full gap-2 text-slate-400 text-sm">
-        <Loader2 size={16} className="animate-spin" />
-        Loading dashboard…
+      <div className="p-6 space-y-4">
+        <div className="h-24 bg-slate-200 animate-pulse rounded-xl" />
+        <div className="h-64 bg-slate-200 animate-pulse rounded-xl" />
+        <div className="h-64 bg-slate-200 animate-pulse rounded-xl" />
       </div>
     )
   }
@@ -121,73 +166,108 @@ export default function DashboardOverview() {
   const allData: any[] = data.allData || []
 
   // Filter
+  function getRowDate(d: any) {
+    return (
+      d.date ||
+      d.timestamp ||
+      d.start_date ||
+      d.created_on ||
+      null
+    )
+  }
+  const compliance = data.compliance || { good: 0, avg: 0, critical: 0 }
+  const submissionData = data.submissionData || []
+  const supervisorPerf = data.supervisorPerf || []
+
+  function parseDate(dateStr: string) {
+    if (!dateStr) return null
+
+    let d = new Date(dateStr)
+    if (!isNaN(d.getTime())) return d
+
+    // handle DD/MM/YYYY
+    const [datePart, timePart] = dateStr.split(" ")
+    const [day, month, year] = datePart.split("/")
+
+    d = new Date(`${year}-${month}-${day}T${timePart || "00:00:00"}`)
+    return isNaN(d.getTime()) ? null : d
+  }
   const filtered = allData.filter((d: any) => {
-    if (!d.date) return false
-    const parsed = new Date(d.date)
-    if (isNaN(parsed.getTime())) return false
+    const rawDate = getRowDate(d)
+    if (!rawDate) return false
+
+    const parsed = parseDate(rawDate)
+    if (!parsed) return false
+
     const days = (Date.now() - parsed.getTime()) / 86_400_000
+
     return days <= Number(range) && (site === "all" || d.site === site)
   })
 
   const sites: string[] = Array.from(new Set(allData.map((d: any) => d.site).filter(Boolean)))
 
   // KPIs
-  const avgScore     = filtered.length
+  const avgScore = filtered.length
     ? Math.round(filtered.reduce((a, b) => a + calcScore(b), 0) / filtered.length) : 0
-  const siteVisits   = filtered.filter((d: any) => d.site_visit        === "Yes").length
-  const repeatComps  = filtered.filter((d: any) => d.repeat_complaint  === "Yes").length
-  const urgentCount  = filtered.filter((d: any) => d.urgent_issue      === "Yes").length
-  const callCount    = filtered.filter((d: any) => d.telephonic_calling=== "Yes").length
-  const manpower     = filtered.filter((d: any) => d.manpower_issue    === "Yes")
+  const siteVisits = filtered.filter((d: any) => getValue(d, "site_visit") === "yes").length
+  const repeatComps = filtered.filter((d: any) => getValue(d, "repeat_complaint") === "yes").length
+  const urgentCount = filtered.filter((d: any) => getValue(d, "urgent_issue") === "yes").length
+  const callCount = filtered.filter((d: any) => getValue(d, "telephonic_calling") === "yes").length
+  const manpower = filtered.filter((d: any) => getValue(d, "manpower_issue") === "yes")
 
   // Daily trend
-  const dayMap: Record<string, {total:number;count:number}> = {}
+  const dayMap: Record<string, { total: number; count: number }> = {}
   filtered.forEach((d: any) => {
-    if (!d.date) return
-    if (!dayMap[d.date]) dayMap[d.date] = {total:0,count:0}
-    dayMap[d.date].total += calcScore(d)
-    dayMap[d.date].count += 1
+    const rawDate = getRowDate(d)
+    const parsed = parseDate(rawDate)
+    if (!parsed) return
+
+    const key = parsed.toISOString().split("T")[0]
+    if (!dayMap[key]) dayMap[key] = { total: 0, count: 0 }
+    dayMap[key].total += calcScore(d)
+    dayMap[key].count += 1
   })
   const trendData = Object.keys(dayMap)
-    .sort((a,b) => new Date(a).getTime()-new Date(b).getTime())
+    .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
     .map(d => ({
-      date:  d.slice(5),          // MM-DD only
+      date: d.slice(5),          // MM-DD only
       score: Math.round(dayMap[d].total / dayMap[d].count),
     }))
 
   // Site performance
-  const siteMap: Record<string,number[]> = {}
+  const siteMap: Record<string, number[]> = {}
   allData.forEach((d: any) => {
     if (!d.site) return
     if (!siteMap[d.site]) siteMap[d.site] = []
     siteMap[d.site].push(calcScore(d))
   })
   const sitePerf = Object.keys(siteMap).map(s => ({
-    site:  s,
-    score: Math.round(siteMap[s].reduce((a,b)=>a+b,0) / siteMap[s].length),
-  })).sort((a,b)=>b.score-a.score)
+    site: s,
+    score: Math.round(siteMap[s].reduce((a, b) => a + b, 0) / siteMap[s].length),
+  })).sort((a, b) => b.score - a.score)
 
-  const topSite   = sitePerf[0]
+  const topSite = sitePerf[0]
   const worstSite = sitePerf[sitePerf.length - 1]
 
   // Top issues
-  const issueMap: Record<string,number> = {}
+  const issueMap: Record<string, number> = {}
   filtered.forEach((d: any) => {
-    Object.entries(d).forEach(([k,v]) => {
-      if (v === "No" || v === "Poor") issueMap[k] = (issueMap[k]||0) + 1
+    Object.entries(d).forEach(([k, v]) => {
+      const val = normalizeValue(v)
+      if (val === "no" || val === "poor") issueMap[k] = (issueMap[k] || 0) + 1
     })
   })
   const topIssues = Object.keys(issueMap)
-    .map(k => ({ label: k.replaceAll("_"," ").replace(/\b\w/g, l=>l.toUpperCase()), count: issueMap[k] }))
-    .sort((a,b) => b.count-a.count)
-    .slice(0,5)
+    .map(k => ({ label: k.replaceAll("_", " ").replace(/\b\w/g, l => l.toUpperCase()), count: issueMap[k] }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
   const maxIssue = topIssues[0]?.count || 1
 
   // Bar colors — single-family progression
   const barScore = (s: number) => s >= 80 ? "#4f46e5" : s >= 50 ? "#818cf8" : "#e0e7ff"
 
   return (
-    <div className="p-6 space-y-8 max-w-7xl mx-auto">
+    <div className="p-6 space-y-10 max-w-7xl mx-auto">
 
       {/* ── Filters ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -230,14 +310,78 @@ export default function DashboardOverview() {
         </div>
       )}
 
+      {/* Smart Insights */}
+      <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 text-sm text-indigo-700">
+        <p className="font-semibold mb-1">Insights</p>
+
+        {avgScore < 60 && <p>⚠️ Overall performance is low. Immediate monitoring required.</p>}
+        {urgentCount > 0 && <p>🚨 Urgent issues detected across sites.</p>}
+        {repeatComps > 0 && <p>🔁 Repeat complaints indicate unresolved problems.</p>}
+        {topSite && <p>🏆 Best site: {topSite.site} ({topSite.score}%)</p>}
+      </div>
+
       {/* ── KPI row ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
-        <Kpi label="Submissions"       value={filtered.length} icon={ClipboardList} color="bg-slate-700"    />
-        <Kpi label="Avg Score"         value={`${avgScore}%`}  icon={TrendingUp}    color="bg-indigo-600"   barValue={avgScore} />
-        <Kpi label="Site Visits"       value={siteVisits}      icon={MapPin}        color="bg-violet-600"   />
-        <Kpi label="Repeat Complaints" value={repeatComps}     icon={RotateCcw}     color="bg-amber-500"    />
-        <Kpi label="Urgent Issues"     value={urgentCount}     icon={AlertCircle}   color="bg-red-500"      danger={urgentCount > 0} />
-        <Kpi label="Outstation Calls"  value={callCount}       icon={Phone}         color="bg-cyan-600"     />
+        <Kpi label="Submissions" value={filtered.length} icon={ClipboardList} color="bg-slate-700" />
+        <Kpi label="Avg Score" value={`${avgScore}%`} icon={TrendingUp} color="bg-indigo-600" barValue={avgScore} />
+        <Kpi label="Site Visits" value={siteVisits} icon={MapPin} color="bg-violet-600" />
+        <Kpi label="Repeat Complaints" value={repeatComps} icon={RotateCcw} color="bg-amber-500" />
+        <Kpi label="Urgent Issues" value={urgentCount} icon={AlertCircle} color="bg-red-500" danger={urgentCount > 0} />
+        <Kpi label="Outstation Calls" value={callCount} icon={Phone} color="bg-cyan-600" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+        {/* Compliance */}
+        <div className="bg-white rounded-xl border p-5">
+          <Section title="Compliance Overview" sub="Distribution of performance" />
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart>
+              <Pie
+                data={[
+                  { name: "Good", value: compliance.good },
+                  { name: "Average", value: compliance.avg },
+                  { name: "Critical", value: compliance.critical },
+                ]}
+                dataKey="value"
+                outerRadius={80}
+              >
+                <Cell fill="#22c55e" />
+                <Cell fill="#f59e0b" />
+                <Cell fill="#ef4444" />
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Submission trend */}
+        <div className="bg-white rounded-xl border p-5">
+          <Section title="Submission Volume" sub="Daily submission count" />
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={submissionData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Line type="monotone" dataKey="count" stroke="#22c55e" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Supervisor leaderboard */}
+        <div className="bg-white rounded-xl border p-5">
+          <Section title="Supervisor Performance" sub="Average score by supervisor" />
+
+          <div className="space-y-3">
+            {supervisorPerf.slice(0, 5).map((s: any, i: number) => (
+              <div key={i} className="flex justify-between items-center bg-slate-50 px-3 py-2 rounded-lg">
+                <span className="text-sm text-slate-700">{s.name}</span>
+                <span className="text-sm font-bold text-indigo-600">{s.score}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
 
       {/* ── Charts row ── */}
@@ -250,7 +394,7 @@ export default function DashboardOverview() {
             <LineChart data={trendData} margin={{ left: -20, right: 10, top: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
               <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#94a3b8" }} stroke="none" tickLine={false} />
-              <YAxis domain={[0,100]} tick={{ fontSize: 11, fill: "#94a3b8" }} stroke="none" tickLine={false} />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "#94a3b8" }} stroke="none" tickLine={false} />
               <Tooltip content={<ChartTip />} cursor={{ stroke: "#e2e8f0" }} />
               <Line
                 type="monotone" dataKey="score"
@@ -269,9 +413,9 @@ export default function DashboardOverview() {
             <BarChart data={sitePerf} margin={{ left: -20, right: 0, top: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
               <XAxis dataKey="site" tick={{ fontSize: 10, fill: "#94a3b8" }} stroke="none" tickLine={false} />
-              <YAxis domain={[0,100]} tick={{ fontSize: 11, fill: "#94a3b8" }} stroke="none" tickLine={false} />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "#94a3b8" }} stroke="none" tickLine={false} />
               <Tooltip content={<ChartTip />} cursor={{ fill: "#f8fafc" }} />
-              <Bar dataKey="score" radius={[4,4,0,0]}>
+              <Bar dataKey="score" radius={[4, 4, 0, 0]}>
                 {sitePerf.map((s, i) => (
                   <Cell key={i} fill={barScore(s.score)} />
                 ))}
@@ -287,24 +431,24 @@ export default function DashboardOverview() {
 
         {/* Recent activity table */}
         <div className="lg:col-span-3 bg-white rounded-xl border border-slate-200 p-5">
-          <Section title="Recent Activity" sub={`Showing latest ${Math.min(filtered.length,8)} submissions`} />
+          <Section title="Recent Activity" sub={`Showing latest ${Math.min(filtered.length, 8)} submissions`} />
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100">
-                {["Site","Date","Score","Status"].map(h => (
-                  <th key={h} className={`pb-2.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wide ${h==="Score"||h==="Status"?"text-right":"text-left"}`}>
+                {["Site", "Date", "Score", "Status"].map(h => (
+                  <th key={h} className={`pb-2.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wide ${h === "Score" || h === "Status" ? "text-right" : "text-left"}`}>
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {filtered.slice(0,8).map((d: any, i: number) => {
+              {filtered.slice(0, 8).map((d: any, i: number) => {
                 const s = calcScore(d)
                 return (
-                  <tr key={i} className="hover:bg-slate-50 transition-colors">
+                  <tr key={i} className="hover:shadow-lg transition-all duration-300">
                     <td className="py-2.5 font-medium text-slate-800">{d.site}</td>
-                    <td className="py-2.5 text-slate-400 text-xs">{d.date}</td>
+                    <td className="py-2.5 text-slate-400 text-xs">{getRowDate(d)}</td>
                     <td className="py-2.5 text-right font-semibold text-slate-700">{s}%</td>
                     <td className="py-2.5 text-right">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${statusClass(s)}`}>
@@ -337,7 +481,7 @@ export default function DashboardOverview() {
               </div>
               <p className="text-sm font-bold text-slate-800">{topSite?.site || "—"}</p>
               <p className="text-xs text-emerald-600 font-semibold mt-0.5 flex items-center gap-0.5">
-                <ArrowUpRight size={12}/>{topSite?.score ?? "—"}%
+                <ArrowUpRight size={12} />{topSite?.score ?? "—"}%
               </p>
             </div>
             <div className="bg-white rounded-xl border border-slate-200 p-4">
@@ -347,7 +491,7 @@ export default function DashboardOverview() {
               </div>
               <p className="text-sm font-bold text-slate-800">{worstSite?.site || "—"}</p>
               <p className="text-xs text-red-500 font-semibold mt-0.5 flex items-center gap-0.5">
-                <ArrowDownRight size={12}/>{worstSite?.score ?? "—"}%
+                <ArrowDownRight size={12} />{worstSite?.score ?? "—"}%
               </p>
             </div>
           </div>
@@ -367,7 +511,7 @@ export default function DashboardOverview() {
               <p className="text-xs text-slate-400">No shortages in selected period</p>
             ) : (
               <div className="space-y-1.5">
-                {manpower.slice(0,5).map((d: any, i: number) => (
+                {manpower.slice(0, 5).map((d: any, i: number) => (
                   <div key={i} className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
                     <span className="text-sm text-slate-700">{d.site}</span>
                     <span className="text-[11px] font-semibold text-red-500">Shortage</span>
@@ -396,7 +540,7 @@ export default function DashboardOverview() {
               const pct = Math.round((item.count / maxIssue) * 100)
               return (
                 <div key={i} className="flex items-center gap-4">
-                  <span className="w-5 text-xs text-slate-400 font-medium text-right shrink-0">{i+1}</span>
+                  <span className="w-5 text-xs text-slate-400 font-medium text-right shrink-0">{i + 1}</span>
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm text-slate-700 font-medium">{item.label}</span>

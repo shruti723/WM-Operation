@@ -1,31 +1,49 @@
-// import Sidebar from "@/components/hr/Sidebar"
+"use client"
 
-// export default function Layout({ children }: any) {
-//     return (
-//         <div className="flex">
-//             <Sidebar />
-//             <div className="flex-1 bg-gray-50 min-h-screen p-6">
-//                 {children}
-//             </div>
-//         </div>
-//     )
-// }
-
-
+import { useState } from "react"
 import Sidebar from "@/components/hr/Sidebar"
+import Header from "@/components/hr/Header"
 
 export default function Layout({ children }: any) {
-  return (
-    <div className="flex">
 
-      {/* ✅ FIXED SIDEBAR */}
-      <div className="w-64 fixed top-0 left-0 h-screen bg-white border-r shadow-sm z-50">
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  return (
+    <div className="h-screen flex overflow-hidden">
+
+      {/* ✅ OVERLAY (mobile only) */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/30 z-40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* ✅ SIDEBAR (FIXED ALWAYS) */}
+      <div
+        className={`
+          fixed md:fixed top-0 left-0 h-screen w-64 bg-white border-r shadow-sm z-50
+          transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+          transition-transform duration-300
+          md:translate-x-0
+        `}
+      >
         <Sidebar />
       </div>
 
-      {/* ✅ SCROLLABLE CONTENT */}
-      <div className="ml-64 flex-1 bg-gray-50 h-screen overflow-y-auto p-6">
-        {children}
+      {/* ✅ MAIN AREA */}
+      <div className="flex-1 md:ml-64 flex flex-col h-screen">
+
+        {/* HEADER (FIXED TOP) */}
+        <div className="bg-gray-50 p-4 border-b">
+          <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+        </div>
+
+        {/* CONTENT (SCROLL ONLY HERE) */}
+        <div className="flex-1 overflow-y-auto bg-gray-50 p-4">
+          {children}
+        </div>
+
       </div>
 
     </div>

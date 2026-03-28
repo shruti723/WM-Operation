@@ -3,42 +3,24 @@
 import { useRouter, usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import {
-  LayoutDashboard,
-  MessageSquare,
-  MapPin,
-  Users,
-  ShoppingBag,
-  AlertTriangle,
-  FileBarChart,
-  Building2,
-  LogOut,
   ChevronRight,
   Bell,
-  Home,
+  ArrowLeft,
+  LogOut,
 } from "lucide-react"
 
-const menu = [
-  { name: "Overview",      path: "/dashboard",               icon: LayoutDashboard },
-  { name: "Communication", path: "/dashboard/communication", icon: MessageSquare   },
-  { name: "Site",          path: "/dashboard/site",          icon: MapPin          },
-  { name: "Manpower",      path: "/dashboard/manpower",      icon: Users           },
-  { name: "Store",         path: "/dashboard/store",         icon: ShoppingBag     },
-  { name: "Issues",        path: "/dashboard/issues",        icon: AlertTriangle   },
-  { name: "Reports",       path: "/dashboard/reports",       icon: FileBarChart    },
-]
-
 const pageTitles: Record<string, string> = {
-  "/dashboard":               "Overview",
+  "/dashboard": "Overview",
   "/dashboard/communication": "Communication",
-  "/dashboard/site":          "Site",
-  "/dashboard/manpower":      "Manpower",
-  "/dashboard/store":         "Store",
-  "/dashboard/issues":        "Issues",
-  "/dashboard/reports":       "Reports",
+  "/dashboard/site": "Site",
+  "/dashboard/manpower": "Manpower",
+  "/dashboard/store": "Store",
+  "/dashboard/issues": "Issues",
+  "/dashboard/reports": "Reports",
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const router   = useRouter()
+  const router = useRouter()
   const pathname = usePathname()
   const [user, setUser] = useState<any>(null)
 
@@ -53,122 +35,76 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const pageTitle = pageTitles[pathname] ?? "Dashboard"
 
+  function logout() {
+    sessionStorage.removeItem("user")
+    router.push("/")
+  }
+
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <div className="h-screen flex flex-col bg-slate-50">
 
-      {/* ──────── SIDEBAR ──────── */}
-      <aside className="w-60 shrink-0 bg-slate-950 flex flex-col">
+      {/* ─────── HEADER ─────── */}
+      <header className="h-16 bg-white border-b border-slate-200 flex items-center px-6 gap-4">
 
-        {/* Brand */}
-        <div className="flex items-center gap-2.5 px-5 h-16 border-b border-slate-800">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-            <Building2 size={15} className="text-white" />
-          </div>
-          <div>
-            <p className="text-white text-sm font-semibold leading-none">FM Operations</p>
-            <p className="text-slate-500 text-[11px] mt-0.5">Admin Panel</p>
-          </div>
-        </div>
-
-        {/* Back to Home */}
+        {/* 🔙 Back Button */}
         <button
-          onClick={() => router.push("/home")}
-          className="mx-3 mt-4 mb-1 flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-500 hover:text-white hover:bg-slate-800 transition-all"
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-sm text-slate-500 hover:text-black transition"
         >
-          <Home size={14} />
-          <span>Back to Home</span>
+          <ArrowLeft size={16} />
+          Back
         </button>
 
-        {/* Nav label */}
-        <p className="px-5 pt-4 pb-2 text-[10px] font-semibold text-slate-600 uppercase tracking-widest">
-          Navigation
-        </p>
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm ml-4">
+          <span className="text-slate-400">Dashboard</span>
 
-        {/* Nav items */}
-        <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
-          {menu.map(({ name, path, icon: Icon }) => {
-            const active = pathname === path
-            return (
-              <button
-                key={path}
-                onClick={() => router.push(path)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
-                  active
-                    ? "bg-indigo-600 text-white"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800"
-                }`}
-              >
-                <Icon size={15} />
-                <span className="flex-1 text-left">{name}</span>
-                {active && <ChevronRight size={13} className="opacity-60" />}
-              </button>
-            )
-          })}
-        </nav>
+          <ChevronRight size={14} className="text-slate-300" />
 
-        {/* User + logout */}
-        <div className="p-3 border-t border-slate-800">
-          <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-slate-800 transition group">
-            <div className="w-8 h-8 rounded-full bg-indigo-700 flex items-center justify-center text-white text-xs font-bold shrink-0">
-              {initials}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-white text-sm font-medium truncate">{user?.name ?? "Admin"}</p>
-              <p className="text-slate-500 text-[11px] truncate">{user?.role ?? "admin"}</p>
-            </div>
-            <button
-              onClick={() => { sessionStorage.removeItem("user"); router.push("/") }}
-              className="text-slate-600 hover:text-red-400 transition"
-              title="Logout"
-            >
-              <LogOut size={14} />
-            </button>
-          </div>
+          <span className="text-slate-700 font-medium">
+            {pageTitle}
+          </span>
         </div>
-      </aside>
 
-      {/* ──────── MAIN ──────── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* RIGHT SIDE */}
+        <div className="ml-auto flex items-center gap-4">
 
-        {/* Top header */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center px-6 gap-4 shrink-0">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-400">Dashboard</span>
-            {pageTitle !== "Overview" && (
-              <>
-                <ChevronRight size={14} className="text-slate-300" />
-                <span className="text-slate-700 font-medium">{pageTitle}</span>
-              </>
-            )}
-            {pageTitle === "Overview" && (
-              <span className="text-slate-700 font-medium">/ Overview</span>
-            )}
+          {/* Date */}
+          <span className="text-xs text-slate-400 hidden md:block">
+            {new Date().toLocaleDateString("en-IN", {
+              weekday: "short",
+              year: "numeric",
+              month: "short",
+              day: "numeric"
+            })}
+          </span>
+
+          {/* Notification */}
+          <button className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-700">
+            <Bell size={14} />
+          </button>
+
+          {/* Avatar */}
+          <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
+            {initials}
           </div>
 
-          <div className="ml-auto flex items-center gap-3">
-            {/* Date */}
-            <span className="text-xs text-slate-400 hidden md:block">
-              {new Date().toLocaleDateString("en-IN", { weekday: "short", year: "numeric", month: "short", day: "numeric" })}
-            </span>
+          {/* Logout */}
+          <button
+            onClick={logout}
+            className="flex items-center gap-2 text-sm text-red-500 hover:text-red-600"
+          >
+            <LogOut size={16} />
+            Logout
+          </button>
 
-            {/* Bell */}
-            <button className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:border-slate-300 transition">
-              <Bell size={14} />
-            </button>
+        </div>
+      </header>
 
-            {/* Avatar */}
-            <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
-              {initials}
-            </div>
-          </div>
-        </header>
-
-        {/* Scrollable content */}
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
-      </div>
+      {/* ─────── CONTENT ─────── */}
+      <main className="flex-1 overflow-y-auto">
+        {children}
+      </main>
 
     </div>
   )

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { sites } from "@/lib/siteList"
+
+
 
 /* ✅ TYPES */
 type ManpowerItem = {
@@ -39,15 +40,40 @@ export default function ManpowerPage() {
         total: 0,
         remarks: ""
     })
-
+    const [loading, setLoading] = useState(false)
     const [user, setUser] = useState<any>(null)
+    const [sidebarOpen, setSidebarOpen] = useState(false)
 
     /* ✅ LOAD USER */
+
     useEffect(() => {
         const storedUser = sessionStorage.getItem("user")
         if (storedUser) setUser(JSON.parse(storedUser))
     }, [])
+    const [siteList, setSiteList] = useState<string[]>([])
+    useEffect(() => {
 
+        async function loadSites() {
+            try {
+                const res = await fetch("https://script.google.com/macros/s/AKfycbw8SDSvKxBr0H7SMYZespI2p1mjhuAVcFddhtzFXuOYMWqlqxxt-qwRv5cvroAjldC2/exec?type=manpowerSites")
+                const data = await res.json()
+
+                console.log("SITE LIST API:", data)
+
+                // 🔥 HANDLE ALL CASES
+
+                console.log("API RESPONSE:", data)
+
+                // ✅ DIRECT FIX
+                setSiteList(data.sites || [])
+
+            } catch (err) {
+                console.error(err)
+            }
+        }
+
+        loadSites() // ✅ load for ALL roles
+    }, [user])
     /* ✅ AUTO TOTAL */
     useEffect(() => {
         if (user?.role === "level2") {
@@ -59,6 +85,12 @@ export default function ManpowerPage() {
             setForm(prev => ({ ...prev, total }))
         }
     }, [form.manpowerList, user])
+
+    useEffect(() => {
+        console.log("🔥 USER:", user)
+        console.log("🔥 SITE LIST:", siteList)
+        console.log("🔥 FORM:", form)
+    }, [user, siteList, form])
 
     /* ✅ NORMAL CHANGE */
     function handleChange(e: any) {
@@ -74,7 +106,7 @@ export default function ManpowerPage() {
         const updated = [...form.manpowerList]
 
         if (field === "authorised") {
-            updated[index].authorised = Number(value)
+            updated[index].authorised = Math.max(1, Number(value)) // ✅ NEVER NEGATIVE
         } else if (field === "designation") {
             updated[index].designation = value
         }
@@ -103,18 +135,25 @@ export default function ManpowerPage() {
     /* ✅ FETCH DATA */
     async function fetchSiteData(siteName: string) {
         try {
-            const res = await fetch(`YOUR_GOOGLE_SCRIPT_URL?siteName=${siteName}`)
+            const res = await fetch(
+                `https://script.google.com/macros/s/AKfycbw8SDSvKxBr0H7SMYZespI2p1mjhuAVcFddhtzFXuOYMWqlqxxt-qwRv5cvroAjldC2/exec?type=manpower&siteName=${siteName}&role=${user?.role}`
+            )
+
             const data = await res.json()
+
 
             if (data) {
                 setForm(prev => ({
                     ...prev,
                     ...data,
                     manpowerList: data.manpowerList
-                        ? JSON.parse(data.manpowerList)
+                        ? (typeof data.manpowerList === "string"
+                            ? JSON.parse(data.manpowerList)
+                            : data.manpowerList)
                         : prev.manpowerList
                 }))
             }
+
         } catch (err) {
             console.error(err)
         }
@@ -143,9 +182,14 @@ export default function ManpowerPage() {
     async function handleSubmit(e: any) {
         e.preventDefault()
 
+        if (!user) {
+            alert("User not loaded")
+            return
+        }
+
         if (user?.role === "level1") {
             const invalid = form.manpowerList.some(
-                item => !item.designation || !item.authorised
+                item => !item.designation || item.authorised <= 0
             )
 
             if (!form.siteName || !form.startDate) {
@@ -158,43 +202,66 @@ export default function ManpowerPage() {
                 return
             }
         }
+        if (user?.role === "level1") {
+            const exists = siteList.some(
+                site => site.toLowerCase().trim() === form.siteName.toLowerCase().trim()
+            )
+
+            if (exists) {
+                alert("Site already exists ❌")
+                return
+            }
+        }
 
         try {
-            await fetch("YOUR_GOOGLE_SCRIPT_URL", {
+            setLoading(true) // 🔥 START LOADING
+
+            const res = await fetch("https://script.google.com/macros/s/AKfycbw8SDSvKxBr0H7SMYZespI2p1mjhuAVcFddhtzFXuOYMWqlqxxt-qwRv5cvroAjldC2/exec", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...form, role: user?.role })
+                body: JSON.stringify({
+                    type: "manpower",
+                    ...form,
+                    role: user?.role
+                })
             })
 
-            alert("Submitted ✅")
+            const result = await res.json()
 
-            setForm({
-                siteName: "",
-                startDate: "",
-                lastRenewalDate: "",
-                nextRenewalDate: "",
-                manpowerList: [{ designation: "", authorised: 0 }],
-                recruitmentProcess: "",
-                responsible: "",
-                cutoffDate: "",
-                total: 0,
-                remarks: ""
-            })
+            if (result.error) {
+                alert(result.error)
+            } else {
+                alert("✅ You have successfully submitted the form")
 
-        } catch {
+                setForm({
+                    siteName: "",
+                    startDate: "",
+                    lastRenewalDate: "",
+                    nextRenewalDate: "",
+                    manpowerList: [{ designation: "", authorised: 0 }],
+                    recruitmentProcess: "",
+                    responsible: "",
+                    cutoffDate: "",
+                    total: 0,
+                    remarks: ""
+                })
+            }
+
+        } catch (err) {
             alert("Error ❌")
+        } finally {
+            setLoading(false) // 🔥 STOP LOADING
         }
     }
 
     return (
-        <div className="max-w-5xl mx-auto">
 
-            <h1 className="text-2xl font-bold mb-1">Manpower Details</h1>
+        <div className="max-w-3xl mx-auto">
+
+            <h1 className="text-2xl font-semibold mb-1">Manpower Details</h1>
             <p className="text-gray-500 mb-6">
                 Submit manpower details for a site.
             </p>
-
-            <div className="bg-white rounded-2xl shadow border p-6">
+            <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
 
                 <form onSubmit={handleSubmit} className="space-y-6">
 
@@ -204,13 +271,41 @@ export default function ManpowerPage() {
                         {/* SITE NAME → TEXT FIELD ✅ */}
                         <div className="col-span-2">
                             <label className="text-sm font-medium">Site Name</label>
-                            <input
-                                name="siteName"
-                                value={form.siteName}
-                                onChange={handleChange}
-                                placeholder="Enter site name"
-                                className="w-full border rounded-lg px-3 py-2 mt-1"
-                            />
+
+                            {user?.role === "level1" ? (
+
+                                // ✅ Vikash → TEXT INPUT
+                                <input
+                                    name="siteName"
+                                    value={form.siteName}
+                                    onChange={handleChange}
+                                    placeholder="Enter site name"
+                                    className="w-full border rounded-lg px-3 py-2 mt-1"
+                                />
+
+                            ) : (
+
+                                // ✅ Anjali + Atul → DROPDOWN
+                                <select
+                                    name="siteName"
+                                    value={form.siteName}
+                                    onChange={(e) => {
+                                        handleChange(e)
+                                        fetchSiteData(e.target.value) // 🔥 auto fill
+                                    }}
+                                    className="w-full border rounded-lg px-3 py-2 mt-1"
+                                >
+                                    <option value="">Select Site</option>
+
+                                    {Array.isArray(siteList) && siteList.map(site => (
+                                        <option key={site} value={site}>
+                                            {site}
+                                        </option>
+                                    ))}
+
+                                </select>
+
+                            )}
                         </div>
 
                         {isVisible("startDate") && (
@@ -272,6 +367,7 @@ export default function ManpowerPage() {
 
                                     <input
                                         type="number"
+                                        min="0"
                                         value={item.authorised}
                                         onChange={(e) =>
                                             handleManpowerChange(index, "authorised", e.target.value)
@@ -282,7 +378,7 @@ export default function ManpowerPage() {
                                     <button
                                         type="button"
                                         onClick={() => removeRow(index)}
-                                        className="col-span-2 text-red-500"
+                                        className="col-span-2 text-red-500 font-semibold0"
                                     >
                                         ❌
                                     </button>
@@ -317,8 +413,13 @@ export default function ManpowerPage() {
                             {form.manpowerList.map((item, index) => (
                                 <div key={index} className="grid grid-cols-12 gap-2 mb-2 items-center">
 
-                                    <div className="col-span-4">{item.designation}</div>
-                                    <div className="col-span-2 text-center">{item.authorised}</div>
+                                    <div className="col-span-4 font-medium text-gray-700">
+                                        {item.designation}
+                                    </div>
+
+                                    <div className="col-span-2 text-center text-gray-600">
+                                        {item.authorised}
+                                    </div>
 
                                     <input
                                         type="number"
@@ -335,10 +436,10 @@ export default function ManpowerPage() {
 
                                             setForm({ ...form, manpowerList: updated })
                                         }}
-                                        className="col-span-3 border rounded-lg px-2 py-2"
+                                        className="col-span-3 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     />
 
-                                    <div className="col-span-3 text-center text-red-500 font-medium">
+                                    <div className="col-span-3 text-center text-red-500 font-semibold font-medium">
                                         {item.shortage || 0}
                                     </div>
 
@@ -410,8 +511,12 @@ export default function ManpowerPage() {
                     )}
 
                     {/* BUTTON */}
-                    <Button className="w-full h-11 text-lg rounded-lg bg-blue-600">
-                        Submit Report
+                    <Button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full h-12 text-lg rounded-xl bg-blue-600 hover:bg-blue-700 transition-all shadow-md"
+                    >
+                        {loading ? "Submitting..." : "Submit Report"}
                     </Button>
 
                 </form>

@@ -16,20 +16,20 @@ export default function Sidebar() {
     ]
 
     return (
-        <div className="w-64 h-screen bg-white border-r p-4">
+        <div className="h-full p-4">
 
             <h1 className="text-lg font-bold mb-6">FM Operation</h1>
 
             {menu.map((item, i) => {
                 const Icon = item.icon
-                const active = pathname === item.path
+                const active = pathname.startsWith(item.path)
 
                 return (
                     <div
                         key={i}
                         onClick={() => router.push(item.path)}
-                        className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer mb-2
-              ${active ? "bg-blue-100 text-blue-600" : "hover:bg-gray-100"}`}
+                        className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer mb-2 transition-all
+${active ? "bg-blue-100 text-blue-600" : "hover:bg-gray-100"}`}
                     >
                         <Icon size={18} />
                         {item.name}

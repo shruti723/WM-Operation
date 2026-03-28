@@ -22,10 +22,9 @@ export default function LoginPage() {
       { email: "admin@fm.com", password: "1234", role: "admin", name: "Admin" },
       { email: "nitesh@fm.com", password: "1234", role: "supervisor", name: "Nitesh" },
       { email: "naveen@fm.com", password: "1234", role: "supervisor", name: "Naveen" },
-      { email: "hr@fm.com", password: "1234", role: "hr", name: "HR Executive" },
-      { email: "vikash@fm.com", password: "1234", role: "level1", name: "Vikash" },
-      { email: "anjali@fm.com", password: "1234", role: "level2", name: "Anjali" },
-      { email: "atul@fm.com", password: "1234", role: "level3", name: "Atul" }
+      { email: "hr1@fm.com", password: "1234", role: "level1", name: "HR 1" },
+      { email: "hr2@fm.com", password: "1234", role: "level2", name: "HR 2" },
+      { email: "hr3@fm.com", password: "1234", role: "level3", name: "HR 3" }
     ]
     const foundUser = users.find(
       (u) => u.email === email && u.password === password
