@@ -4,11 +4,11 @@ import { prisma } from "@/lib/db"
 export async function POST(req: Request) {
     try {
         const body = await req.json()
-        const { submissionId, role } = body
+        const { role } = body
 
-        if (!submissionId || !role) {
+        if (!role) {
             return NextResponse.json(
-                { success: false, message: "submissionId and role are required" },
+                { success: false, message: "role is required" },
                 { status: 400 }
             )
         }
@@ -18,7 +18,6 @@ export async function POST(req: Request) {
         if (lowerRole === "admin") {
             await prisma.checklistComment.updateMany({
                 where: {
-                    submissionId,
                     readByAdmin: false,
                 },
                 data: {
@@ -28,7 +27,6 @@ export async function POST(req: Request) {
         } else {
             await prisma.checklistComment.updateMany({
                 where: {
-                    submissionId,
                     readBySupervisor: false,
                 },
                 data: {

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import {
   ResponsiveContainer,
   PieChart,
@@ -165,6 +166,8 @@ export default function DashboardPage() {
   const [notificationOpen, setNotificationOpen] = useState(false)
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
 
+  const router = useRouter()
+
   async function loadNotifications() {
     const storedUser = sessionStorage.getItem("user")
     const user = storedUser ? JSON.parse(storedUser) : null
@@ -183,6 +186,17 @@ export default function DashboardPage() {
       console.error(err)
     }
   }
+
+  useEffect(() => {
+    const handleClickOutside = (e: any) => {
+      if (!e.target.closest(".notification-wrapper")) {
+        setNotificationOpen(false)
+      }
+    }
+
+    document.addEventListener("click", handleClickOutside)
+    return () => document.removeEventListener("click", handleClickOutside)
+  }, [])
 
   useEffect(() => {
     async function loadDashboard() {
@@ -453,11 +467,10 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3 text-slate-500 relative">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 text-slate-500 relative notification-wrapper">
+          {/* <div className="flex items-center">
             <Filter size={18} />
-            <span className="text-sm font-medium">Filters</span>
-          </div>
+          </div> */}
 
           <button
             onClick={() => setNotificationOpen((prev) => !prev)}
@@ -485,11 +498,29 @@ export default function DashboardPage() {
                   notifications.map((item, index) => (
                     <button
                       key={index}
-                      onClick={() => {
+                      onClick={async () => {
                         setNotificationOpen(false)
-                        if (item.submissionId) openDetail(item.submissionId)
+
+                        if (item.submissionId) {
+                          const storedUser = sessionStorage.getItem("user")
+                          const user = storedUser ? JSON.parse(storedUser) : null
+
+                          await fetch("/api/checklist/mark-read", {
+                            method: "POST",
+                            headers: {
+                              "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({
+                              submissionId: item.submissionId,
+                              role: user?.role || "admin",
+                            }),
+                          })
+
+                          openDetail(item.submissionId)
+                          loadNotifications()
+                        }
                       }}
-                      className="w-full text-left px-4 py-3 border-b hover:bg-slate-50"
+                      className="w-full text-left px-4 py-3 border-b hover:bg-slate-50 bg-blue-50"
                     >
                       <p className="text-sm font-medium text-slate-800">
                         {item.authorName || "User"} ({item.authorRole || "unknown"})
