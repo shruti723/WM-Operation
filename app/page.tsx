@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState("")
@@ -11,40 +12,57 @@ export default function LoginPage() {
   const [mounted, setMounted] = useState(false)
   const [error, setError] = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  // ✅ FIX: ensure client render
+  const [loading, setLoading] = useState(false)
+
   useEffect(() => {
     setMounted(true)
   }, [])
+
   if (!mounted) return null
-  const handleLogin = (e: any) => {
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const users = [
-      { email: "admin@fm.com", password: "1234", role: "admin", name: "Admin" },
-      { email: "nitesh@fm.com", password: "1234", role: "supervisor", name: "Nitesh" },
-      { email: "naveen@fm.com", password: "1234", role: "supervisor", name: "Naveen" },
-      { email: "hr1@fm.com", password: "1234", role: "level1", name: "HR 1" },
-      { email: "hr2@fm.com", password: "1234", role: "level2", name: "HR 2" },
-      { email: "hr3@fm.com", password: "1234", role: "level3", name: "HR 3" }
-    ]
-    const foundUser = users.find(
-      (u) => u.email === email && u.password === password
-    )
-    if (foundUser) {
+    setError("")
+    setLoading(true)
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!data.success) {
+        setError(data.message || "Invalid email or password")
+        return
+      }
+
+      const foundUser = data.user
       sessionStorage.setItem("user", JSON.stringify(foundUser))
-      // ✅ All HR workflow users go to same dashboard
+
       if (["level1", "level2", "level3", "hr"].includes(foundUser.role)) {
         router.push("/hr")
       } else {
         router.push("/supervisor")
       }
-    } else {
-      setError("Invalid email or password")
+    } catch (err) {
+      console.error("Login error:", err)
+      setError("Something went wrong")
+    } finally {
+      setLoading(false)
     }
   }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-indigo-100">
       <Card className="w-full max-w-md shadow-2xl rounded-3xl backdrop-blur-xl bg-white/80 border border-gray-200">
-        {/* HEADER */}
         <CardHeader className="text-center space-y-2">
           <div className="text-4xl">🏢</div>
           <CardTitle className="text-2xl font-bold tracking-tight">
@@ -54,9 +72,9 @@ export default function LoginPage() {
             Login to manage operations
           </p>
         </CardHeader>
+
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-5">
-            {/* EMAIL */}
             <div className="space-y-1">
               <label className="text-sm text-gray-600">Email</label>
               <Input
@@ -69,7 +87,7 @@ export default function LoginPage() {
                 className="h-11 rounded-xl focus:ring-2 focus:ring-blue-400"
               />
             </div>
-            {/* PASSWORD */}
+
             <div className="space-y-1">
               <label className="text-sm text-gray-600">Password</label>
               <div className="relative">
@@ -86,20 +104,25 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-gray-500 text-sm"           >
+                  className="absolute right-3 top-2.5 text-gray-500 text-sm"
+                >
                   {showPassword ? "Hide" : "Show"}
                 </button>
               </div>
             </div>
-            {/* ERROR */}
+
             {error && (
               <p className="text-sm text-red-500 text-center">
                 {error}
               </p>
             )}
-            {/* BUTTON */}
-            <Button className="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 transition">
-              Login
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 transition"
+            >
+              {loading ? "Logging in..." : "Login"}
             </Button>
           </form>
         </CardContent>

@@ -55,7 +55,7 @@ export default function ManpowerPage() {
 
         async function loadSites() {
             try {
-                const res = await fetch("https://script.google.com/macros/s/AKfycbw8SDSvKxBr0H7SMYZespI2p1mjhuAVcFddhtzFXuOYMWqlqxxt-qwRv5cvroAjldC2/exec?type=manpowerSites")
+                const res = await fetch("/api/hr/manpower/sites")
                 const data = await res.json()
 
                 console.log("SITE LIST API:", data)
@@ -135,25 +135,32 @@ export default function ManpowerPage() {
     /* ✅ FETCH DATA */
     async function fetchSiteData(siteName: string) {
         try {
+            if (!siteName) return
+
             const res = await fetch(
-                `https://script.google.com/macros/s/AKfycbw8SDSvKxBr0H7SMYZespI2p1mjhuAVcFddhtzFXuOYMWqlqxxt-qwRv5cvroAjldC2/exec?type=manpower&siteName=${siteName}&role=${user?.role}`
+                `/api/hr/manpower?siteName=${encodeURIComponent(siteName)}&role=${encodeURIComponent(user?.role || "")}`
             )
 
             const data = await res.json()
 
-
-            if (data) {
-                setForm(prev => ({
-                    ...prev,
-                    ...data,
-                    manpowerList: data.manpowerList
-                        ? (typeof data.manpowerList === "string"
-                            ? JSON.parse(data.manpowerList)
-                            : data.manpowerList)
-                        : prev.manpowerList
-                }))
+            if (data.success) {
+                setForm({
+                    siteName: data.siteName || siteName,
+                    startDate: data.startDate || "",
+                    lastRenewalDate: data.lastRenewalDate || "",
+                    nextRenewalDate: data.nextRenewalDate || "",
+                    manpowerList: Array.isArray(data.manpowerList)
+                        ? data.manpowerList
+                        : [],
+                    recruitmentProcess: data.recruitmentProcess || "",
+                    responsible: data.responsible || "",
+                    cutoffDate: data.cutoffDate || "",
+                    total: data.total || 0,
+                    remarks: data.remarks || "",
+                })
+            } else {
+                alert(data.message || "Failed to load site data")
             }
-
         } catch (err) {
             console.error(err)
         }
@@ -216,21 +223,23 @@ export default function ManpowerPage() {
         try {
             setLoading(true) // 🔥 START LOADING
 
-            const res = await fetch("https://script.google.com/macros/s/AKfycbw8SDSvKxBr0H7SMYZespI2p1mjhuAVcFddhtzFXuOYMWqlqxxt-qwRv5cvroAjldC2/exec", {
+            const res = await fetch("/api/hr/manpower", {
                 method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
                 body: JSON.stringify({
-                    type: "manpower",
                     ...form,
-                    role: user?.role
-                })
+                    role: user?.role,
+                }),
             })
 
             const result = await res.json()
 
-            if (result.error) {
-                alert(result.error)
+            if (!result.success) {
+                alert(result.message || "Something went wrong")
             } else {
-                alert("✅ You have successfully submitted the form")
+                alert(result.message || "✅ You have successfully submitted the form")
 
                 setForm({
                     siteName: "",
@@ -463,7 +472,7 @@ export default function ManpowerPage() {
                                     <option value="">Select</option>
                                     <option>Ongoing</option>
                                     <option>Completed</option>
-                                    <option>Not Started</option>
+                                    <option value="NotStarted">Not Started</option>
                                 </select>
                             </div>
 

@@ -3,8 +3,7 @@
 import { useRouter, usePathname } from "next/navigation"
 import { LayoutDashboard, DollarSign, Wallet, Users } from "lucide-react"
 
-export default function Sidebar() {
-
+export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     const router = useRouter()
     const pathname = usePathname()
 
@@ -15,27 +14,52 @@ export default function Sidebar() {
         { name: "Manpower", icon: Users, path: "/hr/manpower" },
     ]
 
+    function isActive(path: string) {
+        if (path === "/hr") return pathname === "/hr"
+        return pathname.startsWith(path)
+    }
+
+    function handleNavigate(path: string) {
+        router.push(path)
+        onNavigate?.()
+    }
+
     return (
-        <div className="h-full p-4">
+        <div className="h-full flex flex-col bg-white">
+            <div className="px-4 py-4 md:px-5 border-b">
+                <h1 className="text-lg md:text-xl font-bold text-slate-800 truncate">
+                    FM Operation
+                </h1>
+                <p className="text-xs text-slate-400 mt-1 hidden md:block">
+                    HR Panel
+                </p>
+            </div>
 
-            <h1 className="text-lg font-bold mb-6">FM Operation</h1>
+            <div className="flex-1 overflow-y-auto p-3 md:p-4">
+                <nav className="space-y-2">
+                    {menu.map((item, i) => {
+                        const Icon = item.icon
+                        const active = isActive(item.path)
 
-            {menu.map((item, i) => {
-                const Icon = item.icon
-                const active = pathname.startsWith(item.path)
-
-                return (
-                    <div
-                        key={i}
-                        onClick={() => router.push(item.path)}
-                        className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer mb-2 transition-all
-${active ? "bg-blue-100 text-blue-600" : "hover:bg-gray-100"}`}
-                    >
-                        <Icon size={18} />
-                        {item.name}
-                    </div>
-                )
-            })}
+                        return (
+                            <button
+                                key={i}
+                                onClick={() => handleNavigate(item.path)}
+                                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all
+                                ${active
+                                        ? "bg-blue-100 text-blue-600 font-medium"
+                                        : "text-slate-700 hover:bg-gray-100"
+                                    }`}
+                            >
+                                <Icon size={18} className="shrink-0" />
+                                <span className="text-sm md:text-[15px] truncate">
+                                    {item.name}
+                                </span>
+                            </button>
+                        )
+                    })}
+                </nav>
+            </div>
         </div>
     )
 }

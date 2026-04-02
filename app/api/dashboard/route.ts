@@ -1,431 +1,216 @@
+import { NextResponse } from "next/server"
+import { prisma } from "@/lib/db"
+
+function formatDate(date: Date | null | undefined) {
+  if (!date) return ""
+  return date.toISOString().split("T")[0]
+}
+
+function normalizeValue(v: any) {
+  if (!v) return ""
+  const val = String(v).trim().toLowerCase()
+
+  if (["yes", "1", "done", "completed"].includes(val)) return "yes"
+  if (["no", "0", "not done"].includes(val)) return "no"
+  if (["good", "satisfactory"].includes(val)) return "good"
+  if (["poor", "bad"].includes(val)) return "poor"
+
+  return ""
+}
+
+function calcScore(answers: any[]) {
+  let total = 0
+  let good = 0
+
+  for (const ans of answers) {
+    const val = normalizeValue(ans.answerValue)
+    if (!val) continue
+
+    total++
+    if (val === "yes" || val === "good") good++
+  }
+
+  return total ? Math.round((good / total) * 100) : 0
+}
+
+function getStatus(score: number) {
+  if (score >= 80) return "Good"
+  if (score >= 50) return "Average"
+  return "Critical"
+}
+
+function getBestSiteName(submission: any) {
+  if (submission.siteName) return submission.siteName
+  if (submission.telephonicSiteName) return submission.telephonicSiteName
+  if (submission.siteVisitConducted === "No") return "No Site Visit"
+  if (submission.telephonicCalling === "No") return "No Telephonic Contact"
+  return "General Submission"
+}
+
+const issueLabelMap: Record<string, string> = {
+  pendingEmails: "Pending Emails",
+  repeatComplaint: "Repeat Complaint",
+  complaintResolved: "Complaint Not Resolved",
+  manpowerShortage: "Manpower Shortage",
+  replacementArranged: "Replacement Not Arranged",
+  cleaningScheduleFollowed: "Cleaning Schedule Not Followed",
+  toiletsCleaned: "Toilets Not Cleaned",
+  garbageDisposal: "Garbage Disposal Delay",
+  machinesWorking: "Machines Not Working",
+  stockRegisterUpdated: "Stock Register Not Updated",
+  safetyRisk: "Safety Risk",
+}
+
 export async function GET() {
-
-  const scriptURL =
-    "https://script.google.com/macros/s/AKfycbw8SDSvKxBr0H7SMYZespI2p1mjhuAVcFddhtzFXuOYMWqlqxxt-qwRv5cvroAjldC2/exec"
-
-  const res = await fetch(scriptURL + "?type=checklist", { cache: "no-store" })
-  const raw = await res.json()
-  const data = Array.isArray(raw) ? raw : []
-
-  // ============================
-  // 🔧 HELPERS
-  // ============================
-
-  function normalizeKey(key: string) {
-    return key
-      .toLowerCase()
-      .replace(/\(reason\)/gi, "")
-      .replace(/[^a-z0-9]/g, "_")
-      .replace(/_+/g, "_")
-      .replace(/^_|_$/g, "")
-  }
-
-  function normalizeValue(v: any) {
-    if (!v) return ""
-
-    const val = v.toString().trim().toLowerCase()
-
-    if (["yes", "1", "done", "completed"].includes(val)) return "yes"
-    if (["no", "0", "not done"].includes(val)) return "no"
-    if (["good", "satisfactory"].includes(val)) return "good"
-    if (["poor", "bad"].includes(val)) return "poor"
-
-    return ""
-  }
-
-  function calcScore(item: any) {
-    let total = 0, good = 0
-
-    Object.values(item).forEach((v: any) => {
-      const val = normalizeValue(v)
-      if (!val) return
-
-      total++
-      if (val === "yes" || val === "good") good++
+  try {
+    const submissions = await prisma.checklistSubmission.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        answers: true,
+      },
     })
 
-    return total ? Math.round((good / total) * 100) : 0
-  }
+    const allRows = submissions.map((submission) => {
+      const score = calcScore(submission.answers)
+      const site = getBestSiteName(submission)
+      const safeDate = formatDate(submission.date) || formatDate(submission.createdAt)
 
-  function getRowDate(d: any) {
-    return d.date || d.timestamp || d.start_date || d.created_on || null
-  }
-
-  function parseDate(dateStr: string) {
-    if (!dateStr) return null
-
-    let d = new Date(dateStr)
-    if (!isNaN(d.getTime())) return d
-
-    const [datePart, timePart] = dateStr.split(" ")
-    const [day, month, year] = datePart.split("/")
-
-    d = new Date(`${year}-${month}-${day}T${timePart || "00:00:00"}`)
-    return isNaN(d.getTime()) ? null : d
-  }
-
-  // ============================
-  // 🔁 NORMALIZE DATA
-  // ============================
-
-  const FIELD_MAP: any = {
-    sitename: "site",
-    telephonicsitename: "site",
-    sitevisit: "site_visit",
-    telephoniccalling: "telephonic_calling",
-    repeatcomplaint: "repeat_complaint",
-    any_urgent_issue_observed_at_the_site_site_visit: "urgent_issue",
-    is_manpower_shortage_affecting_operations_site_visit: "manpower_issue",
-    is_manpower_shortage_affecting_operations_telephonic: "manpower_issue",
-  }
-
-  const allData = data.map((row: any) => {
-    let obj: any = {}
-
-    Object.entries(row).forEach(([key, value]) => {
-      if (key.toLowerCase().includes("(reason)")) return
-
-      let cleanKey = normalizeKey(key)
-
-      if (cleanKey.includes("sitevisit")) cleanKey = "site_visit"
-      if (cleanKey.includes("telephoniccalling")) cleanKey = "telephonic_calling"
-      if (cleanKey.includes("repeatcomplaint")) cleanKey = "repeat_complaint"
-      if (cleanKey.includes("urgent_issue")) cleanKey = "urgent_issue"
-      if (cleanKey.includes("manpower")) cleanKey = "manpower_issue"
-
-      if (FIELD_MAP[cleanKey]) cleanKey = FIELD_MAP[cleanKey]
-
-      if (cleanKey === "site") {
-        obj.site = obj.site || value
-      } else {
-        obj[cleanKey] = value
+      return {
+        id: submission.id,
+        supervisorName: submission.supervisorName,
+        date: safeDate,
+        time: submission.timeText || "",
+        site,
+        score,
+        status: getStatus(score),
+        siteVisitConducted: submission.siteVisitConducted || "",
+        telephonicCalling: submission.telephonicCalling || "",
+        createdAt: submission.createdAt,
+        updatedAt: submission.updatedAt,
+        answers: submission.answers,
       }
     })
 
-    return obj
-  })
-
-  // ============================
-  // 📊 KPI CALCULATIONS
-  // ============================
-
-  const todayDate = new Date(
-    new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
-  ).toISOString().split("T")[0]
-
-  const now = new Date()
-
-  const today = allData.filter(d => {
-    const parsed = parseDate(getRowDate(d))
-    return parsed && parsed.toISOString().split("T")[0] === todayDate
-  }).length
-
-  const week = allData.filter(d => {
-    const parsed = parseDate(getRowDate(d))
-    if (!parsed) return false
-
-    const diff = (now.getTime() - parsed.getTime()) / 86400000
-    return diff <= 7
-  }).length
-
-  const sites = new Set(allData.map(d => d.site).filter(Boolean)).size
-
-  const recent = [...allData].reverse().slice(0, 5)
-
-  // ============================
-  // 🚀 NEW ADVANCED DATA
-  // ============================
-
-  const compliance = {
-    good: allData.filter(d => calcScore(d) >= 80).length,
-    avg: allData.filter(d => calcScore(d) >= 50 && calcScore(d) < 80).length,
-    critical: allData.filter(d => calcScore(d) < 50).length,
-  }
-
-  const supervisorMap: any = {}
-
-  allData.forEach(d => {
-    if (!d.supervisorname) return
-
-    if (!supervisorMap[d.supervisorname]) {
-      supervisorMap[d.supervisorname] = []
+    const compliance = {
+      good: allRows.filter((r) => r.score >= 80).length,
+      avg: allRows.filter((r) => r.score >= 50 && r.score < 80).length,
+      critical: allRows.filter((r) => r.score < 50).length,
     }
 
-    supervisorMap[d.supervisorname].push(calcScore(d))
-  })
+    const submissionMap: Record<string, number> = {}
+    allRows.forEach((row) => {
+      const safeDate = row.date || formatDate(row.createdAt)
+      submissionMap[safeDate] = (submissionMap[safeDate] || 0) + 1
+    })
 
-  const supervisorPerf = Object.keys(supervisorMap).map(name => ({
-    name,
-    score: Math.round(
-      supervisorMap[name].reduce((a: number, b: number) => a + b, 0) /
-      supervisorMap[name].length
+    const submissionData = Object.entries(submissionMap)
+      .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+      .map(([date, count]) => ({
+        date,
+        count,
+      }))
+
+    const supervisorMap: Record<string, number[]> = {}
+    allRows.forEach((row) => {
+      if (!supervisorMap[row.supervisorName]) supervisorMap[row.supervisorName] = []
+      supervisorMap[row.supervisorName].push(row.score)
+    })
+
+    const supervisorPerf = Object.entries(supervisorMap)
+      .map(([name, scores]) => ({
+        name,
+        score: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
+      }))
+      .sort((a, b) => b.score - a.score)
+
+    const siteMap: Record<string, number[]> = {}
+    allRows.forEach((row) => {
+      if (!siteMap[row.site]) siteMap[row.site] = []
+      siteMap[row.site].push(row.score)
+    })
+
+    const sitePerf = Object.entries(siteMap)
+      .map(([site, scores]) => ({
+        site,
+        score: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
+      }))
+      .sort((a, b) => b.score - a.score)
+
+    const trendMap: Record<string, { total: number; count: number }> = {}
+    allRows.forEach((row) => {
+      const safeDate = row.date || formatDate(row.createdAt)
+      if (!trendMap[safeDate]) {
+        trendMap[safeDate] = { total: 0, count: 0 }
+      }
+      trendMap[safeDate].total += row.score
+      trendMap[safeDate].count += 1
+    })
+
+    const trendData = Object.entries(trendMap)
+      .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+      .map(([date, val]) => ({
+        date,
+        score: Math.round(val.total / val.count),
+      }))
+
+    const issueMap: Record<string, number> = {}
+
+    submissions.forEach((submission) => {
+      submission.answers.forEach((ans) => {
+        const key = String(ans.questionId || ans.questionText || "")
+        const val = normalizeValue(ans.answerValue)
+
+        const skipKeys = [
+          "supervisorName",
+          "date",
+          "time",
+          "siteVisit",
+          "siteName",
+          "telephonicCalling",
+          "telephonicSiteName",
+          "telephonicIncharge",
+        ]
+
+        if (skipKeys.includes(key)) return
+
+        const isIssue =
+          val === "poor" ||
+          val === "no" ||
+          (String(ans.answerValue).trim().toLowerCase() === "yes" &&
+            ["pendingEmails", "repeatComplaint", "manpowerShortage", "safetyRisk"].includes(key))
+
+        if (!isIssue) return
+
+        const label = issueLabelMap[key] || ans.questionText
+        issueMap[label] = (issueMap[label] || 0) + 1
+      })
+    })
+
+    const topIssues = Object.entries(issueMap)
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8)
+
+    return NextResponse.json({
+      success: true,
+      totalSubmissions: allRows.length,
+      avgScore: allRows.length
+        ? Math.round(allRows.reduce((a, b) => a + b.score, 0) / allRows.length)
+        : 0,
+      compliance,
+      submissionData,
+      supervisorPerf,
+      sitePerf,
+      trendData,
+      topIssues,
+      recentSubmissions: allRows,
+      allSites: Array.from(new Set(allRows.map((r) => r.site).filter(Boolean))),
+    })
+  } catch (error) {
+    console.error("Dashboard API error:", error)
+    return NextResponse.json(
+      { success: false, message: "Failed to load dashboard data" },
+      { status: 500 }
     )
-  }))
-
-  const submissionTrend: any = {}
-
-  allData.forEach(d => {
-    const parsed = parseDate(getRowDate(d))
-    if (!parsed) return
-
-    const key = parsed.toISOString().split("T")[0]
-    submissionTrend[key] = (submissionTrend[key] || 0) + 1
-  })
-
-  const submissionData = Object.keys(submissionTrend).map(date => ({
-    date,
-    count: submissionTrend[date]
-  }))
-
-  // ============================
-  // 🎯 FINAL RESPONSE
-  // ============================
-
-  return Response.json({
-    today,
-    week,
-    sites,
-    recent,
-    allData,
-    compliance,
-    supervisorPerf,
-    submissionData
-  })
+  }
 }
-
-
-// export async function GET() {
-
-//   const scriptURL =
-//     "https://script.google.com/macros/s/AKfycbw8SDSvKxBr0H7SMYZespI2p1mjhuAVcFddhtzFXuOYMWqlqxxt-qwRv5cvroAjldC2/exec"
-
-//   const res = await fetch(
-//     scriptURL + "?type=checklist",
-//     { cache: "no-store" }
-//   )
-//   const raw = await res.json()
-//   const data = Array.isArray(raw) ? raw : []
-
-//   // ============================
-//   // 🔥 NORMALIZE KEYS (DYNAMIC)
-//   // ============================
-//   function normalizeKey(key: string) {
-//     return key
-//       .toLowerCase()
-//       .replace(/\(reason\)/gi, "") // only remove reason
-//       .replace(/[^a-z0-9]/g, "_")
-//       .replace(/_+/g, "_")        // remove double underscore
-//       .replace(/^_|_$/g, "")      // remove starting/ending _
-//   }
-
-//   const FIELD_MAP: any = {
-//     // ✅ SITE
-//     sitename: "site",
-//     telephonicsitename: "site",
-
-//     // ✅ BASIC FLAGS
-//     sitevisit: "site_visit",
-//     telephoniccalling: "telephonic_calling",
-//     repeatcomplaint: "repeat_complaint",
-
-//     // ✅ URGENT ISSUE
-//     any_urgent_issue_observed_at_the_site_site_visit: "urgent_issue",
-
-//     // ✅ MANPOWER
-//     is_manpower_shortage_affecting_operations_site_visit: "manpower_issue",
-//     is_manpower_shortage_affecting_operations_telephonic: "manpower_issue",
-//   }
-
-//   // Compliance breakdown
-//   const compliance = {
-//     good: allData.filter(d => calcScore(d) >= 80).length,
-//     avg: allData.filter(d => calcScore(d) >= 50 && calcScore(d) < 80).length,
-//     critical: allData.filter(d => calcScore(d) < 50).length,
-//   }
-
-//   const supervisorMap: any = {}
-
-//   allData.forEach(d => {
-//     if (!d.supervisorname) return
-
-//     if (!supervisorMap[d.supervisorname]) {
-//       supervisorMap[d.supervisorname] = []
-//     }
-
-//     supervisorMap[d.supervisorname].push(calcScore(d))
-//   })
-
-//   const supervisorPerf = Object.keys(supervisorMap).map(name => ({
-//     name,
-//     score: Math.round(
-//       supervisorMap[name].reduce((a, b) => a + b, 0) / supervisorMap[name].length
-//     )
-//   }))
-
-//   const submissionTrend: any = {}
-
-//   allData.forEach(d => {
-//     const date = getRowDate(d)?.split("T")[0]
-//     if (!date) return
-
-//     submissionTrend[date] = (submissionTrend[date] || 0) + 1
-//   })
-
-//   const submissionData = Object.keys(submissionTrend).map(date => ({
-//     date,
-//     count: submissionTrend[date]
-//   }))
-
-//   const allData = data.map((row: any) => {
-//     let obj: any = {}
-
-//     Object.entries(row).forEach(([key, value]) => {
-
-//       // ❌ IGNORE reason columns completely
-//       if (key.toLowerCase().includes("(reason)")) return
-
-//       let cleanKey = normalizeKey(key)
-//       // 🔥 fallback mapping (handles all variations)
-//       if (cleanKey.includes("sitevisit")) cleanKey = "site_visit"
-//       if (cleanKey.includes("telephoniccalling")) cleanKey = "telephonic_calling"
-//       if (cleanKey.includes("repeatcomplaint")) cleanKey = "repeat_complaint"
-//       if (cleanKey.includes("urgent_issue")) cleanKey = "urgent_issue"
-//       if (cleanKey.includes("manpower")) cleanKey = "manpower_issue"
-//       if (FIELD_MAP[cleanKey]) {
-//         cleanKey = FIELD_MAP[cleanKey]
-//       }
-//       if (cleanKey === "site") {
-//         obj.site = obj.site || value
-//       } else {
-//         obj[cleanKey] = value
-//       }
-//     })
-//     return obj
-//   })
-//   console.log("TOTAL RECORDS:", allData.length)
-//   function getRowDate(d: any) {
-//     return (
-//       d.date ||
-//       d.timestamp ||
-//       d.start_date ||
-//       d.created_on ||
-//       null
-//     )
-//   }
-
-//   return Response.json({
-//     today,
-//     week,
-//     sites,
-//     recent,
-//     allData,
-//     compliance,
-//     supervisorPerf,
-//     submissionData,
-//     schema
-//   })
-
-//   function parseDate(dateStr: string) {
-//     if (!dateStr) return null
-
-//     let d = new Date(dateStr)
-
-//     if (!isNaN(d.getTime())) return d
-
-//     // 🔥 HANDLE DD/MM/YYYY FORMAT
-//     const [datePart, timePart] = dateStr.split(" ")
-//     const [day, month, year] = datePart.split("/")
-
-//     d = new Date(`${year}-${month}-${day}T${timePart || "00:00:00"}`)
-
-//     return isNaN(d.getTime()) ? null : d
-//   }
-
-//   // ============================
-//   // 📅 DATE FIX
-//   // ============================
-//   const todayDate = new Date(
-//     new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
-//   ).toISOString().split("T")[0]
-
-//   // ============================
-//   // 📊 TODAY / WEEK
-//   // ============================
-//   const today = allData.filter((d: any) => {
-//     const rawDate = getRowDate(d)
-//     if (!rawDate) return false
-
-//     const parsedDate = parseDate(rawDate)
-//     if (!parsedDate) return false
-
-//     return parsedDate.toISOString().split("T")[0] === todayDate
-//   }).length
-//   const now = new Date()
-//   const week = allData.filter((d: any) => {
-//     const rawDate = getRowDate(d)
-//     if (!rawDate) return false
-
-//     const parsedDate = parseDate(rawDate)
-//     if (!parsedDate) return false
-
-//     const diff =
-//       (now.getTime() - parsedDate.getTime()) /
-//       (1000 * 60 * 60 * 24)
-
-//     return diff <= 7
-//   }).length
-//   // ============================
-//   // 🏢 UNIQUE SITES
-//   // ============================
-//   const sites = new Set(
-//     allData
-//       .map((d: any) => d.site || d.site_name || d.telephonic_site_name)
-//       .filter(Boolean)
-//   ).size
-//   console.log("RAW SAMPLE:", raw[0])
-//   console.log("NORMALIZED:", allData[0])
-//   console.log("DATE:", getRowDate(allData[0]))
-
-//   // ============================
-//   // 🧠 AUTO FIELD DETECTION
-//   // ============================
-//   const schema: any = {
-//     numericFields: new Set<string>(),
-//     yesNoFields: new Set<string>(),
-//     textFields: new Set<string>()
-//   }
-
-//   allData.forEach((row: any) => {
-//     Object.entries(row).forEach(([key, value]) => {
-
-//       if (!value) return
-
-//       if (!isNaN(Number(value))) {
-//         schema.numericFields.add(key)
-//       } else if (value === "Yes" || value === "No") {
-//         schema.yesNoFields.add(key)
-//       } else {
-//         schema.textFields.add(key)
-//       }
-
-//     })
-//   })
-//   console.log("SAMPLE:", allData[0])
-//   // ============================
-//   // 📦 RECENT DATA
-//   // ============================
-//   const recent = [...allData].reverse().slice(0, 5)
-
-//   return Response.json({
-//     today,
-//     week,
-//     sites,
-//     recent,
-//     allData,
-//     schema: {
-//       numericFields: Array.from(schema.numericFields),
-//       yesNoFields: Array.from(schema.yesNoFields),
-//       textFields: Array.from(schema.textFields)
-//     }
-//   })
-// }

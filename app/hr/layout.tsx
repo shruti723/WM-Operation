@@ -4,48 +4,43 @@ import { useState } from "react"
 import Sidebar from "@/components/hr/Sidebar"
 import Header from "@/components/hr/Header"
 
-export default function Layout({ children }: any) {
-
+export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className="h-screen flex overflow-hidden">
-
-      {/* ✅ OVERLAY (mobile only) */}
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/30 z-40 md:hidden"
+          className="fixed inset-0 z-40 bg-black/40 md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* ✅ SIDEBAR (FIXED ALWAYS) */}
-      <div
+      {/* Sidebar */}
+      <aside
         className={`
-          fixed md:fixed top-0 left-0 h-screen w-64 bg-white border-r shadow-sm z-50
-          transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-          transition-transform duration-300
+          fixed inset-y-0 left-0 z-50 w-[260px] bg-white border-r shadow-sm
+          transform transition-transform duration-300 ease-in-out
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0
         `}
       >
         <Sidebar />
-      </div>
+      </aside>
 
-      {/* ✅ MAIN AREA */}
-      <div className="flex-1 md:ml-64 flex flex-col h-screen">
-
-        {/* HEADER (FIXED TOP) */}
-        <div className="bg-gray-50 p-4 border-b">
+      {/* Main area */}
+      <div className="md:ml-[260px] min-h-screen flex flex-col">
+        {/* Header */}
+        <div className="sticky top-0 z-30 bg-gray-50 border-b px-3 py-3 md:px-6 md:py-4">
           <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
         </div>
 
-        {/* CONTENT (SCROLL ONLY HERE) */}
-        <div className="flex-1 overflow-y-auto bg-gray-50 p-4">
+        {/* Page content */}
+        <main className="flex-1 px-3 py-4 md:px-6 md:py-6 overflow-x-hidden">
           {children}
-        </div>
-
+        </main>
       </div>
-
     </div>
   )
 }

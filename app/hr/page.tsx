@@ -22,9 +22,7 @@ export default function HRDashboard() {
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const res = await fetch(
-          "https://script.google.com/macros/s/AKfycbw8SDSvKxBr0H7SMYZespI2p1mjhuAVcFddhtzFXuOYMWqlqxxt-qwRv5cvroAjldC2/exec?type=dashboard"
-        )
+        const res = await fetch("/api/hr/dashboard")
         const data = await res.json()
 
         console.log("DASHBOARD API:", data)

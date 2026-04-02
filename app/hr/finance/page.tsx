@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { sites } from "@/lib/siteList"
 
 const months = [
     "January", "February", "March", "April", "May", "June",
@@ -10,6 +9,7 @@ const months = [
 ]
 
 export default function FinancePage() {
+    const [siteList, setSiteList] = useState<string[]>([])
 
     const [form, setForm] = useState({
         siteName: "",
@@ -30,6 +30,20 @@ export default function FinancePage() {
         salaryMonth: ""
     })
 
+    useEffect(() => {
+        async function loadSites() {
+            try {
+                const res = await fetch("/api/hr/manpower/sites")
+                const data = await res.json()
+                setSiteList(data.sites || [])
+            } catch (err) {
+                console.error("Failed to load sites:", err)
+            }
+        }
+
+        loadSites()
+    }, [])
+
     function handleChange(e: any) {
         setForm({
             ...form,
@@ -37,8 +51,40 @@ export default function FinancePage() {
         })
     }
 
+    function handleNumberChange(e: any) {
+        const { name, value } = e.target
+
+        // integer only
+        if (/^\d*$/.test(value)) {
+            setForm((prev) => ({
+                ...prev,
+                [name]: value,
+            }))
+        }
+    }
+
     async function handleSubmit(e: any) {
         e.preventDefault()
+
+        if (!form.siteName) {
+            alert("Please select site")
+            return
+        }
+
+        if (form.monthlyBilling && !/^\d+$/.test(form.monthlyBilling)) {
+            alert("Monthly Billing must be number only")
+            return
+        }
+
+        if (form.invoiceAmount && !/^\d+$/.test(form.invoiceAmount)) {
+            alert("Invoice Amount must be number only")
+            return
+        }
+
+        if (form.salaryAmount && !/^\d+$/.test(form.salaryAmount)) {
+            alert("Salary Amount must be number only")
+            return
+        }
 
         const data = {
             updatedOn: new Date().toISOString(),
@@ -46,17 +92,41 @@ export default function FinancePage() {
         }
 
         try {
-            await fetch("https://script.google.com/macros/s/AKfycbxiRXN-O1ECmw5Ru2UtVR9ZAlTfgx0rLGfXXPz8xDNDf9X01zvQmb7WaKLgpzO9a44K/exec", {
+            const res = await fetch("/api/hr/finance", {
                 method: "POST",
-                mode: "no-cors",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify(data),
             })
 
-            alert("Data submitted successfully ✅")
+            const result = await res.json()
 
+            if (!result.success) {
+                alert(result.message || "Error submitting data ❌")
+                return
+            }
+
+            alert(result.message || "Data submitted successfully ✅")
+
+            setForm({
+                siteName: "",
+                incharge: "",
+
+                startDate: "",
+                lastRenewalDate: "",
+                nextRenewalDate: "",
+                monthlyBilling: "",
+
+                invoiceDate: "",
+                invoiceAmount: "",
+                invoiceMonth: "",
+                paymentStatus: "",
+
+                salaryDate: "",
+                salaryAmount: "",
+                salaryMonth: ""
+            })
         } catch (error) {
             console.error(error)
             alert("Error submitting data ❌")
@@ -65,19 +135,13 @@ export default function FinancePage() {
 
     return (
         <div className="max-w-4xl mx-auto">
-
-            {/* HEADER */}
             <h1 className="text-2xl font-bold">Finance Details</h1>
             <p className="text-gray-500 mb-6">
                 Submit financial details for a site.
             </p>
 
-            {/* CARD */}
             <div className="bg-white rounded-2xl shadow-sm border p-6">
-
                 <form onSubmit={handleSubmit} className="space-y-6">
-
-                    {/* SITE */}
                     <div>
                         <label className="block text-sm font-medium mb-1">
                             Site Name
@@ -90,19 +154,15 @@ export default function FinancePage() {
                         >
                             <option value="">Select site</option>
 
-                            {sites.map((site) => (
+                            {siteList.map((site) => (
                                 <option key={site} value={site}>
                                     {site}
                                 </option>
                             ))}
-
                         </select>
                     </div>
 
-                    {/* GRID */}
                     <div className="grid md:grid-cols-2 gap-4">
-
-                        {/* INCHARGE */}
                         <div>
                             <label className="block text-sm font-medium mb-1">
                                 Incharge
@@ -115,7 +175,6 @@ export default function FinancePage() {
                             />
                         </div>
 
-                        {/* START DATE */}
                         <div>
                             <label className="block text-sm font-medium mb-1">
                                 Start Date
@@ -129,7 +188,6 @@ export default function FinancePage() {
                             />
                         </div>
 
-                        {/* LAST RENEWAL */}
                         <div>
                             <label className="block text-sm font-medium mb-1">
                                 Last Renewal Date
@@ -143,7 +201,6 @@ export default function FinancePage() {
                             />
                         </div>
 
-                        {/* NEXT RENEWAL */}
                         <div>
                             <label className="block text-sm font-medium mb-1">
                                 Next Renewal Due
@@ -157,20 +214,21 @@ export default function FinancePage() {
                             />
                         </div>
 
-                        {/* BILLING */}
                         <div>
                             <label className="block text-sm font-medium mb-1">
                                 Monthly Billing (₹)
                             </label>
                             <input
+                                type="text"
+                                inputMode="numeric"
                                 name="monthlyBilling"
                                 value={form.monthlyBilling}
-                                onChange={handleChange}
+                                onChange={handleNumberChange}
                                 className="w-full border rounded-lg px-3 py-2"
+                                placeholder="Enter amount"
                             />
                         </div>
 
-                        {/* INVOICE DATE */}
                         <div>
                             <label className="block text-sm font-medium mb-1">
                                 Last Invoice Raise Date
@@ -184,20 +242,21 @@ export default function FinancePage() {
                             />
                         </div>
 
-                        {/* INVOICE AMOUNT */}
                         <div>
                             <label className="block text-sm font-medium mb-1">
                                 Last Invoice Raise Amount
                             </label>
                             <input
+                                type="text"
+                                inputMode="numeric"
                                 name="invoiceAmount"
                                 value={form.invoiceAmount}
-                                onChange={handleChange}
+                                onChange={handleNumberChange}
                                 className="w-full border rounded-lg px-3 py-2"
+                                placeholder="Enter amount"
                             />
                         </div>
 
-                        {/* INVOICE MONTH */}
                         <div>
                             <label className="block text-sm font-medium mb-1">
                                 Last Invoice Raise Month
@@ -217,7 +276,6 @@ export default function FinancePage() {
                             </select>
                         </div>
 
-                        {/* PAYMENT STATUS */}
                         <div>
                             <label className="block text-sm font-medium mb-1">
                                 Invoice Payment Status
@@ -234,7 +292,6 @@ export default function FinancePage() {
                             </select>
                         </div>
 
-                        {/* SALARY DATE */}
                         <div>
                             <label className="block text-sm font-medium mb-1">
                                 Last Salary Disbursement Date
@@ -248,20 +305,21 @@ export default function FinancePage() {
                             />
                         </div>
 
-                        {/* SALARY AMOUNT */}
                         <div>
                             <label className="block text-sm font-medium mb-1">
                                 Last Salary Disbursement Amount
                             </label>
                             <input
+                                type="text"
+                                inputMode="numeric"
                                 name="salaryAmount"
                                 value={form.salaryAmount}
-                                onChange={handleChange}
+                                onChange={handleNumberChange}
                                 className="w-full border rounded-lg px-3 py-2"
+                                placeholder="Enter amount"
                             />
                         </div>
 
-                        {/* SALARY MONTH */}
                         <div>
                             <label className="block text-sm font-medium mb-1">
                                 Last Salary Disbursement Month
@@ -280,7 +338,6 @@ export default function FinancePage() {
                                 ))}
                             </select>
                         </div>
-
                     </div>
 
                     <Button
@@ -289,11 +346,8 @@ export default function FinancePage() {
                     >
                         Submit Report
                     </Button>
-
                 </form>
-
             </div>
-
         </div>
     )
 }
