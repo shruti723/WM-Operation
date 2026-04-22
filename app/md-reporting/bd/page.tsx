@@ -16,7 +16,7 @@ type RenewalItem = {
     id: string
     siteName: string
     nextRenewalDate: string | null
-    category: "This Month" | "Next 3 Months" | "Later"
+    category: "Next 30 Days" | "Next 3 Months" | "Later"
     status: "Pending" | "In Progress" | "Confirmed"
 }
 
@@ -41,9 +41,16 @@ function getStatusClasses(status: RenewalItem["status"]) {
 }
 
 function getCategoryClasses(category: RenewalItem["category"]) {
-    return category === "This Month"
-        ? "bg-indigo-50 text-indigo-700 border-indigo-200"
-        : "bg-violet-50 text-violet-700 border-violet-200"
+    switch (category) {
+        case "Next 30 Days":
+            return "bg-indigo-50 text-indigo-700 border-indigo-200"
+        case "Next 3 Months":
+            return "bg-violet-50 text-violet-700 border-violet-200"
+        case "Later":
+            return "bg-slate-50 text-slate-700 border-slate-200"
+        default:
+            return "bg-slate-50 text-slate-700 border-slate-200"
+    }
 }
 
 function parseDate(dateStr: string) {
@@ -106,12 +113,19 @@ export default function BDPage() {
         misc: "",
     })
     const [filter, setFilter] = useState<
-        "All" | "This Month" | "Next 3 Months" | "Overdue"
+        "All" | "Next 30 Days" | "Next 3 Months" | "Overdue"
     >("All")
 
-    const renewalsThisMonth = renewalData.filter(
-        (r) => r.category === "This Month"
-    ).length
+    const renewalsNext30Days = renewalData.filter((r) => {
+        const d = parseDate(r.nextRenewalDate)
+        if (!d) return false
+
+        const today = new Date()
+        const next30 = new Date()
+        next30.setDate(today.getDate() + 30)
+
+        return d >= today && d <= next30
+    }).length
 
     const renewalsNext3Months = renewalData.filter(
         (r) => r.category === "Next 3 Months"
@@ -176,7 +190,16 @@ export default function BDPage() {
             const d = parseDate(item.nextRenewalDate)
 
             // ✅ FILTER LOGIC
-            if (filter === "This Month" && item.category !== "This Month") return false
+            if (filter === "Next 30 Days") {
+                const d = parseDate(item.nextRenewalDate)
+                if (!d) return false
+
+                const today = new Date()
+                const next30 = new Date()
+                next30.setDate(today.getDate() + 30)
+
+                if (!(d >= today && d <= next30)) return false
+            }
             if (filter === "Next 3 Months" && item.category !== "Next 3 Months") return false
             if (filter === "Overdue" && !item.isOverdue) return false
 
@@ -252,13 +275,13 @@ export default function BDPage() {
                                 {/* Card 1 */}
                                 <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
                                     <p className="text-sm font-semibold text-slate-500 uppercase">
-                                        Renewals This Month
+                                        Renewals Next 30 Days
                                     </p>
                                     <p className="mt-3 text-4xl font-bold text-slate-900">
-                                        {renewalsThisMonth}
+                                        {renewalsNext30Days}
                                     </p>
                                     <p className="text-sm text-slate-500 mt-1">
-                                        Sites due before month-end
+                                        Sites due in next 30 days
                                     </p>
                                 </div>
 
@@ -326,7 +349,7 @@ export default function BDPage() {
 
                                             {/* FILTER BUTTONS */}
                                             <div className="flex flex-wrap gap-2">
-                                                {["All", "This Month", "Next 3 Months", "Overdue"].map((f) => (
+                                                {["All", "Next 30 Days", "Next 3 Months", "Overdue"].map((f) => (
                                                     <button
                                                         key={f}
                                                         onClick={() => setFilter(f as any)}

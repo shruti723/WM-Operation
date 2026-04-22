@@ -17,22 +17,21 @@ export async function GET(req: Request) {
         const { searchParams } = new URL(req.url)
         const role = searchParams.get("role")
 
+        const submissions = await prisma.manpowerSubmission.findMany({
+            orderBy: { submittedAt: "desc" },
+            include: {
+                site: true,
+                items: {
+                    orderBy: { createdAt: "asc" },
+                },
+            },
+        })
+
         // ========================
-        // 🔵 HR1 → SITE TABLE
+        // 🔵 HR1 → ONLY LATEST PER SITE
         // ========================
         if (role === "level1") {
 
-            const submissions = await prisma.manpowerSubmission.findMany({
-                orderBy: { submittedAt: "desc" },
-                include: {
-                    site: true,
-                    items: {
-                        orderBy: { createdAt: "asc" },
-                    },
-                },
-            })
-
-            // ✅ KEEP ONLY LATEST PER SITE
             const latestMap = new Map()
 
             for (const sub of submissions) {
@@ -43,7 +42,6 @@ export async function GET(req: Request) {
 
             const latestSubmissions = Array.from(latestMap.values())
 
-            // ✅ NOW USE THIS
             const data = latestSubmissions.map((submission: any) => ({
                 submissionId: submission.id,
                 site: submission.site.siteName,
@@ -65,34 +63,10 @@ export async function GET(req: Request) {
         }
 
         // ========================
-        // 🟣 HR2 / HR3 → SUBMISSION TABLE
+        // 🟣 HR2 / HR3 → ALL RECORDS (NO FILTER)
         // ========================
-        // ========================
-        // 🟣 HR2 / HR3 → SUBMISSION TABLE
-        // ========================
-        const submissions = await prisma.manpowerSubmission.findMany({
-            orderBy: { submittedAt: "desc" },
-            include: {
-                site: true,
-                items: {
-                    orderBy: { createdAt: "asc" },
-                },
-            },
-        })
 
-        // ✅ CREATE LATEST MAP HERE ALSO
-        const latestMap = new Map()
-
-        for (const sub of submissions) {
-            if (!latestMap.has(sub.siteId)) {
-                latestMap.set(sub.siteId, sub)
-            }
-        }
-
-        const latestSubmissions = Array.from(latestMap.values())
-
-        // ✅ NOW USE IT
-        const data = latestSubmissions.map((submission: any) => {
+        const data = submissions.map((submission: any) => {
 
             let totalDeployed = 0
             let totalNeeded = 0
@@ -125,11 +99,11 @@ export async function GET(req: Request) {
 
             return {
                 submissionId: submission.id,
+                siteId: submission.siteId,
                 site: submission.site.siteName,
-
                 createdAt: submission.createdAt,
 
-                totalAuthorised, // ✅ THIS WILL NOW WORK
+                totalAuthorised,
                 totalDeployed,
                 totalNeeded,
 

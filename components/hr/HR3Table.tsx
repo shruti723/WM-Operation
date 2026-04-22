@@ -51,6 +51,7 @@ export default function HR3Table() {
     const [page, setPage] = useState(1)
     const perPage = 10
 
+
     const filteredData = data.filter((item) => {
 
         const matchesSearch =
@@ -67,6 +68,18 @@ export default function HR3Table() {
         return matchesSearch && matchesFrom && matchesTo
     })
 
+    /* ✅ LATEST RECORD PER SITE */
+    const latestMap = new Map<string, RecordType>()
+
+    filteredData.forEach((item) => {
+        if (!latestMap.has(item.siteName)) {
+            latestMap.set(item.siteName, item)
+        }
+    })
+
+    const latestData = Array.from(latestMap.values())
+
+    /* PAGINATION */
     const paginatedData = filteredData.slice(
         (page - 1) * perPage,
         page * perPage
@@ -248,11 +261,11 @@ export default function HR3Table() {
                             <div>
                                 <p className="text-sm text-gray-500">Total Authorized</p>
                                 <h2 className="text-2xl font-semibold">
-                                    {filteredData.reduce(
+                                    {latestData.reduce(
                                         (sum, item) =>
                                             sum +
                                             item.manpowerList.reduce(
-                                                (a, b) => a + (b.authorised || 0),
+                                                (a: number, b: ManpowerItem) => a + (b.authorised || 0),
                                                 0
                                             ),
                                         0
@@ -269,7 +282,7 @@ export default function HR3Table() {
                             <div>
                                 <p className="text-sm text-gray-500">Total Deployed</p>
                                 <h2 className="text-2xl font-semibold">
-                                    {filteredData.reduce((sum, i) => sum + i.totalDeployed, 0)}
+                                    {latestData.reduce((sum, i) => sum + i.totalDeployed, 0)}
                                 </h2>
                             </div>
                         </div>
@@ -282,7 +295,7 @@ export default function HR3Table() {
                             <div>
                                 <p className="text-sm text-gray-500">Total Needed</p>
                                 <h2 className="text-2xl font-semibold">
-                                    {filteredData.reduce((sum, i) => sum + i.totalNeeded, 0)}
+                                    {latestData.reduce((sum, i) => sum + i.totalNeeded, 0)}
                                 </h2>
                             </div>
                         </div>

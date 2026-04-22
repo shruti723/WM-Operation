@@ -67,6 +67,7 @@ export default function HRAdminDashboard() {
     const [endDate, setEndDate] = useState("")
 
     const ITEMS_PER_PAGE = 12
+
     const router = useRouter()
 
     useEffect(() => {
@@ -85,35 +86,58 @@ export default function HRAdminDashboard() {
         loadData()
     }, [])
 
+
+
+
+    const filteredManpower = (data?.manpowerDetails || [])
+        .filter((site: any) => {
+
+            const matchesSearch =
+                site.site.toLowerCase().includes(search.toLowerCase())
+
+            const matchesStatus =
+                status === "all" ||
+                (status === "completed" && site.hr3Done) ||
+                (status === "pending" && !site.hr3Done)
+
+            const itemDate = site.createdAt ? new Date(site.createdAt) : null
+
+            const start = startDate ? new Date(startDate + "T00:00:00") : null
+            const end = endDate ? new Date(endDate + "T23:59:59") : null
+
+            const matchesStart =
+                !start || (itemDate && itemDate >= start)
+
+            const matchesEnd =
+                !end || (itemDate && itemDate <= end)
+
+            return matchesSearch && matchesStatus && matchesStart && matchesEnd
+        })
+        .sort((a: any, b: any) =>
+            new Date(b.createdAt || 0).getTime() -
+            new Date(a.createdAt || 0).getTime()
+        )
+
+    // Manpower pagination
+    const manpowerStart = (manpowerPage - 1) * ITEMS_PER_PAGE
+    const totalPages = Math.max(1, Math.ceil(filteredManpower.length / ITEMS_PER_PAGE))
+
+    useEffect(() => {
+        if (manpowerPage > totalPages) {
+            setManpowerPage(1)
+        }
+    }, [filteredManpower.length, totalPages])
+
+
     if (loading) return <div className="p-6">Loading...</div>
     // Site pagination
     const siteStart = (sitePage - 1) * ITEMS_PER_PAGE
     const sitePaginated = data?.siteDetails?.slice(siteStart, siteStart + ITEMS_PER_PAGE)
-
-    const filteredManpower = data?.manpowerDetails?.filter((site: any) => {
-        // 🔍 search
-        const matchesSearch = site.site
-            .toLowerCase()
-            .includes(search.toLowerCase())
-
-        // 📊 status (based on HR3)
-        const matchesStatus =
-            status === "all" ||
-            (status === "completed" && site.hr3Done) ||
-            (status === "pending" && !site.hr3Done)
-
-        // 📅 date filter (based on submissionId time later if needed)
-        // currently skipping because date not in data
-
-        return matchesSearch && matchesStatus
-    }) || []
-
-    // Manpower pagination
-    const manpowerStart = (manpowerPage - 1) * ITEMS_PER_PAGE
     const manpowerPaginated = filteredManpower.slice(
         manpowerStart,
         manpowerStart + ITEMS_PER_PAGE
     )
+
 
     return (
         <div className="min-h-screen bg-gray-50 p-6">
@@ -278,13 +302,19 @@ export default function HRAdminDashboard() {
                     <input
                         placeholder="Search by site name..."
                         value={search}
-                        onChange={(e) => setSearch(e.target.value)}
+                        onChange={(e) => {
+                            setSearch(e.target.value)
+                            setManpowerPage(1)
+                        }}
                         className="border px-4 py-2 rounded-lg text-sm w-60"
                     />
 
                     <select
                         value={status}
-                        onChange={(e) => setStatus(e.target.value)}
+                        onChange={(e) => {
+                            setStatus(e.target.value)
+                            setManpowerPage(1)
+                        }}
                         className="border px-4 py-2 rounded-lg text-sm"
                     >
                         <option value="all">All Status</option>
@@ -295,14 +325,20 @@ export default function HRAdminDashboard() {
                     <input
                         type="date"
                         value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
+                        onChange={(e) => {
+                            setStartDate(e.target.value)
+                            setManpowerPage(1)
+                        }}
                         className="border px-3 py-2 rounded-lg text-sm"
                     />
 
                     <input
                         type="date"
                         value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
+                        onChange={(e) => {
+                            setEndDate(e.target.value)
+                            setManpowerPage(1)
+                        }}
                         className="border px-3 py-2 rounded-lg text-sm"
                     />
                 </div>
@@ -316,7 +352,8 @@ export default function HRAdminDashboard() {
                         <table className="w-full text-sm">
                             <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
                                 <tr>
-                                    <th className="p-3 text-left">Site</th>
+                                    <th className="p-3">Created At</th>
+                                    <th className="p-3 text-left">Site Name</th>
                                     <th className="p-3">Authorised</th>
                                     <th className="p-3">Deployed</th>
                                     <th className="p-3">Shortage</th>
@@ -327,10 +364,10 @@ export default function HRAdminDashboard() {
                             </thead>
 
                             <tbody className="align-top">
-                                {data?.manpowerDetails?.length === 0 ? (
+                                {filteredManpower.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="p-6 text-center text-gray-400 h-[300px] align-middle">
-                                            No sites available
+                                        <td colSpan={8} className="p-6 text-center text-gray-400 h-[300px] align-middle">
+                                            No records found for selected filters
                                         </td>
                                     </tr>
                                 ) : (
@@ -339,6 +376,10 @@ export default function HRAdminDashboard() {
 
                                         return (
                                             <tr key={i} className="border-t hover:bg-gray-50 transition">
+
+                                                <td className="p-3 text-center">
+                                                    {site.createdAt ? formatDate(site.createdAt) : "-"}
+                                                </td>
 
                                                 <td className="p-3 font-medium">{site.site}</td>
 
@@ -391,6 +432,7 @@ export default function HRAdminDashboard() {
                         </table>
                         <div className="flex justify-between items-center p-4 mt-auto">
                             <button
+
                                 disabled={manpowerPage === 1}
                                 onClick={() => setManpowerPage(manpowerPage - 1)}
                                 className="px-3 py-1 border rounded disabled:opacity-50"
@@ -399,11 +441,11 @@ export default function HRAdminDashboard() {
                             </button>
 
                             <span className="text-sm">
-                                Page {manpowerPage}
+                                Page {manpowerPage} of {totalPages}
                             </span>
 
                             <button
-                                disabled={manpowerStart + ITEMS_PER_PAGE >= (data?.manpowerDetails?.length || 0)}
+                                disabled={manpowerPage === totalPages}
                                 onClick={() => setManpowerPage(manpowerPage + 1)}
                                 className="px-3 py-1 border rounded disabled:opacity-50"
                             >
@@ -417,20 +459,6 @@ export default function HRAdminDashboard() {
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
-
-                {/* <div className="bg-white rounded-2xl border shadow-sm p-6">
-                    <h3 className="font-semibold mb-4">Shortage by Site</h3>
-                    <div className="h-40 flex items-center justify-center text-gray-400">
-                        Chart here
-                    </div>
-                </div> */}
-
-                {/* <div className="bg-white rounded-2xl border shadow-sm p-6">
-                    <h3 className="font-semibold mb-4">Status Distribution</h3>
-                    <div className="h-40 flex items-center justify-center text-gray-400">
-                        Chart here
-                    </div>
-                </div> */}
 
             </div>
         </div>

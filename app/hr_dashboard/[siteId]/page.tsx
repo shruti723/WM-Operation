@@ -38,6 +38,11 @@ export default function SiteDetailsPage() {
     const [data, setData] = useState<any>(null)
     const [isHR1, setIsHR1] = useState(false)
 
+    const [messages, setMessages] = useState<any[]>([])
+    const [newMessage, setNewMessage] = useState("")
+
+
+
     useEffect(() => {
         const type = searchParams.get("type")
 
@@ -57,6 +62,8 @@ export default function SiteDetailsPage() {
 
         load()
     }, [params.siteId, searchParams])
+
+
 
     if (!data) return <div className="p-6">Loading...</div>
 
@@ -224,6 +231,8 @@ export default function SiteDetailsPage() {
                 )}
 
             </div>
+
+
 
         </div>
     )

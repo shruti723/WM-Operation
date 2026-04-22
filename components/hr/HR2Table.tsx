@@ -46,7 +46,7 @@ type RecordType = {
     cutoffDate?: string
     remarks?: string
     createdAt: string
-
+    siteId: string
     // ✅ ADD THESE
     totalDeployed: number
     totalNeeded: number
@@ -92,6 +92,7 @@ export default function HR2Table() {
                 return {
                     id: item.submissionId,
                     siteName: item.site,
+                    siteId: item.siteId,
                     createdAt: item.createdAt,
                     manpowerList: item.manpowerList,
 
@@ -154,6 +155,16 @@ export default function HR2Table() {
 
         return matchesSearch && matchesFrom && matchesTo
     })
+
+    const latestMap = new Map()
+
+    filteredData.forEach((item) => {
+        if (!latestMap.has(item.siteId)) {
+            latestMap.set(item.siteId, item)
+        }
+    })
+
+    const latestData = Array.from(latestMap.values())
 
     const totalPages = Math.max(1, Math.ceil(filteredData.length / rowsPerPage))
 
@@ -317,11 +328,11 @@ export default function HR2Table() {
                             <div>
                                 <p className="text-sm text-gray-500">Total Authorized</p>
                                 <h2 className="text-2xl font-semibold">
-                                    {filteredData.reduce(
+                                    {latestData.reduce(
                                         (sum, item) =>
                                             sum +
                                             item.manpowerList.reduce(
-                                                (a, b) => a + (b.authorised || 0),
+                                                (a: number, b: ManpowerItem) => a + (b.authorised || 0),
                                                 0
                                             ),
                                         0
@@ -336,7 +347,7 @@ export default function HR2Table() {
                             <div>
                                 <p className="text-sm text-gray-500">Total Deployed</p>
                                 <h2 className="text-2xl font-semibold">
-                                    {filteredData.reduce((sum, i) => sum + i.totalDeployed, 0)}
+                                    {latestData.reduce((sum, i) => sum + i.totalDeployed, 0)}
                                 </h2>
                             </div>
                         </div>
@@ -347,7 +358,7 @@ export default function HR2Table() {
                             <div>
                                 <p className="text-sm text-gray-500">Total Needed</p>
                                 <h2 className="text-2xl font-semibold">
-                                    {filteredData.reduce((sum, i) => sum + i.totalNeeded, 0)}
+                                    {latestData.reduce((sum, i) => sum + i.totalNeeded, 0)}
                                 </h2>
                             </div>
                         </div>

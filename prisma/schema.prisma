@@ -50,6 +50,7 @@ model ManpowerSubmission {
   updatedAt       DateTime                 @updatedAt
   site            Site                     @relation(fields: [siteId], references: [id], onDelete: Cascade)
   items           ManpowerSubmissionItem[]
+  chats     ManpowerChat[] 
 }
 
 model ManpowerSubmissionItem {
@@ -246,4 +247,14 @@ model BDReport {
   misc                  String?
 
   createdAt DateTime @default(now())
+}
+
+model ManpowerChat {
+  id            String   @id @default(cuid())
+  submissionId  String
+  message       String
+  senderRole    String   // "HR2" | "HR3"
+  createdAt     DateTime @default(now())
+
+  submission    ManpowerSubmission @relation(fields: [submissionId], references: [id])
 }
