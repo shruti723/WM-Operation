@@ -142,7 +142,7 @@ export default function SupervisorPage() {
   const [count, setCount] = useState(0)
 
   const [notifications, setNotifications] = useState<any[]>([])
-  const [financeData, setFinanceData] = useState<any[]>([])
+  // const [financeData, setFinanceData] = useState<any[]>([])
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
@@ -188,22 +188,22 @@ export default function SupervisorPage() {
     return () => clearInterval(interval)
   }, [user])
 
-  useEffect(() => {
-    const fetchFinance = async () => {
-      try {
-        const res = await fetch("/api/google-sheet")
-        const data = await res.json()
+  // useEffect(() => {
+  //   const fetchFinance = async () => {
+  //     try {
+  //       const res = await fetch("/api/google-sheet")
+  //       const data = await res.json()
 
-        if (data.success) {
-          setFinanceData(data.data)
-        }
-      } catch (err) {
-        console.error("Finance fetch error:", err)
-      }
-    }
+  //       if (data.success) {
+  //         setFinanceData(data.data)
+  //       }
+  //     } catch (err) {
+  //       console.error("Finance fetch error:", err)
+  //     }
+  //   }
 
-    fetchFinance()
-  }, [])
+  //   fetchFinance()
+  // }, [])
 
   useEffect(() => {
     const handleClick = (e: any) => {
