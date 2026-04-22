@@ -17,50 +17,51 @@ const adminModules = [
     title: "Operations",
     desc: "Site visits, checklists, performance scores & field reports",
     icon: BarChart3,
-    path: "/dashboard",
+    path: "/operations_dashboard",
     gradient: "from-indigo-600 to-violet-600",
     badge: null,
     available: true,
   },
   {
     id: "hr",
-    title: "Human Resources",
+    title: "Manpower",
     desc: "Manpower tracking, site staffing, shortage reports & recruitment",
     icon: Users,
-    path: "/hr",
+    path: "/hr_dashboard",
     gradient: "from-sky-500 to-cyan-500",
     badge: null,
     available: true,
   },
-  {
-    id: "petty-cash",
-    title: "Petty Cash",
-    desc: "Monthly disbursements, audit tracking & expense statements",
-    icon: Wallet,
-    path: "/petty-cash",
-    gradient: "from-emerald-500 to-teal-500",
-    badge: null,
-    available: true,
-  },
+
   {
     id: "accounts",
-    title: "Accounts",
+    title: "Finance",
     desc: "Invoices, billing, vendor payments & financial summaries",
     icon: BookOpen,
-    path: "/accounts",
+    path: "/account-dashboard",
     gradient: "from-amber-500 to-orange-500",
     badge: null,
     available: true,
   },
   {
-    id: "maintenance",
-    title: "Maintenance",
-    desc: "Work orders, asset tracking & preventive maintenance",
-    icon: Wrench,
-    path: "/maintenance",
-    gradient: "from-rose-500 to-pink-500",
-    badge: "Coming soon",
-    available: false,
+    id: "financeSheet",
+    title: "Finance Sheet",
+    desc: "Monthly billing data from accounts team (Google Sheet based dashboard)",
+    icon: Wallet,
+    path: "/finance/finance-overview",
+    gradient: "from-emerald-500 to-teal-500",
+    badge: null,
+    available: true,
+  },
+  {
+    id: "mdReporting",
+    title: "MD Reporting",
+    desc: "Daily MD reporting: BD, Ops, Manpower, Finance & Decisions",
+    icon: ClipboardList,
+    path: "/md-reporting",
+    gradient: "from-pink-500 to-rose-500",
+    badge: null,
+    available: true,
   },
 ]
 
@@ -83,6 +84,7 @@ const supervisorModules = [
     gradient: "from-emerald-500 to-teal-500",
     available: true,
   },
+
 ]
 
 
@@ -140,6 +142,7 @@ export default function SupervisorPage() {
   const [count, setCount] = useState(0)
 
   const [notifications, setNotifications] = useState<any[]>([])
+  const [financeData, setFinanceData] = useState<any[]>([])
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
@@ -186,6 +189,23 @@ export default function SupervisorPage() {
   }, [user])
 
   useEffect(() => {
+    const fetchFinance = async () => {
+      try {
+        const res = await fetch("/api/google-sheet")
+        const data = await res.json()
+
+        if (data.success) {
+          setFinanceData(data.data)
+        }
+      } catch (err) {
+        console.error("Finance fetch error:", err)
+      }
+    }
+
+    fetchFinance()
+  }, [])
+
+  useEffect(() => {
     const handleClick = (e: any) => {
       if (!e.target.closest(".notification-wrapper")) {
         setOpen(false)
@@ -205,10 +225,18 @@ export default function SupervisorPage() {
     : "FM"
 
   const hour = new Date().getHours()
-  const greeting =
-    hour < 12 ? "Good morning" :
-      hour < 17 ? "Good afternoon" :
-        "Good evening"
+
+  let greeting = "Hello"
+
+  if (hour >= 5 && hour < 12) {
+    greeting = "Good morning"
+  } else if (hour >= 12 && hour < 17) {
+    greeting = "Good afternoon"
+  } else if (hour >= 17 && hour < 22) {
+    greeting = "Good evening"
+  } else {
+    greeting = "Hello"
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -318,10 +346,10 @@ export default function SupervisorPage() {
       </header>
 
       {/* ── Main ── */}
-      <main className="max-w-5xl mx-auto px-6 py-12">
+      <main className="max-w-[1400px] mx-auto px-8 py-10">
 
         {/* Welcome block */}
-        <div className="mb-10">
+        <div className="mb-12">
           <p className="text-sm text-slate-400 mb-1">{greeting},</p>
           <h1 className="text-3xl font-bold text-slate-900">{user.name}</h1>
           <p className="text-slate-400 text-sm mt-1.5">
@@ -338,7 +366,7 @@ export default function SupervisorPage() {
         </div>
 
         {/* Module grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {modules.map((mod) => (
             <ModuleCard
               key={mod.id}
@@ -347,6 +375,7 @@ export default function SupervisorPage() {
             />
           ))}
         </div>
+
 
         {/* Footer note */}
         <p className="text-center text-[11px] text-slate-300 mt-16">

@@ -1,67 +1,25 @@
 "use client"
+
 import { useEffect, useState } from "react"
-import StatCard from "@/components/hr/StatCard"
-import DashboardTable from "@/components/hr/DashboardTable"
-import Charts from "@/components/hr/Charts"
+import HR1Table from "@/components/hr/HR1Table"
+import HR2Table from "@/components/hr/HR2Table"
+import HR3Table from "@/components/hr/HR3Table"
+import A1Table from "@/components/hr/A1Table"
 
-import {
-  FileText, ClipboardList, Clock, AlertTriangle, CheckCircle
-} from "lucide-react"
-
-export default function HRDashboard() {
-
-  // ✅ MOVE INSIDE COMPONENT
-  const [stats, setStats] = useState({
-    totalSites: 0,
-    submitted: 0,
-    pending: 0,
-    overdue: 0,
-    completed: 0
-  })
+export default function DashboardPage() {
+  const [role, setRole] = useState("")
 
   useEffect(() => {
-    async function loadDashboard() {
-      try {
-        const res = await fetch("/api/hr/dashboard")
-        const data = await res.json()
-
-        console.log("DASHBOARD API:", data)
-
-        setStats(data)
-
-      } catch (err) {
-        console.error("Dashboard error:", err)
-      }
-    }
-
-    loadDashboard()
+    const user = JSON.parse(sessionStorage.getItem("user") || "{}")
+    setRole(user?.role)
   }, [])
 
-  return (
-    <div>
+  if (!role) return null
 
-      <h1 className="text-2xl font-bold">Dashboard</h1>
-      <p className="text-gray-500 mb-6">
-        Overview of all sites and form submissions
-      </p>
+  if (role === "level1") return <HR1Table />
+  if (role === "level2") return <HR2Table />
+  if (role === "level3") return <HR3Table />
+  if (role === "account1") return <A1Table />
 
-      <div className="grid md:grid-cols-5 gap-4">
-
-        <StatCard title="Total Sites" value={stats.totalSites} icon={ClipboardList} color="blue" />
-
-        <StatCard title="Forms Submitted" value={stats.submitted} icon={FileText} color="blue" />
-
-        <StatCard title="Pending" value={stats.pending} icon={Clock} color="yellow" />
-
-        <StatCard title="Overdue" value={stats.overdue} icon={AlertTriangle} color="red" />
-
-        <StatCard title="Completed" value={stats.completed} icon={CheckCircle} color="green" />
-
-      </div>
-
-      <Charts stats={stats} />
-      <DashboardTable />
-
-    </div>
-  )
+  return <div>No Access</div>
 }

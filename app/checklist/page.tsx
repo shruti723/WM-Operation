@@ -553,7 +553,7 @@ export default function ChecklistPage() {
                         <div className="space-y-2 mt-2 border p-3 rounded">
 
                             {/* SITE NAME */}
-                            <label className="text-sm">Select Complaint Site</label>
+                            <label className="text-sm">Complaint Site Name</label>
                             <Select
                                 value={form.repeatComplaintSite?.value || ""}
                                 onValueChange={(v) => update("repeatComplaintSite", v)}

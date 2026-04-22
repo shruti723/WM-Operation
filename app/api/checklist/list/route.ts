@@ -50,7 +50,7 @@ export async function GET() {
             },
         })
 
-        const data = submissions.map((item) => {
+        const data = submissions.map((item: any) => {
             const score = calcScoreFromAnswers(item.answers)
 
             return {

@@ -1,11 +1,32 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { checklistQuestions } from "@/lib/checklistQuestions"
+
+
 
 function formatDate(date: Date | null | undefined) {
     if (!date) return ""
     return date.toISOString().split("T")[0]
 }
+function getQuestionText(questionId?: string | null, fallback?: string | null) {
+    if (!questionId) return fallback || "-"
 
+    // ✅ SPECIAL CASE FIX (ONLY ADD THIS BLOCK)
+    if (questionId === "repeatComplaintSite") {
+        return "Complaint Site Name"
+    }
+
+    if (questionId === "repeatComplaintCount") {
+        return "Number of repeat complaints"
+    }
+
+    // existing logic
+    const allQuestions = Object.values(checklistQuestions).flat()
+
+    const found = allQuestions.find((q: any) => q.id === questionId)
+
+    return found?.question || fallback || questionId
+}
 export async function GET(
     req: Request,
     { params }: { params: { id: string } }
@@ -49,19 +70,19 @@ export async function GET(
                 createdAt: submission.createdAt,
                 updatedAt: submission.updatedAt,
 
-                answers: submission.answers.map((a) => ({
+                answers: submission.answers.map((a: any) => ({
                     id: a.id,
                     sectionName: a.sectionName,
                     source: a.source,
                     questionId: a.questionId,
-                    questionText: a.questionText,
+                    questionText: getQuestionText(a.questionId, a.questionText),
                     answerValue: a.answerValue,
                     answerReason: a.answerReason,
                     siteContext: a.siteContext,
                     createdAt: a.createdAt,
                 })),
 
-                comments: submission.comments.map((c) => ({
+                comments: submission.comments.map((c: any) => ({
                     id: c.id,
                     authorName: c.authorName,
                     authorRole: c.authorRole,

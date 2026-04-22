@@ -1,8 +1,8 @@
 export const sites = [
-    "Aaron",
+    "Aarone",
     "Crystal IT Park",
-    "Daily Collage",
-    "Dewas Muncipal Corporation",
+    "Daly College",
+    "Dewas Municipal Corporation",
     "Dist. Collector",
     "IDA",
     "ISBT Raipur",

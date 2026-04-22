@@ -8,11 +8,17 @@ import { useRouter } from "next/navigation"
 export default function Header({ toggleSidebar }: { toggleSidebar: () => void }) {
     const [open, setOpen] = useState(false)
     const [user, setUser] = useState<any>(null)
+    const [userLoaded, setUserLoaded] = useState(false)
     const router = useRouter()
 
     useEffect(() => {
         const storedUser = sessionStorage.getItem("user")
-        if (storedUser) setUser(JSON.parse(storedUser))
+
+        if (storedUser) {
+            setUser(JSON.parse(storedUser))
+        }
+
+        setUserLoaded(true)
     }, [])
 
     function handleLogout() {
@@ -20,17 +26,7 @@ export default function Header({ toggleSidebar }: { toggleSidebar: () => void })
         router.push("/")
     }
 
-    const notifications = [
-        { text: "Manpower pending – Alpha Site", time: "2h ago", type: "pending" },
-        { text: "Finance deadline – Delta Hub", time: "5h ago", type: "warning" },
-        { text: "Overdue – Gamma Plaza", time: "1d ago", type: "danger" }
-    ]
-
-    const iconColor: Record<string, string> = {
-        pending: "text-yellow-500",
-        warning: "text-orange-500",
-        danger: "text-red-500"
-    }
+    if (!userLoaded) return null
 
     return (
         <div className="flex items-center justify-between gap-3 bg-white px-3 py-3 md:px-4 md:py-3 rounded-xl shadow-sm border">
@@ -52,16 +48,7 @@ export default function Header({ toggleSidebar }: { toggleSidebar: () => void })
             {/* RIGHT */}
             <div className="flex items-center gap-2 md:gap-4 relative shrink-0">
                 {/* Notification */}
-                <div
-                    className="relative cursor-pointer"
-                    onClick={() => setOpen(!open)}
-                >
-                    <Bell size={20} className="md:w-[22px] md:h-[22px]" />
 
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] md:text-xs px-1.5 rounded-full min-w-[18px] text-center">
-                        {notifications.length}
-                    </span>
-                </div>
 
                 {/* User info */}
                 <div className="hidden sm:block text-right leading-tight">
@@ -100,19 +87,7 @@ export default function Header({ toggleSidebar }: { toggleSidebar: () => void })
                                 Notifications
                             </div>
 
-                            <div className="max-h-80 overflow-y-auto">
-                                {notifications.map((n, i) => (
-                                    <div key={i} className="p-3 border-b hover:bg-gray-50">
-                                        <p className="text-sm flex gap-2">
-                                            <span className={iconColor[n.type]}>●</span>
-                                            <span>{n.text}</span>
-                                        </p>
-                                        <p className="text-xs text-gray-500 ml-4">
-                                            {n.time}
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
+
                         </motion.div>
                     )}
                 </AnimatePresence>

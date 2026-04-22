@@ -8,27 +8,54 @@ const months = [
     "July", "August", "September", "October", "November", "December"
 ]
 
+type FinanceFormType = {
+    siteName: string
+    incharge: string
+    startDate: string
+    lastRenewalDate: string
+    nextRenewalDate: string
+    monthlyBilling: string
+    invoiceDate: string
+    invoiceAmount: string
+    invoiceMonth: string
+    paymentStatus: string
+    salaryDate: string
+    salaryAmount: string
+    salaryMonth: string
+}
+
+const initialForm: FinanceFormType = {
+    siteName: "",
+    incharge: "",
+    startDate: "",
+    lastRenewalDate: "",
+    nextRenewalDate: "",
+    monthlyBilling: "",
+    invoiceDate: "",
+    invoiceAmount: "",
+    invoiceMonth: "",
+    paymentStatus: "",
+    salaryDate: "",
+    salaryAmount: "",
+    salaryMonth: ""
+}
+
 export default function FinancePage() {
     const [siteList, setSiteList] = useState<string[]>([])
+    const [form, setForm] = useState<FinanceFormType>(initialForm)
+    const [user, setUser] = useState<any>(null)
+    const [userLoaded, setUserLoaded] = useState(false)
+    const [loading, setLoading] = useState(false)
 
-    const [form, setForm] = useState({
-        siteName: "",
-        incharge: "",
+    const role = String(user?.role || "").toLowerCase()
 
-        startDate: "",
-        lastRenewalDate: "",
-        nextRenewalDate: "",
-        monthlyBilling: "",
-
-        invoiceDate: "",
-        invoiceAmount: "",
-        invoiceMonth: "",
-        paymentStatus: "",
-
-        salaryDate: "",
-        salaryAmount: "",
-        salaryMonth: ""
-    })
+    useEffect(() => {
+        const storedUser = sessionStorage.getItem("user")
+        if (storedUser) {
+            setUser(JSON.parse(storedUser))
+        }
+        setUserLoaded(true)
+    }, [])
 
     useEffect(() => {
         async function loadSites() {
@@ -44,17 +71,21 @@ export default function FinancePage() {
         loadSites()
     }, [])
 
-    function handleChange(e: any) {
-        setForm({
-            ...form,
-            [e.target.name]: e.target.value
-        })
+    function handleChange(
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    ) {
+        const { name, value } = e.target
+        setForm((prev) => ({
+            ...prev,
+            [name]: value,
+        }))
     }
 
-    function handleNumberChange(e: any) {
+    function handleNumberChange(
+        e: React.ChangeEvent<HTMLInputElement>
+    ) {
         const { name, value } = e.target
 
-        // integer only
         if (/^\d*$/.test(value)) {
             setForm((prev) => ({
                 ...prev,
@@ -63,35 +94,64 @@ export default function FinancePage() {
         }
     }
 
-    async function handleSubmit(e: any) {
+    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
+
+        if (!user) {
+            alert("User not loaded")
+            return
+        }
 
         if (!form.siteName) {
             alert("Please select site")
             return
         }
 
-        if (form.monthlyBilling && !/^\d+$/.test(form.monthlyBilling)) {
-            alert("Monthly Billing must be number only")
-            return
+        if (role === "level1") {
+            // if (!form.incharge || !form.startDate) {
+            //     alert("Please fill HR1 required fields")
+            //     return
+            // }
+
+            if (form.monthlyBilling && !/^\d+$/.test(form.monthlyBilling)) {
+                alert("Monthly Billing must be number only")
+                return
+            }
         }
 
-        if (form.invoiceAmount && !/^\d+$/.test(form.invoiceAmount)) {
-            alert("Invoice Amount must be number only")
-            return
+        if (role === "account1") {
+            if (!form.invoiceDate || !form.invoiceAmount || !form.invoiceMonth || !form.paymentStatus) {
+                alert("Please fill A1 required invoice fields")
+                return
+            }
+
+            if (form.invoiceAmount && !/^\d+$/.test(form.invoiceAmount)) {
+                alert("Invoice Amount must be number only")
+                return
+            }
         }
 
-        if (form.salaryAmount && !/^\d+$/.test(form.salaryAmount)) {
-            alert("Salary Amount must be number only")
-            return
+        if (role === "level2") {
+            if (!form.salaryDate || !form.salaryAmount || !form.salaryMonth) {
+                alert("Please fill HR2 required salary fields")
+                return
+            }
+
+            if (form.salaryAmount && !/^\d+$/.test(form.salaryAmount)) {
+                alert("Salary Amount must be number only")
+                return
+            }
         }
 
         const data = {
             updatedOn: new Date().toISOString(),
-            ...form
+            ...form,
+            role,
         }
 
         try {
+            setLoading(true)
+
             const res = await fetch("/api/hr/finance", {
                 method: "POST",
                 headers: {
@@ -108,246 +168,205 @@ export default function FinancePage() {
             }
 
             alert(result.message || "Data submitted successfully ✅")
-
-            setForm({
-                siteName: "",
-                incharge: "",
-
-                startDate: "",
-                lastRenewalDate: "",
-                nextRenewalDate: "",
-                monthlyBilling: "",
-
-                invoiceDate: "",
-                invoiceAmount: "",
-                invoiceMonth: "",
-                paymentStatus: "",
-
-                salaryDate: "",
-                salaryAmount: "",
-                salaryMonth: ""
-            })
+            setForm(initialForm)
         } catch (error) {
             console.error(error)
             alert("Error submitting data ❌")
+        } finally {
+            setLoading(false)
         }
     }
+
+    if (!userLoaded) return null
+
+    const canEdit =
+        role === "level1" ||
+        role === "account1" ||
+        role === "level2"
 
     return (
         <div className="max-w-4xl mx-auto">
             <h1 className="text-2xl font-bold">Finance Details</h1>
+
             <p className="text-gray-500 mb-6">
                 Submit financial details for a site.
             </p>
 
             <div className="bg-white rounded-2xl shadow-sm border p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    <div>
-                        <label className="block text-sm font-medium mb-1">
-                            Site Name
-                        </label>
-                        <select
-                            name="siteName"
-                            value={form.siteName}
-                            onChange={handleChange}
-                            className="w-full border rounded-lg px-3 py-2"
-                        >
-                            <option value="">Select site</option>
+                    {role === "level1" && (
+                        <>
+                            <div>
+                                <label>Site Name</label>
+                                <input
+                                    name="siteName"
+                                    value={form.siteName}
+                                    onChange={handleChange}
+                                    className="w-full border rounded-lg px-3 py-2"
+                                />
+                            </div>
 
-                            {siteList.map((site) => (
-                                <option key={site} value={site}>
-                                    {site}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                            <div>
+                                <label>Incharge</label>
+                                <input
+                                    name="incharge"
+                                    value={form.incharge}
+                                    onChange={handleChange}
+                                    className="w-full border rounded-lg px-3 py-2"
+                                />
+                            </div>
 
-                    <div className="grid md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Incharge
-                            </label>
-                            <input
-                                name="incharge"
-                                value={form.incharge}
-                                onChange={handleChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                            />
-                        </div>
+                            <div>
+                                <label>Start Date</label>
+                                <input
+                                    type="date"
+                                    name="startDate"
+                                    value={form.startDate}
+                                    onChange={handleChange}
+                                    className="w-full border rounded-lg px-3 py-2"
+                                />
+                            </div>
 
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Start Date
-                            </label>
-                            <input
-                                type="date"
-                                name="startDate"
-                                value={form.startDate}
-                                onChange={handleChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                            />
-                        </div>
+                            <div>
+                                <label>Last Renewal Date</label>
+                                <input
+                                    type="date"
+                                    name="lastRenewalDate"
+                                    value={form.lastRenewalDate}
+                                    onChange={handleChange}
+                                    className="w-full border rounded-lg px-3 py-2"
+                                />
+                            </div>
 
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Last Renewal Date
-                            </label>
-                            <input
-                                type="date"
-                                name="lastRenewalDate"
-                                value={form.lastRenewalDate}
-                                onChange={handleChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                            />
-                        </div>
+                            <div>
+                                <label>Next Renewal Due On</label>
+                                <input
+                                    type="date"
+                                    name="nextRenewalDate"
+                                    value={form.nextRenewalDate}
+                                    onChange={handleChange}
+                                    className="w-full border rounded-lg px-3 py-2"
+                                />
+                            </div>
 
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Next Renewal Due
-                            </label>
-                            <input
-                                type="date"
-                                name="nextRenewalDate"
-                                value={form.nextRenewalDate}
-                                onChange={handleChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                            />
-                        </div>
 
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Monthly Billing (₹)
-                            </label>
-                            <input
-                                type="text"
-                                inputMode="numeric"
-                                name="monthlyBilling"
-                                value={form.monthlyBilling}
-                                onChange={handleNumberChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                                placeholder="Enter amount"
-                            />
-                        </div>
+                        </>
+                    )}
+                    {role === "account1" && (
+                        <>
+                            <div>
+                                <label>Monthly Billing</label>
+                                <input
+                                    type="text"
+                                    name="monthlyBilling"
+                                    value={form.monthlyBilling}
+                                    onChange={handleNumberChange}
+                                    className="w-full border rounded-lg px-3 py-2"
+                                />
+                            </div>
+                            <div>
+                                <label>Last Invoice Raise - On Date</label>
+                                <input
+                                    type="date"
+                                    name="invoiceDate"
+                                    value={form.invoiceDate}
+                                    onChange={handleChange}
+                                    className="w-full border rounded-lg px-3 py-2"
+                                />
+                            </div>
 
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Last Invoice Raise Date
-                            </label>
-                            <input
-                                type="date"
-                                name="invoiceDate"
-                                value={form.invoiceDate}
-                                onChange={handleChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                            />
-                        </div>
+                            <div>
+                                <label>Last Invoice Raise - Amount</label>
+                                <input
+                                    type="text"
+                                    name="invoiceAmount"
+                                    value={form.invoiceAmount}
+                                    onChange={handleNumberChange}
+                                    className="w-full border rounded-lg px-3 py-2"
+                                />
+                            </div>
 
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Last Invoice Raise Amount
-                            </label>
-                            <input
-                                type="text"
-                                inputMode="numeric"
-                                name="invoiceAmount"
-                                value={form.invoiceAmount}
-                                onChange={handleNumberChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                                placeholder="Enter amount"
-                            />
-                        </div>
+                            <div>
+                                <label>Last Invoice Raise - For Month</label>
+                                <select
+                                    name="invoiceMonth"
+                                    value={form.invoiceMonth}
+                                    onChange={handleChange}
+                                    className="w-full border rounded-lg px-3 py-2"
+                                >
+                                    <option value="">Select Month</option>
+                                    {months.map((m) => (
+                                        <option key={m} value={m}>{m}</option>
+                                    ))}
+                                </select>
+                            </div>
 
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Last Invoice Raise Month
-                            </label>
-                            <select
-                                name="invoiceMonth"
-                                value={form.invoiceMonth}
-                                onChange={handleChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                            >
-                                <option value="">Select Month</option>
-                                {months.map((month) => (
-                                    <option key={month} value={month}>
-                                        {month}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                            <div>
+                                <label>Invoice Payment Status</label>
+                                <select
+                                    name="paymentStatus"
+                                    value={form.paymentStatus}
+                                    onChange={handleChange}
+                                    className="w-full border rounded-lg px-3 py-2"
+                                >
+                                    <option value="">Select</option>
+                                    <option value="Payment Received">Payment Received</option>
+                                    <option value="Payment Pending">Payment Pending</option>
+                                </select>
+                            </div>
+                        </>
+                    )}
+                    {role === "level2" && (
+                        <>
+                            <div>
+                                <label>Last Salary Disbursement - On Date</label>
+                                <input
+                                    type="date"
+                                    name="salaryDate"
+                                    value={form.salaryDate}
+                                    onChange={handleChange}
+                                    className="w-full border rounded-lg px-3 py-2"
+                                />
+                            </div>
 
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Invoice Payment Status
-                            </label>
-                            <select
-                                name="paymentStatus"
-                                value={form.paymentStatus}
-                                onChange={handleChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                            >
-                                <option value="">Select</option>
-                                <option value="Paid">Paid</option>
-                                <option value="Payment Pending">Payment Pending</option>
-                            </select>
-                        </div>
+                            <div>
+                                <label>Last Salary Disbursement - Amount</label>
+                                <input
+                                    type="text"
+                                    name="salaryAmount"
+                                    value={form.salaryAmount}
+                                    onChange={handleNumberChange}
+                                    className="w-full border rounded-lg px-3 py-2"
+                                />
+                            </div>
 
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Last Salary Disbursement Date
-                            </label>
-                            <input
-                                type="date"
-                                name="salaryDate"
-                                value={form.salaryDate}
-                                onChange={handleChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                            />
-                        </div>
+                            <div>
+                                <label>Last Salary Disbursement - Month</label>
+                                <select
+                                    name="salaryMonth"
+                                    value={form.salaryMonth}
+                                    onChange={handleChange}
+                                    className="w-full border rounded-lg px-3 py-2"
+                                >
+                                    <option value="">Select Month</option>
+                                    {months.map((m) => (
+                                        <option key={m} value={m}>{m}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </>
+                    )}
 
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Last Salary Disbursement Amount
-                            </label>
-                            <input
-                                type="text"
-                                inputMode="numeric"
-                                name="salaryAmount"
-                                value={form.salaryAmount}
-                                onChange={handleNumberChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                                placeholder="Enter amount"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Last Salary Disbursement Month
-                            </label>
-                            <select
-                                name="salaryMonth"
-                                value={form.salaryMonth}
-                                onChange={handleChange}
-                                className="w-full border rounded-lg px-3 py-2"
-                            >
-                                <option value="">Select Month</option>
-                                {months.map((month) => (
-                                    <option key={month} value={month}>
-                                        {month}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
 
                     <Button
                         type="submit"
+                        disabled={loading || !canEdit}
                         className="w-full h-11 text-lg rounded-lg"
                     >
-                        Submit Report
+                        {loading ? "Submitting..." : "Submit Report"}
                     </Button>
                 </form>
-            </div>
-        </div>
+            </div >
+        </div >
     )
 }

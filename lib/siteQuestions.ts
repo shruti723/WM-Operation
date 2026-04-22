@@ -18,7 +18,7 @@ export const siteQuestions: any = {
         { question: "Any urgent issue observed at the site", type: "yesno", requireReasonOnYes: true }
 
     ],
-    "MPSeDC": [
+    "MPSEDC": [
         { question: "Cleanliness and maintenance of the outer area", type: "rating" },
         { question: "Cleanliness and maintenance of the reception area", type: "rating" },
         { question: "Cleanliness and maintenance of the ground floor washrooms", type: "rating" },
@@ -59,7 +59,7 @@ export const siteQuestions: any = {
 
     ],
 
-    "Hotel sunder ( Edn)": [
+    "Hotel sunder ( EDN)": [
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -84,7 +84,7 @@ export const siteQuestions: any = {
         { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
-    "crystal IT Park": [
+    "Crystal IT Park": [
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -259,7 +259,7 @@ export const siteQuestions: any = {
 
     ],
 
-    "Daily Collage (Consulting)": [
+    "Daly College (Consulting)": [
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -284,7 +284,7 @@ export const siteQuestions: any = {
         { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
-    "MPSED Gwalior ": [
+    "MPIDC Gwalior ": [
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -309,7 +309,7 @@ export const siteQuestions: any = {
         { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
-    "MPSED Gwalior": [
+    "MPSEDC Bhopal": [
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -334,32 +334,7 @@ export const siteQuestions: any = {
         { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
-    "MOSED Bhopal": [
-        { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
-        { question: "Were CCTV cameras checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Were fire safety systems inspected?", type: "yesno", requireReasonOnNo: true },
-        { question: "Were electrical panels checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was plumbing leakage checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was material stock physically verified?", type: "yesno", requireReasonOnNo: true },
-        { question: "Total sanctioned manpower for the site", type: "number" },
-        { question: "Number of staff present today", type: "number" },
-        { question: "Number of staff absent", type: "number" },
-        { question: "Is manpower shortage affecting operations?", type: "yesno", requireReasonOnYes: true },
-        { question: "Is replacement arranged?", type: "yesno", requireReasonOnNo: true },
-        { id: "hiringRequest", question: "Is hiring request raised?", type: "yesno" },
-        { question: "Is cleaning schedule followed?", type: "yesno", requireReasonOnNo: true },
-        { question: "Are toilets cleaned as per frequency?", type: "yesno", requireReasonOnNo: true },
-        { question: "Is garbage disposal done on time?", type: "yesno", requireReasonOnNo: true },
-        { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
-        { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
-        { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
-        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
-
-    ],
-    "dewas munsipal co.": [
+    "Dewas Municipal Corporation": [
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -509,7 +484,7 @@ export const siteQuestions: any = {
         { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
-    "Daily college": [
+    "Daly college": [
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },

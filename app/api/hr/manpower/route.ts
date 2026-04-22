@@ -271,6 +271,7 @@ export async function POST(req: Request) {
                                 authorised: template?.authorised ?? Number(item.authorised || 0),
                                 deployed: Number(item.deployed || 0),
                                 shortage: Number(item.shortage || 0),
+                                needed: Number(item.needed ?? 0), // ✅ ADD HERE
                             }
                         }),
                     },
@@ -320,7 +321,6 @@ export async function POST(req: Request) {
                     await prisma.manpowerSubmissionItem.update({
                         where: { id: existing.id },
                         data: {
-                            needed: Number(item.needed || 0),
                             recruitmentProcess: item.recruitmentProcess || null,
                             responsible: item.responsible || null,
                             cutoffDate: parseDate(item.cutoffDate),

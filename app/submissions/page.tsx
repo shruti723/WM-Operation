@@ -27,6 +27,14 @@ type Submission = {
   commentCount: number
   latestComment: string
   submittedAt: string
+
+  summary?: {
+    totalIssues: number
+    openIssues: number
+    resolvedIssues: number
+    isRepeat: boolean
+    issueTags?: string[]
+  }
 }
 
 type DetailAnswer = {
@@ -61,12 +69,21 @@ type DetailData = {
   telephonicIncharge: string
   answers: DetailAnswer[]
   comments: DetailComment[]
+  status: string
 }
 
 function statusClass(status: string) {
-  if (status === "Good") return "bg-emerald-100 text-emerald-700"
-  if (status === "Average") return "bg-amber-100 text-amber-700"
-  return "bg-red-100 text-red-700"
+  if (status === "completed") return "bg-emerald-100 text-emerald-700"
+  if (status === "needs_action") return "bg-amber-100 text-amber-700"
+  if (status === "critical") return "bg-red-100 text-red-700"
+  return "bg-slate-100 text-slate-600"
+}
+
+function statusLabel(status: string) {
+  if (status === "completed") return "Completed"
+  if (status === "needs_action") return "Needs Action"
+  if (status === "critical") return "Critical"
+  return status
 }
 
 function formatDateTime(value?: string) {
@@ -86,6 +103,8 @@ function formatReadableLabel(text: string) {
 export default function SubmissionsPage() {
   const router = useRouter()
 
+
+
   const [user, setUser] = useState<any>(null)
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [loading, setLoading] = useState(true)
@@ -96,6 +115,54 @@ export default function SubmissionsPage() {
 
   const [replyText, setReplyText] = useState("")
   const [sendingReply, setSendingReply] = useState(false)
+
+  const [editMode, setEditMode] = useState(false)
+  const [editableAnswers, setEditableAnswers] = useState<DetailAnswer[]>([])
+
+  const [filter, setFilter] = useState("all")
+
+  const [search, setSearch] = useState("")
+
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [fromDate, setFromDate] = useState("")
+  const [toDate, setToDate] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+
+  const ITEMS_PER_PAGE = 10
+
+
+
+  const filteredSubmissions = submissions.filter((s) => {
+    const matchesSearch =
+      s.site.toLowerCase().includes(search.toLowerCase()) ||
+      s.supervisorName.toLowerCase().includes(search.toLowerCase())
+
+    const matchesStatus =
+      statusFilter === "all" || s.status === statusFilter
+
+    const submissionDate = s.date ? new Date(s.date) : null
+    const from = fromDate ? new Date(fromDate) : null
+    const to = toDate ? new Date(toDate) : null
+
+    const matchesFrom = !from || !submissionDate || submissionDate >= from
+    const matchesTo = !to || !submissionDate || submissionDate <= to
+
+    return matchesSearch && matchesStatus && matchesFrom && matchesTo
+  })
+
+  const pendingCount = filteredSubmissions.filter(
+    (s) => s.status !== "completed"
+  ).length
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredSubmissions.length / ITEMS_PER_PAGE)
+  )
+
+  const paginatedSubmissions = filteredSubmissions.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  )
 
   useEffect(() => {
     const userData = sessionStorage.getItem("user")
@@ -110,9 +177,10 @@ export default function SubmissionsPage() {
     async function loadSubmissions() {
       try {
         const res = await fetch(
-          `/api/checklist/my-submissions?supervisorName=${encodeURIComponent(parsedUser.name)}`
+          `/api/checklist/my-submissions?email=${parsedUser.email}`
         )
         const result = await res.json()
+        console.log("Logged user:", parsedUser)
 
         if (result.success) {
           setSubmissions(result.data || [])
@@ -136,6 +204,12 @@ export default function SubmissionsPage() {
 
       if (result.success) {
         setDetail(result.data)
+        setEditableAnswers(
+          result.data.answers.map((a: DetailAnswer) => ({
+            ...a,
+            answerValue: a.answerValue?.toLowerCase() || ""
+          }))
+        )
       } else {
         setDetail(null)
       }
@@ -183,6 +257,39 @@ export default function SubmissionsPage() {
     }
   }
 
+  async function handleUpdate() {
+    if (!detail?.id) return
+
+    try {
+      const res = await fetch("/api/checklist", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          submissionId: detail.id,
+          answers: editableAnswers,
+        }),
+      })
+
+      const result = await res.json()
+
+      if (!result.success) {
+        alert("Update failed")
+        return
+      }
+
+      alert("Updated successfully ✅")
+
+      setEditMode(false)
+      await openDetail(detail.id)
+
+    } catch (err) {
+      console.error(err)
+      alert("Something went wrong")
+    }
+  }
+
   if (loading) {
     return <div className="p-6">Loading submissions...</div>
   }
@@ -205,6 +312,40 @@ export default function SubmissionsPage() {
         </div>
       </header>
 
+      <div className="sticky top-14 z-30 mb-6 backdrop-blur-xl bg-white/80 border border-slate-200 shadow-lg rounded-2xl px-4 py-3 flex flex-wrap items-center gap-3">
+        <input
+          type="text"
+          placeholder="Search by site or supervisor..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full md:w-64 px-4 py-2.5 rounded-xl border border-slate-200 bg-white/70 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+        />
+
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white/70 shadow-sm focus:ring-2 focus:ring-indigo-500 transition"
+        >
+          <option value="all">All Status</option>
+          <option value="completed">Completed</option>
+          <option value="needs_action">Needs Action</option>
+        </select>
+
+        <input
+          type="date"
+          value={fromDate}
+          onChange={(e) => setFromDate(e.target.value)}
+          className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white/70 shadow-sm focus:ring-2 focus:ring-indigo-500 transition"
+        />
+
+        <input
+          type="date"
+          value={toDate}
+          onChange={(e) => setToDate(e.target.value)}
+          className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white/70 shadow-sm focus:ring-2 focus:ring-indigo-500 transition"
+        />
+      </div>
+
       <main className="p-4 max-w-5xl mx-auto">
         {submissions.length === 0 ? (
           <div className="bg-white rounded-2xl border p-10 text-center">
@@ -221,78 +362,147 @@ export default function SubmissionsPage() {
             </button>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="text-sm text-slate-500">
-              {submissions.length} submission{submissions.length !== 1 ? "s" : ""}
-            </div>
+          <>
+            {pendingCount > 0 && (
+              <div className="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 font-medium">
+                ⚠ {pendingCount} checklist(s) require your attention
+              </div>
+            )}
 
-            {submissions.map((submission) => (
-              <div
-                key={submission.id}
-                className="bg-white rounded-2xl border p-5 shadow-sm"
-              >
-                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-slate-900">
-                      {submission.site}
-                    </h3>
+            <div className="space-y-4">
+              <div className="text-sm text-slate-500">
+                {filteredSubmissions.length} submission{submissions.length !== 1 ? "s" : ""}
+              </div>
 
-                    <div className="flex flex-wrap gap-4 mt-3 text-sm text-slate-500">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        <span>{submission.date}</span>
+              {paginatedSubmissions.map((submission) => (
+                <div
+                  key={submission.id}
+                  className="group bg-white/80 backdrop-blur border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+                >
+                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-900 group-hover:text-indigo-600 transition">
+                        {submission.site}
+                      </h3>
+                      {submission.summary && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {submission.summary.issueTags?.map((tag) => (
+                            <span
+                              key={tag}
+                              className="px-2 py-1 text-xs rounded-full bg-red-50 text-red-700 border border-red-200 font-medium"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+
+
+
+                          {submission.summary?.openIssues > 0 && (
+                            <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-700 font-medium">
+                              ❗ {submission.summary.openIssues} Open Issues
+                            </span>
+                          )}
+
+                          {submission.summary?.resolvedIssues > 0 && (
+                            <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium">
+                              ✅ {submission.summary.resolvedIssues} Resolved
+                            </span>
+                          )}
+
+
+
+                        </div>
+                      )}
+
+
+
+
+                      <div className="flex flex-wrap gap-4 mt-3 text-sm text-slate-500">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>{submission.date}</span>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          <span>{submission.time || "-"}</span>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-4 w-4" />
+                          <span>{submission.supervisorName}</span>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <MessageSquare className="h-4 w-4" />
+                          <span>{submission.commentCount} comment(s)</span>
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        <span>{submission.time || "-"}</span>
-                      </div>
-
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        <span>{submission.supervisorName}</span>
-                      </div>
-
-                      <div className="flex items-center gap-1">
-                        <MessageSquare className="h-4 w-4" />
-                        <span>{submission.commentCount} comment(s)</span>
-                      </div>
+                      {submission.latestComment && (
+                        <div className="mt-3 text-sm text-slate-600 bg-slate-50 rounded-xl p-3 border">
+                          <span className="font-medium">Latest admin/supervisor discussion:</span>{" "}
+                          {submission.latestComment}
+                        </div>
+                      )}
                     </div>
 
-                    {submission.latestComment && (
-                      <div className="mt-3 text-sm text-slate-600 bg-slate-50 rounded-xl p-3 border">
-                        <span className="font-medium">Latest admin/supervisor discussion:</span>{" "}
-                        {submission.latestComment}
+                    <div className="flex flex-col items-start lg:items-end gap-3">
+                      <div className="flex items-center gap-2">
+
+                        {(submission.summary?.totalIssues ?? 0) > 0 ? (
+                          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-600 border border-red-200">
+                            {submission.summary?.totalIssues} Issues
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
+                            No Issues
+                          </span>
+                        )}
+
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${statusClass(
+                            submission.status
+                          )}`}
+                        >
+                          {statusLabel(submission.status)}
+                        </span>
+
                       </div>
-                    )}
-                  </div>
 
-                  <div className="flex flex-col items-start lg:items-end gap-3">
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-semibold text-slate-700">
-                        {submission.score}%
-                      </span>
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${statusClass(
-                          submission.status
-                        )}`}
-                      >
-                        {submission.status}
-                      </span>
+                      <button
+                        onClick={() => openDetail(submission.id)}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow hover:opacity-90 transition"                        >
+                        <Eye size={16} />
+                        View Details
+                      </button>
                     </div>
-
-                    <button
-                      onClick={() => openDetail(submission.id)}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100"
-                    >
-                      <Eye size={16} />
-                      View Details
-                    </button>
                   </div>
                 </div>
+              ))}
+            </div>
+            <div className="flex justify-center items-center gap-6 mt-8">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className="px-4 py-2 rounded-lg border bg-white shadow-sm hover:bg-slate-50 disabled:opacity-40"
+              >
+                ← Prev
+              </button>
+
+              <div className="text-sm font-medium text-slate-600 bg-white px-4 py-2 rounded-lg shadow-sm border">
+                Page <span className="text-indigo-600 font-semibold">{currentPage}</span> of {totalPages}
               </div>
-            ))}
-          </div>
+
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className="px-4 py-2 rounded-lg border bg-white shadow-sm hover:bg-slate-50 disabled:opacity-40"
+              >
+                Next →
+              </button>
+            </div>
+          </>
         )}
       </main>
 
@@ -304,16 +514,33 @@ export default function SubmissionsPage() {
                 Submission Detail
               </h2>
 
-              <button
-                onClick={() => {
-                  setSelectedId(null)
-                  setDetail(null)
-                  setReplyText("")
-                }}
-                className="w-9 h-9 rounded-full bg-red-50 text-red-500 flex items-center justify-center"
-              >
-                <X size={18} />
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  disabled={detail?.status === "completed"}
+                  onClick={() => setEditMode(!editMode)}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition
+      ${detail?.status === "completed"
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : editMode
+                        ? "bg-red-100 text-red-600 hover:bg-red-200"
+                        : "bg-indigo-600 text-white hover:bg-indigo-700"
+                    }`}
+                >
+                  {editMode ? "Cancel Edit" : "Update Issues"}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setSelectedId(null)
+                    setDetail(null)
+                    setReplyText("")
+                    setEditMode(false)
+                  }}
+                  className="w-9 h-9 rounded-full bg-red-50 text-red-500 flex items-center justify-center"
+                >
+                  <X size={18} />
+                </button>
+              </div>
             </div>
 
             {detailLoading ? (
@@ -381,16 +608,82 @@ export default function SubmissionsPage() {
                                 <th className="p-3 text-left">Question</th>
                                 <th className="p-3 text-left">Answer</th>
                                 <th className="p-3 text-left">Reason</th>
-                                <th className="p-3 text-left">Context</th>
+
                               </tr>
                             </thead>
                             <tbody>
                               {sectionAnswers.map((ans) => (
                                 <tr key={ans.id} className="border-t">
                                   <td className="p-3">{formatReadableLabel(ans.questionText)}</td>
-                                  <td className="p-3 font-medium">{ans.answerValue || "-"}</td>
+                                  <td className="p-3">
+                                    {editMode ? (
+                                      (() => {
+                                        const current = editableAnswers.find(a => a.id === ans.id)
+                                        const value = current?.answerValue ?? ans.answerValue ?? ""
+
+                                        const booleanQuestions = [
+                                          "pendingemails",
+                                          "repeatcomplaint",
+                                          "complaintresolved",
+                                          "sitevisitconducted",
+                                          "telephoniccalling"
+                                        ]
+
+                                        const isDropdown = booleanQuestions.includes(
+                                          ans.questionText.toLowerCase()
+                                        )
+
+                                        // 🔹 CASE 1: Dropdown (Yes/No/Good/Poor)
+                                        if (isDropdown) {
+                                          return (
+                                            <select
+                                              value={value}
+                                              onChange={(e) => {
+                                                setEditableAnswers(prev =>
+                                                  prev.map(a =>
+                                                    a.id === ans.id
+                                                      ? { ...a, answerValue: e.target.value }
+                                                      : a
+                                                  )
+                                                )
+                                              }}
+                                              className="border rounded-lg px-3 py-1.5 bg-white shadow-sm focus:ring-2 focus:ring-indigo-500"
+                                            >
+                                              <option value="">Select</option>
+                                              <option value="yes">Yes</option>
+                                              <option value="no">No</option>
+                                              <option value="good">Good</option>
+                                              <option value="poor">Poor</option>
+                                            </select>
+                                          )
+                                        }
+
+                                        // 🔹 CASE 2: Number/Text input
+                                        return (
+                                          <input
+                                            type="text"
+                                            value={value}
+                                            onChange={(e) => {
+                                              setEditableAnswers(prev =>
+                                                prev.map(a =>
+                                                  a.id === ans.id
+                                                    ? { ...a, answerValue: e.target.value }
+                                                    : a
+                                                )
+                                              )
+                                            }}
+                                            className="border rounded-lg px-3 py-1.5 w-24"
+                                          />
+                                        )
+                                      })()
+                                    ) : (
+                                      <span className="font-medium text-slate-800">
+                                        {ans.answerValue || "-"}
+                                      </span>
+                                    )}
+                                  </td>
                                   <td className="p-3">{ans.answerReason || "-"}</td>
-                                  <td className="p-3">{ans.siteContext || "-"}</td>
+
                                 </tr>
                               ))}
                             </tbody>
@@ -399,6 +692,16 @@ export default function SubmissionsPage() {
                       </div>
                     )
                   }
+                )}
+                {editMode && (
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleUpdate}
+                      className="px-6 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 shadow"
+                    >
+                      Save Updates
+                    </button>
+                  </div>
                 )}
 
                 <div className="rounded-2xl border overflow-hidden">
@@ -415,8 +718,8 @@ export default function SubmissionsPage() {
                         <div
                           key={comment.id}
                           className={`p-3 rounded-xl border ${comment.authorRole === "admin"
-                              ? "bg-red-50 border-red-200"
-                              : "bg-blue-50 border-blue-200"
+                            ? "bg-red-50 border-red-200"
+                            : "bg-blue-50 border-blue-200"
                             }`}
                         >
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 mb-1">
@@ -459,19 +762,22 @@ export default function SubmissionsPage() {
               <div className="p-6">No detail found.</div>
             )}
           </div>
-        </div>
-      )}
+        </div >
+      )
+      }
 
-      {submissions.length > 0 && (
-        <div className="fixed bottom-6 right-6">
-          <button
-            className="h-14 px-6 rounded-full shadow-lg bg-indigo-600 text-white hover:bg-indigo-700"
-            onClick={() => router.push("/checklist")}
-          >
-            New Checklist
-          </button>
-        </div>
-      )}
-    </div>
+      {
+        submissions.length > 0 && (
+          <div className="fixed bottom-6 right-6">
+            <button
+              className="h-14 px-6 rounded-full shadow-lg bg-indigo-600 text-white hover:bg-indigo-700"
+              onClick={() => router.push("/checklist")}
+            >
+              New Checklist
+            </button>
+          </div>
+        )
+      }
+    </div >
   )
 }

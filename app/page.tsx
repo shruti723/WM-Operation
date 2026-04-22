@@ -47,11 +47,23 @@ export default function LoginPage() {
       const foundUser = data.user
       sessionStorage.setItem("user", JSON.stringify(foundUser))
 
-      if (["level1", "level2", "level3", "hr"].includes(foundUser.role)) {
+      const role = foundUser.role
+
+      if (role === "account2") {
+        router.push("/petty-cash")
+      } else if (role === "account1") {
+        router.push("/hr")
+      } else if (["level1", "level2", "level3"].includes(role)) {
         router.push("/hr")
       } else {
         router.push("/supervisor")
       }
+
+      // if (["level1", "level2", "level3", "hr", "account1"].includes(foundUser.role)) {
+      //   router.push("/hr")
+      // } else {
+      //   router.push("/supervisor")
+      // }
     } catch (err) {
       console.error("Login error:", err)
       setError("Something went wrong")

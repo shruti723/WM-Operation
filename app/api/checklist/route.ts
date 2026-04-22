@@ -50,27 +50,107 @@ function cleanQuestionText(key: string) {
         .trim()
 }
 
+function normalizeAnswer(value: any) {
+    if (!value) return ""
+    const v = String(value).trim().toLowerCase()
+
+    if (["yes", "done", "completed"].includes(v)) return "yes"
+    if (["no", "not done"].includes(v)) return "no"
+    if (["good", "satisfactory"].includes(v)) return "good"
+    if (["poor", "bad"].includes(v)) return "poor"
+
+    return ""
+}
+
+function calculateCounts(answers: any[], section: string) {
+    const filtered = answers.filter((a) => a.sectionName === section)
+
+    if (!filtered.length) return null
+
+    let ok = 0
+    let issues = 0
+
+    filtered.forEach((a) => {
+        const val = normalizeAnswer(a.answerValue)
+        const q = a.questionText.toLowerCase()
+
+        // 🔹 Reverse logic questions
+        const isReverse =
+            q.includes("pending") ||
+            q.includes("complaint") ||
+            q.includes("issue") ||
+            q.includes("risk") ||
+            q.includes("delay")
+
+        if (isReverse) {
+            if (val === "no") ok++
+            else if (val === "yes") issues++
+        } else {
+            if (val === "yes" || val === "good") ok++
+            else if (val === "no" || val === "poor") issues++
+        }
+    })
+
+    return { ok, issues }
+}
+
+// function calculateScore(answers: any[], section: string) {
+//     const filtered = answers.filter((a) => a.sectionName === section)
+
+//     if (!filtered.length) return null
+
+//     let total = 0
+
+//     filtered.forEach((a) => {
+//         const val = normalizeAnswer(a.answerValue)
+
+//         if (val === "yes" || val === "good") total += 1
+//         if (val === "no" || val === "poor") total += 0
+//     })
+
+//     return Math.round((total / filtered.length) * 100)
+// }
+
+export async function PUT(req: Request) {
+    try {
+        const data = await req.json()
+
+        console.log("✏️ Update Request:", data)
+
+        const { submissionId, answers } = data
+
+        if (!submissionId || !answers) {
+            return Response.json({ success: false, message: "Invalid data" }, { status: 400 })
+        }
+
+        // 🔹 Update each answer
+        for (const ans of answers) {
+            await prisma.checklistAnswer.update({
+                where: { id: ans.id },
+                data: {
+                    answerValue: ans.answerValue,
+                    answerReason: ans.answerReason || null,
+                },
+            })
+        }
+
+        return Response.json({ success: true })
+
+    } catch (err: any) {
+        console.error("❌ UPDATE ERROR:", err)
+
+        return Response.json(
+            { success: false, message: err.message },
+            { status: 500 }
+        )
+    }
+}
+
 export async function POST(req: Request) {
     try {
         const data = await req.json()
 
         console.log("📦 Incoming Checklist Data:", data)
-
-        const submission = await prisma.checklistSubmission.create({
-            data: {
-                supervisorName: data.supervisorName || "",
-                date: parseDate(data.date),
-                timeText: data.time || "",
-
-                siteVisitConducted: data.siteVisit || null,
-                siteVisitReason: data["siteVisit (Reason)"] || null,
-                siteName: data.siteName || null,
-
-                telephonicCalling: data.telephonicCalling || null,
-                telephonicSiteName: data.telephonicSiteName || null,
-                telephonicIncharge: data.telephonicIncharge || null,
-            },
-        })
 
         const ignoreKeys = new Set([
             "type",
@@ -99,8 +179,7 @@ export async function POST(req: Request) {
             const sectionName = detectSectionName(source)
 
             answersToCreate.push({
-                submissionId: submission.id,
-                source, // must match ChecklistSource enum values
+                source,
                 sectionName,
                 questionId: key,
                 questionText: cleanQuestionText(key),
@@ -115,15 +194,93 @@ export async function POST(req: Request) {
             })
         }
 
+        const communicationStats = calculateCounts(answersToCreate, "Communication")
+        const siteVisitStats = calculateCounts(answersToCreate, "Site Visit")
+        const telephonicStats = calculateCounts(answersToCreate, "Telephonic")
+        const storeStats = calculateCounts(answersToCreate, "Store")
+
+        let totalOk = 0
+        let totalIssues = 0
+
+            ;[communicationStats, siteVisitStats, telephonicStats, storeStats]
+                .filter(Boolean)
+                .forEach((s: any) => {
+                    totalOk += s.ok
+                    totalIssues += s.issues
+                })
+
+        const issues: string[] = []
+
+        answersToCreate.forEach((a) => {
+            const val = normalizeAnswer(a.answerValue)
+            const q = a.questionText.toLowerCase()
+
+            if (q.includes("pending email") && val === "no") {
+                issues.push("Pending Emails")
+            }
+
+            if (q.includes("safety risk") && val === "yes") {
+                issues.push("Safety Risk")
+            }
+
+            if (q.includes("repeat complaint") && val === "yes") {
+                issues.push("Repeat Complaint")
+            }
+        })
+
+        const uniqueIssues = [...new Set(issues)]
+        console.log("Detected issues:", uniqueIssues)
+
+        let status = "completed"
+
+        if (totalIssues > 0 && totalIssues <= 3) {
+            status = "needs_action"
+        }
+
+        if (totalIssues > 3 || uniqueIssues.length > 0) {
+            status = "critical"
+        }
+
+        const submission = await prisma.checklistSubmission.create({
+            data: {
+                supervisorName: data.supervisorName || "",
+                date: parseDate(data.date),
+                timeText: data.time || "",
+
+                siteVisitConducted: data.siteVisit || null,
+                siteVisitReason: data["siteVisit (Reason)"] || null,
+                siteName: data.siteName || null,
+
+                telephonicCalling: data.telephonicCalling || null,
+                telephonicSiteName: data.telephonicSiteName || null,
+                telephonicIncharge: data.telephonicIncharge || null,
+
+                okCount: totalOk,
+                issueCount: totalIssues,
+                status, // ⭐ ADD THIS
+            },
+        })
+
         if (answersToCreate.length) {
             await prisma.checklistAnswer.createMany({
-                data: answersToCreate,
+                data: answersToCreate.map((answer) => ({
+                    submissionId: submission.id,
+                    ...answer,
+                })),
             })
         }
 
         return Response.json({
             success: true,
             submissionId: submission.id,
+            // scores: {
+            //     communicationScore,
+            //     siteVisitScore,
+            //     telephonicScore,
+            //     storeScore,
+            //     finalScore,
+            // },
+            issues: uniqueIssues,
         })
     } catch (err: any) {
         console.error("❌ Checklist API ERROR:", err)

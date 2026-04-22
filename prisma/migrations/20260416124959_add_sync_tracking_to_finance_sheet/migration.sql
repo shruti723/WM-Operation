@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "FinanceSheetRecord" ADD COLUMN     "isActive" BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN     "lastSyncedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;

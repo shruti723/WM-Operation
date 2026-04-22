@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { ChecklistSubmission, ChecklistAnswer } from "@prisma/client"
 
 function formatDate(date: Date | null | undefined) {
   if (!date) return ""
@@ -18,11 +19,13 @@ function normalizeValue(v: any) {
   return ""
 }
 
-function calcScore(answers: any[]) {
+function calcSectionScore(answers: any[], sectionName: string) {
+  const sectionAnswers = answers.filter((a) => a.sectionName === sectionName)
+
   let total = 0
   let good = 0
 
-  for (const ans of answers) {
+  for (const ans of sectionAnswers) {
     const val = normalizeValue(ans.answerValue)
     if (!val) continue
 
@@ -30,7 +33,58 @@ function calcScore(answers: any[]) {
     if (val === "yes" || val === "good") good++
   }
 
-  return total ? Math.round((good / total) * 100) : 0
+  return total ? Math.round((good / total) * 100) : null
+}
+
+function calcFinalScore(submission: any) {
+  const answers = submission.answers
+
+  const communicationScore = calcSectionScore(answers, "Communication")
+  const siteVisitScore =
+    submission.siteVisitConducted === "Yes"
+      ? calcSectionScore(answers, "Site Visit")
+      : null
+
+  const telephonicScore =
+    submission.telephonicCalling === "Yes"
+      ? calcSectionScore(answers, "Telephonic")
+      : null
+
+  const storeScore = calcSectionScore(answers, "Store")
+
+  let totalWeight = 0
+  let finalScore = 0
+
+  // 🔥 WEIGHTS (you can tweak later)
+  if (communicationScore !== null) {
+    finalScore += communicationScore * 0.3
+    totalWeight += 0.3
+  }
+
+  if (siteVisitScore !== null) {
+    finalScore += siteVisitScore * 0.4
+    totalWeight += 0.4
+  }
+
+  if (telephonicScore !== null) {
+    finalScore += telephonicScore * 0.2
+    totalWeight += 0.2
+  }
+
+  if (storeScore !== null) {
+    finalScore += storeScore * 0.1
+    totalWeight += 0.1
+  }
+
+  finalScore = totalWeight ? Math.round(finalScore / totalWeight) : 0
+
+  return {
+    finalScore,
+    communicationScore,
+    siteVisitScore,
+    telephonicScore,
+    storeScore,
+  }
 }
 
 function getStatus(score: number) {
@@ -47,20 +101,6 @@ function getBestSiteName(submission: any) {
   return "General Submission"
 }
 
-const issueLabelMap: Record<string, string> = {
-  pendingEmails: "Pending Emails",
-  repeatComplaint: "Repeat Complaint",
-  complaintResolved: "Complaint Not Resolved",
-  manpowerShortage: "Manpower Shortage",
-  replacementArranged: "Replacement Not Arranged",
-  cleaningScheduleFollowed: "Cleaning Schedule Not Followed",
-  toiletsCleaned: "Toilets Not Cleaned",
-  garbageDisposal: "Garbage Disposal Delay",
-  machinesWorking: "Machines Not Working",
-  stockRegisterUpdated: "Stock Register Not Updated",
-  safetyRisk: "Safety Risk",
-}
-
 export async function GET() {
   try {
     const submissions = await prisma.checklistSubmission.findMany({
@@ -71,9 +111,56 @@ export async function GET() {
     })
 
     const allRows = submissions.map((submission) => {
-      const score = calcScore(submission.answers)
+      const scoreData = calcFinalScore(submission)
       const site = getBestSiteName(submission)
       const safeDate = formatDate(submission.date) || formatDate(submission.createdAt)
+
+      const issueTags: string[] = []
+
+      submission.answers.forEach((ans: any) => {
+        const q = (ans.questionText || "").toLowerCase().trim()
+        const val = (ans.answerValue || "").toLowerCase().trim()
+
+        // ✅ EMAIL PENDING
+        if (q === "pendingemails" && val === "yes") {
+          issueTags.push("Emails Pending > 24h")
+        }
+
+        // ✅ REPEAT COMPLAINT (COUNT > 0)
+        if (q === "repeatcomplaintcount" && Number(val) > 0) {
+          issueTags.push("Repeat Complaint")
+        }
+
+        // ✅ NOT RESOLVED
+        if (q === "complaintresolved" && val === "no") {
+          issueTags.push("Complaint Not Resolved")
+        }
+
+        // ✅ URGENT ISSUE
+        if (q === "urgentissue" && val === "yes") {
+          issueTags.push("Urgent Issue")
+        }
+
+        // ✅ MANPOWER
+        if (q === "manpowershortage" && val === "yes") {
+          issueTags.push("Manpower Shortage")
+        }
+
+        // ✅ REPLACEMENT
+        if (q === "replacementarranged" && val === "no") {
+          issueTags.push("Replacement Not Arranged")
+        }
+
+        // ✅ HIRING
+        if (q === "hiringrequest" && val === "yes") {
+          issueTags.push("Hiring Request Raised")
+        }
+
+        // ✅ SAFETY
+        if (q === "safetyrisk" && val === "yes") {
+          issueTags.push("Safety Risk")
+        }
+      })
 
       return {
         id: submission.id,
@@ -81,13 +168,23 @@ export async function GET() {
         date: safeDate,
         time: submission.timeText || "",
         site,
-        score,
-        status: getStatus(score),
+
+        answers: submission.answers, // ✅ ADD THIS
+
+        score: scoreData.finalScore,
+        status: getStatus(scoreData.finalScore),
+
+        communicationScore: scoreData.communicationScore,
+        siteVisitScore: scoreData.siteVisitScore,
+        telephonicScore: scoreData.telephonicScore,
+        storeScore: scoreData.storeScore,
+
         siteVisitConducted: submission.siteVisitConducted || "",
         telephonicCalling: submission.telephonicCalling || "",
+
+        issueTags,
         createdAt: submission.createdAt,
-        updatedAt: submission.updatedAt,
-        answers: submission.answers,
+        updatedAt: submission.updatedAt
       }
     })
 
@@ -153,35 +250,19 @@ export async function GET() {
         score: Math.round(val.total / val.count),
       }))
 
-    const issueMap: Record<string, number> = {}
+    const issueMap: Record<string, number> = {
+      "Emails Pending > 24h": 0,
+      "Repeat Complaint": 0,
+      "Complaint Not Resolved": 0,
+      "Urgent Issue": 0,
+      "Manpower Shortage": 0,
+      "Replacement Not Arranged": 0,
+      "Hiring Request Raised": 0,
+      "Safety Risk": 0,
+    }
 
-    submissions.forEach((submission) => {
-      submission.answers.forEach((ans) => {
-        const key = String(ans.questionId || ans.questionText || "")
-        const val = normalizeValue(ans.answerValue)
-
-        const skipKeys = [
-          "supervisorName",
-          "date",
-          "time",
-          "siteVisit",
-          "siteName",
-          "telephonicCalling",
-          "telephonicSiteName",
-          "telephonicIncharge",
-        ]
-
-        if (skipKeys.includes(key)) return
-
-        const isIssue =
-          val === "poor" ||
-          val === "no" ||
-          (String(ans.answerValue).trim().toLowerCase() === "yes" &&
-            ["pendingEmails", "repeatComplaint", "manpowerShortage", "safetyRisk"].includes(key))
-
-        if (!isIssue) return
-
-        const label = issueLabelMap[key] || ans.questionText
+    allRows.forEach((row) => {
+      row.issueTags?.forEach((label: string) => {
         issueMap[label] = (issueMap[label] || 0) + 1
       })
     })
@@ -189,7 +270,7 @@ export async function GET() {
     const topIssues = Object.entries(issueMap)
       .map(([label, count]) => ({ label, count }))
       .sort((a, b) => b.count - a.count)
-      .slice(0, 8)
+
 
     return NextResponse.json({
       success: true,
@@ -204,7 +285,9 @@ export async function GET() {
       trendData,
       topIssues,
       recentSubmissions: allRows,
-      allSites: Array.from(new Set(allRows.map((r) => r.site).filter(Boolean))),
+      allSites: Array.from(
+        new Set(allRows.map((r) => r.site).filter(Boolean))
+      ),
     })
   } catch (error) {
     console.error("Dashboard API error:", error)

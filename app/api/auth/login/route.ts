@@ -27,7 +27,10 @@ export async function POST(req: Request) {
             )
         }
 
-        const isValidPassword = await bcrypt.compare(password, user.passwordHash)
+        const isValidPassword =
+            user.passwordHash.startsWith("$2")
+                ? await bcrypt.compare(password, user.passwordHash)
+                : user.passwordHash === password
 
         if (!isValidPassword) {
             return NextResponse.json(
