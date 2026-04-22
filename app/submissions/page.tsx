@@ -177,7 +177,10 @@ export default function SubmissionsPage() {
     async function loadSubmissions() {
       try {
         const res = await fetch(
-          `/api/checklist/my-submissions?email=${parsedUser.email}`
+          `/api/checklist/my-submissions?email=${parsedUser.email}`,
+          {
+            cache: "no-store",
+          }
         )
         const result = await res.json()
         console.log("Logged user:", parsedUser)
@@ -199,7 +202,9 @@ export default function SubmissionsPage() {
     try {
       setSelectedId(id)
       setDetailLoading(true)
-      const res = await fetch(`/api/checklist/${id}`)
+      const res = await fetch(`/api/checklist/${id}`, {
+        cache: "no-store",
+      })
       const result = await res.json()
 
       if (result.success) {
