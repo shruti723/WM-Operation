@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs"
 import { UserRole } from "@prisma/client"
 
 export async function GET() {
+    console.log("DATABASE_URL:", process.env.DATABASE_URL)
     try {
         const usersToCreate = [
             {
