@@ -188,22 +188,7 @@ export default function SupervisorPage() {
     return () => clearInterval(interval)
   }, [user])
 
-  // useEffect(() => {
-  //   const fetchFinance = async () => {
-  //     try {
-  //       const res = await fetch("/api/google-sheet")
-  //       const data = await res.json()
 
-  //       if (data.success) {
-  //         setFinanceData(data.data)
-  //       }
-  //     } catch (err) {
-  //       console.error("Finance fetch error:", err)
-  //     }
-  //   }
-
-  //   fetchFinance()
-  // }, [])
 
   useEffect(() => {
     const handleClick = (e: any) => {
