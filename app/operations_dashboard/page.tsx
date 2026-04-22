@@ -239,7 +239,10 @@ export default function DashboardPage() {
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const res = await fetch("/api/dashboard")
+        const res = await fetch("/api/dashboard", {
+          cache: "no-store"
+        })
+
         const result = await res.json()
         setData(result)
       } catch (err) {

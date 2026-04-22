@@ -2,6 +2,10 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { ChecklistSubmission, ChecklistAnswer } from "@prisma/client"
 
+// ✅ ADD THIS LINE HERE
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 function formatDate(date: Date | null | undefined) {
   if (!date) return ""
   return date.toISOString().split("T")[0]
