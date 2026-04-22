@@ -2,7 +2,6 @@ import { prisma } from "@/lib/db"
 import bcrypt from "bcryptjs"
 import { UserRole } from "@prisma/client"
 
-
 export async function GET() {
     try {
         const usersToCreate = [
@@ -10,49 +9,49 @@ export async function GET() {
                 name: "Admin",
                 email: "admin@fm.com",
                 password: "1234",
-                role: "admin",
+                role: UserRole.admin,
             },
             {
                 name: "HR 1",
                 email: "hr1@fm.com",
                 password: "1234",
-                role: "level1",
+                role: UserRole.level1,
             },
             {
                 name: "HR 2",
                 email: "hr2@fm.com",
                 password: "1234",
-                role: "level2",
+                role: UserRole.level2,
             },
             {
                 name: "HR 3",
                 email: "hr3@fm.com",
                 password: "1234",
-                role: "level3",
+                role: UserRole.level3,
             },
             {
                 name: "Supervisor 1",
                 email: "nitesh@fm.com",
                 password: "1234",
-                role: "supervisor",
+                role: UserRole.supervisor,
             },
             {
                 name: "Supervisor 2",
                 email: "naveen@fm.com",
                 password: "1234",
-                role: "supervisor",
+                role: UserRole.supervisor,
             },
             {
                 name: "Account 1",
                 email: "a1@fm.com",
                 password: "1234",
-                role: "account1",
+                role: UserRole.account1,
             },
             {
                 name: "Account 2",
                 email: "a2@fm.com",
                 password: "1234",
-                role: "account2",
+                role: UserRole.account2,
             },
         ]
 
@@ -71,7 +70,7 @@ export async function GET() {
                         name: u.name,
                         email: u.email,
                         passwordHash: hashedPassword,
-                        role: u.role as UserRole
+                        role: u.role,
                     },
                 })
                 createdUsers.push(user)
