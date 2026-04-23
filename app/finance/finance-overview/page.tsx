@@ -202,7 +202,9 @@ export default function Dashboard() {
     }, [monthChart])
 
     useEffect(() => {
-        fetch("/api/finance/dashboard")
+        fetch("/api/finance/dashboard", {
+            cache: "no-store",
+        })
             .then(res => res.json())
             .then(res => setData(res.records || []))
             .finally(() => setLoading(false))

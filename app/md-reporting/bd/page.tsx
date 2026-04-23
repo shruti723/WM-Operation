@@ -76,7 +76,7 @@ export default function BDPage() {
 
     useEffect(() => {
         const fetchRenewals = async () => {
-            const res = await fetch("/api/md-reporting/bd/renewals")
+            const res = await fetch("/api/md-reporting/bd/renewals", { cache: "no-store" })
             const data = await res.json()
 
             if (data.success) {
@@ -90,7 +90,7 @@ export default function BDPage() {
     useEffect(() => {
         const fetchHistory = async () => {
             try {
-                const res = await fetch("/api/md-reporting/bd/history")
+                const res = await fetch("/api/md-reporting/bd/history", { cache: "no-store" })
                 const data = await res.json()
 
                 if (data.success) {
@@ -141,6 +141,7 @@ export default function BDPage() {
     const handleSave = async () => {
         try {
             const res = await fetch("/api/md-reporting/bd/save", {
+                cache: "no-store",
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -163,7 +164,7 @@ export default function BDPage() {
                 })
 
                 // refresh history
-                const historyRes = await fetch("/api/md-reporting/bd/history")
+                const historyRes = await fetch("/api/md-reporting/bd/history", { cache: "no-store" })
                 const historyJson = await historyRes.json()
 
                 if (historyJson.success) {

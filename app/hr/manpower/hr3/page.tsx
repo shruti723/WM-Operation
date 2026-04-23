@@ -46,7 +46,9 @@ export default function HR3ManpowerPage() {
     /* 🔥 LOAD SITES */
     useEffect(() => {
         async function loadSites() {
-            const res = await fetch("/api/hr/manpower/sites")
+            const res = await fetch("/api/hr/manpower/sites", {
+                cache: "no-store",
+            })
             const data = await res.json()
             setSiteList(data.sites || [])
         }
@@ -89,6 +91,8 @@ export default function HR3ManpowerPage() {
             setLoading(true)
 
             const res = await fetch("/api/hr/manpower", {
+
+                cache: "no-store",
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

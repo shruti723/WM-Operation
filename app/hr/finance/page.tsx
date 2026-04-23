@@ -60,7 +60,9 @@ export default function FinancePage() {
     useEffect(() => {
         async function loadSites() {
             try {
-                const res = await fetch("/api/hr/manpower/sites")
+                const res = await fetch("/api/hr/manpower/sites", {
+                    cache: "no-store",
+                })
                 const data = await res.json()
                 setSiteList(data.sites || [])
             } catch (err) {
@@ -153,6 +155,8 @@ export default function FinancePage() {
             setLoading(true)
 
             const res = await fetch("/api/hr/finance", {
+
+                cache: "no-store",
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

@@ -387,6 +387,9 @@ export default function ChecklistPage() {
             })
 
             await fetch("/api/checklist", {
+
+                cache: "no-store",
+
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"

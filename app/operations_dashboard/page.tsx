@@ -240,6 +240,7 @@ export default function DashboardPage() {
     async function loadDashboard() {
       try {
         const res = await fetch("/api/dashboard", {
+
           cache: "no-store"
         })
 
@@ -277,6 +278,7 @@ export default function DashboardPage() {
         const user = storedUser ? JSON.parse(storedUser) : null
 
         await fetch("/api/checklist/mark-read", {
+          cache: "no-store",
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -309,6 +311,7 @@ export default function DashboardPage() {
       const user = storedUser ? JSON.parse(storedUser) : null
 
       const res = await fetch("/api/checklist/comment", {
+        cache: "no-store",
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -672,6 +675,7 @@ export default function DashboardPage() {
                           const user = storedUser ? JSON.parse(storedUser) : null
 
                           await fetch("/api/checklist/mark-read", {
+                            cache: "no-store",
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({

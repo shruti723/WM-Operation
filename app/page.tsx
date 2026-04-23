@@ -27,6 +27,7 @@ export default function LoginPage() {
 
     try {
       const res = await fetch("/api/auth/login", {
+        cache: "no-store",
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -59,11 +60,6 @@ export default function LoginPage() {
         router.push("/supervisor")
       }
 
-      // if (["level1", "level2", "level3", "hr", "account1"].includes(foundUser.role)) {
-      //   router.push("/hr")
-      // } else {
-      //   router.push("/supervisor")
-      // }
     } catch (err) {
       console.error("Login error:", err)
       setError("Something went wrong")

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
+import ChatDrawer from "@/components/chat/ChatDrawer"
 
 /* ---------------- TYPES ---------------- */
 
@@ -51,6 +52,10 @@ export default function HR3Table() {
     const [page, setPage] = useState(1)
     const perPage = 10
 
+    const [chatOpen, setChatOpen] = useState(false)
+    const [chatSubmissionId, setChatSubmissionId] = useState<string | null>(null)
+    const [currentUser, setCurrentUser] = useState<any>(null)
+
 
     const filteredData = data.filter((item) => {
 
@@ -85,6 +90,22 @@ export default function HR3Table() {
         page * perPage
     )
 
+    useEffect(() => {
+        const user = JSON.parse(sessionStorage.getItem("user") || "{}")
+        setCurrentUser(user)
+    }, [])
+
+    useEffect(() => {
+        const handler = (e: any) => {
+            const submissionId = e.detail.submissionId
+
+            setChatSubmissionId(submissionId)
+            setChatOpen(true)
+        }
+
+        window.addEventListener("openChat", handler)
+        return () => window.removeEventListener("openChat", handler)
+    }, [])
 
     useEffect(() => {
         fetchData()
@@ -92,7 +113,9 @@ export default function HR3Table() {
 
     async function fetchData() {
         try {
-            const res = await fetch("/api/hr/dashboard-table?role=level3")
+            const res = await fetch("/api/hr/dashboard-table?role=level3", {
+                cache: "no-store",
+            })
             const json = await res.json()
 
             const formatted = (json.data || []).map((item: any) => {
@@ -137,6 +160,7 @@ export default function HR3Table() {
 
         try {
             await fetch("/api/hr/update-manpower", {
+                cache: "no-store",
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -369,6 +393,17 @@ export default function HR3Table() {
                                                 >
                                                     Update
                                                 </Button>
+
+                                                <Button
+                                                    className="bg-green-600 hover:bg-green-700 text-white"
+                                                    onClick={() => {
+                                                        setSelected(null) // ✅ close modal if open
+                                                        setChatSubmissionId(item.id)
+                                                        setChatOpen(true)
+                                                    }}
+                                                >
+                                                    💬 Chat
+                                                </Button>
                                             </div> {/* 🔥 THIS WAS MISSING */}
                                         </td>
                                     </tr>
@@ -574,6 +609,17 @@ export default function HR3Table() {
                     }
                 </div >
             </div>
+            {chatOpen && chatSubmissionId && currentUser && (
+                <ChatDrawer
+                    submissionId={chatSubmissionId}
+                    user={currentUser}
+                    siteName={data.find(d => d.id === chatSubmissionId)?.siteName}
+                    onClose={() => {
+                        setChatOpen(false)
+                        setChatSubmissionId(null)
+                    }}
+                />
+            )}
         </div>
     )
 }

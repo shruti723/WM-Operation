@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
+import ChatDrawer from "@/components/chat/ChatDrawer"
 
 /* ---------------- TYPES ---------------- */
 function formatDateTimeDMY(date: string) {
@@ -65,6 +66,29 @@ export default function HR2Table() {
     const [currentPage, setCurrentPage] = useState(1)
     const rowsPerPage = 10
 
+    const [chatOpen, setChatOpen] = useState(false)
+    const [chatSubmissionId, setChatSubmissionId] = useState<string | null>(null)
+
+    // get user
+    const [currentUser, setCurrentUser] = useState<any>(null)
+
+    useEffect(() => {
+        const user = JSON.parse(sessionStorage.getItem("user") || "{}")
+        setCurrentUser(user)
+    }, [])
+
+    useEffect(() => {
+        const handler = (e: any) => {
+            const submissionId = e.detail.submissionId
+
+            setChatSubmissionId(submissionId)
+            setChatOpen(true)
+        }
+
+        window.addEventListener("openChat", handler)
+        return () => window.removeEventListener("openChat", handler)
+    }, [])
+
     const [fromDate, setFromDate] = useState("")
     const [toDate, setToDate] = useState("")
 
@@ -74,7 +98,9 @@ export default function HR2Table() {
 
     async function fetchData() {
         try {
-            const res = await fetch("/api/hr/dashboard-table?role=level2")
+            const res = await fetch("/api/hr/dashboard-table?role=level2", {
+                cache: "no-store",
+            })
             const json = await res.json()
 
             const formatted = (json.data || []).map((item: any) => {
@@ -118,6 +144,8 @@ export default function HR2Table() {
 
         try {
             await fetch("/api/hr/update-manpower", {
+
+                cache: "no-store",
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -290,19 +318,6 @@ export default function HR2Table() {
                                 />
                             </PopoverContent>
                         </Popover>
-                        {(search || fromDate || toDate) && (
-                            <button
-                                onClick={() => {
-                                    setSearch("")
-                                    setFromDate("")
-                                    setToDate("")
-                                    setCurrentPage(1)
-                                }}
-                                className="px-3 py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 text-sm"
-                            >
-                                Clear
-                            </button>
-                        )}
 
                         {(search || fromDate || toDate) && (
                             <button
@@ -421,6 +436,18 @@ export default function HR2Table() {
                                                     }}
                                                 >
                                                     Update
+                                                </Button>
+
+                                                <Button
+                                                    size="sm"
+                                                    className="bg-green-600 hover:bg-green-700 text-white"
+                                                    onClick={() => {
+                                                        setSelected(null) // ✅ close modal if open
+                                                        setChatSubmissionId(item.id)
+                                                        setChatOpen(true)
+                                                    }}
+                                                >
+                                                    💬 Chat
                                                 </Button>
 
                                             </div>
@@ -617,8 +644,24 @@ export default function HR2Table() {
                     </div>
                 )
             }
+            {/* ✅ Chat Drawer (correct place) */}
+            {chatOpen && chatSubmissionId && currentUser && (
+                <ChatDrawer
+                    submissionId={chatSubmissionId as string}
+                    user={currentUser}
+                    siteName={
+                        data.find((d) => d.id === chatSubmissionId)?.siteName || ""
+                    }
+                    onClose={() => {
+                        setChatOpen(false)
+                        setChatSubmissionId(null)
+                    }}
+                />
+            )}
+
         </div >
     )
+
 }
 function HR2Finance() {
     const [data, setData] = useState<any[]>([])
@@ -639,7 +682,9 @@ function HR2Finance() {
     }, [])
 
     async function fetchData() {
-        const res = await fetch("/api/hr/finance-table?role=level2")
+        const res = await fetch("/api/hr/finance-table?role=level2", {
+            cache: "no-store",
+        })
         const json = await res.json()
         setData(json.data || [])
     }
@@ -648,6 +693,8 @@ function HR2Finance() {
         if (!selected) return
 
         await fetch("/api/hr/finance", {
+
+            cache: "no-store",
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -1140,7 +1187,9 @@ function HR2Finance() {
                         </div>
                     </div>
                 </div>
+
             )}
+
         </div>
 
     )

@@ -233,6 +233,7 @@ export default function SubmissionsPage() {
       setSendingReply(true)
 
       const res = await fetch("/api/checklist/comment", {
+        cache: "no-store",
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -267,6 +268,7 @@ export default function SubmissionsPage() {
 
     try {
       const res = await fetch("/api/checklist", {
+        cache: "no-store",
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

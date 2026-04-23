@@ -25,7 +25,7 @@ export default function A1Table() {
     }, [])
 
     async function fetchData() {
-        const res = await fetch("/api/hr/finance-table?role=account1")
+        const res = await fetch("/api/hr/finance-table?role=account1", { cache: "no-store" })
         const json = await res.json()
         setData(json.data || [])
     }
@@ -34,6 +34,7 @@ export default function A1Table() {
         if (!selected) return
 
         const res = await fetch("/api/hr/finance", {
+            cache: "no-store",
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

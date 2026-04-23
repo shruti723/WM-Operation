@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
+import ChatDrawer from "@/components/chat/ChatDrawer"
 
 /* ---------------- TYPES ---------------- */
 
@@ -126,6 +127,31 @@ function HR1Manpower() {
     const [fromDate, setFromDate] = useState("")
     const [toDate, setToDate] = useState("")
 
+    const [chatOpen, setChatOpen] = useState(false)
+    const [chatSubmissionId, setChatSubmissionId] = useState<string | null>(null)
+    const [currentUser, setCurrentUser] = useState<any>(null)
+
+    useEffect(() => {
+        const user = JSON.parse(sessionStorage.getItem("user") || "{}")
+        setCurrentUser(user)
+    }, [])
+
+    useEffect(() => {
+        function handleOpenChat(event: any) {
+            const submissionId = event.detail?.submissionId
+
+            if (submissionId) {
+                setChatSubmissionId(submissionId)
+                setChatOpen(true)
+            }
+        }
+
+        window.addEventListener("openChat", handleOpenChat)
+
+        return () => {
+            window.removeEventListener("openChat", handleOpenChat)
+        }
+    }, [])
 
     useEffect(() => {
         fetchData()
@@ -133,7 +159,7 @@ function HR1Manpower() {
 
     async function fetchData() {
         try {
-            const res = await fetch("/api/hr/dashboard-table?role=level1")
+            const res = await fetch("/api/hr/dashboard-table?role=level1", { cache: "no-store" })
             const json = await res.json()
 
             const formatted = (json.data || []).map((item: any) => ({
@@ -160,6 +186,7 @@ function HR1Manpower() {
 
         try {
             await fetch("/api/hr/update-manpower", {
+                cache: "no-store",
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -456,6 +483,18 @@ function HR1Manpower() {
                                             Edit
                                         </Button>
 
+                                        {/* ✅ NEW CHAT BUTTON */}
+                                        <Button
+                                            size="sm"
+                                            className="bg-green-600 hover:bg-green-700 text-white"
+                                            onClick={() => {
+                                                setChatSubmissionId(item.id)
+                                                setChatOpen(true)
+                                            }}
+                                        >
+                                            💬 Chat
+                                        </Button>
+
                                     </div>
                                 </td>
                             </tr>
@@ -658,6 +697,17 @@ function HR1Manpower() {
                     </div>
                 </div>
             )}
+            {chatOpen && chatSubmissionId && currentUser && (
+                <ChatDrawer
+                    submissionId={chatSubmissionId}
+                    user={currentUser}
+                    siteName={data.find(d => d.id === chatSubmissionId)?.siteName}
+                    onClose={() => {
+                        setChatOpen(false)
+                        setChatSubmissionId(null)
+                    }}
+                />
+            )}
         </div>
     )
 }
@@ -684,7 +734,7 @@ function HR1Finance() {
 
     async function fetchData() {
         try {
-            const res = await fetch("/api/hr/finance-table?role=level1")
+            const res = await fetch("/api/hr/finance-table?role=level1", { cache: "no-store" })
             const json = await res.json()
 
             const formatted = (json.data || []).map((item: any) => ({
@@ -717,6 +767,7 @@ function HR1Finance() {
 
         try {
             const res = await fetch("/api/hr/finance", {
+                cache: "no-store",
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

@@ -246,6 +246,7 @@ export default function SupervisorPage() {
 
                 if (count > 0) {
                   await fetch("/api/checklist/mark-read", {
+                    cache: "no-store",
                     method: "POST",
                     headers: {
                       "Content-Type": "application/json",

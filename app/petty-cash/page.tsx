@@ -40,7 +40,7 @@ export default function PettyCashPage() {
 
   // 📥 Fetch data
   async function fetchRecords() {
-    const res = await fetch("/api/petty-cash")
+    const res = await fetch("/api/petty-cash", { cache: "no-store" })
     const data = await res.json()
     if (data.success) setRecords(data.records)
   }

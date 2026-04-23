@@ -73,7 +73,7 @@ export default function HRAdminDashboard() {
     useEffect(() => {
         async function loadData() {
             try {
-                const res = await fetch("/api/hr/admin-dashboard")
+                const res = await fetch("/api/hr/admin-dashboard", { cache: "no-store" })
                 const result = await res.json()
                 setData(result)
             } catch (err) {

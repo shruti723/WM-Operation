@@ -73,6 +73,9 @@ export default function HR1ManpowerPage() {
             setLoading(true)
 
             const res = await fetch("/api/hr/manpower", {
+
+                cache: "no-store",
+
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
