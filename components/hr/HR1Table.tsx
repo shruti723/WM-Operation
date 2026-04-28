@@ -20,6 +20,7 @@ type ManpowerRecord = {
     lastRenewalDate: string
     nextRenewalDate: string
     manpowerList: ManpowerItem[]
+    siteType?: "CLIENT" | "INTERNAL"
 }
 
 type FinanceRecord = {
@@ -57,7 +58,7 @@ export default function HR1Table() {
 
             {/* 🔥 TABS */}
             <div className="flex gap-2 bg-white p-1 rounded-xl w-fit shadow-sm border">
-                <button
+                {/* <button
                     onClick={() => setActiveTab("manpower")}
                     className={`px-5 py-2 rounded-lg text-sm font-medium transition ${activeTab === "manpower"
                         ? "bg-blue-600 text-white shadow"
@@ -65,9 +66,9 @@ export default function HR1Table() {
                         }`}
                 >
                     Manpower
-                </button>
+                </button> */}
 
-                <button
+                {/* <button
                     onClick={() => setActiveTab("finance")}
                     className={`px-5 py-2 rounded-lg text-sm font-medium transition ${activeTab === "finance"
                         ? "bg-blue-600 text-white shadow"
@@ -75,7 +76,7 @@ export default function HR1Table() {
                         }`}
                 >
                     Finance
-                </button>
+                </button> */}
             </div>
 
             {/* 🔥 CONTENT */}
@@ -169,6 +170,7 @@ function HR1Manpower() {
                 lastRenewalDate: item.lastRenewalDate,
                 nextRenewalDate: item.nextRenewalDate,
                 manpowerList: item.manpowerList,
+                siteType: item.siteType ?? "CLIENT",
             }))
 
             setData(formatted)
@@ -194,7 +196,7 @@ function HR1Manpower() {
                 body: JSON.stringify({
                     submissionId: selected.id,
                     manpowerList: selected.manpowerList,
-
+                    siteName: selected.siteName,
                     role: "level1",  // 🔥 REQUIRED
 
 
@@ -202,6 +204,7 @@ function HR1Manpower() {
                     startDate: selected.startDate,
                     lastRenewalDate: selected.lastRenewalDate,
                     nextRenewalDate: selected.nextRenewalDate,
+                    siteType: selected.siteType || "CLIENT",
                 }),
             })
 
@@ -488,8 +491,12 @@ function HR1Manpower() {
                                             size="sm"
                                             className="bg-green-600 hover:bg-green-700 text-white"
                                             onClick={() => {
-                                                setChatSubmissionId(item.id)
-                                                setChatOpen(true)
+                                                if (item.id) {
+                                                    setChatSubmissionId(item.id)
+                                                    setChatOpen(true)
+                                                } else {
+                                                    alert("Chat available after HR2 submission")
+                                                }
                                             }}
                                         >
                                             💬 Chat
@@ -557,6 +564,32 @@ function HR1Manpower() {
                                     readOnly
                                     className="w-full border rounded-lg px-3 py-2 mt-1 bg-gray-50"
                                 />
+                            </div>
+
+                            <div>
+                                <label className="text-sm text-gray-600">Site Type</label>
+
+                                {editMode ? (
+                                    <select
+                                        value={selected.siteType || "CLIENT"}
+                                        onChange={(e) =>
+                                            setSelected({
+                                                ...selected,
+                                                siteType: e.target.value as "CLIENT" | "INTERNAL",
+                                            })
+                                        }
+                                        className="w-full border rounded-lg px-3 py-2 mt-1"
+                                    >
+                                        <option value="CLIENT">Client Site</option>
+                                        <option value="INTERNAL">Internal Site</option>
+                                    </select>
+                                ) : (
+                                    <p className="mt-1">
+                                        {selected.siteType === "INTERNAL"
+                                            ? "Internal Site"
+                                            : "Client Site"}
+                                    </p>
+                                )}
                             </div>
 
                             <div>

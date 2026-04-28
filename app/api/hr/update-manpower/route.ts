@@ -24,42 +24,98 @@ export async function POST(req: Request) {
         const submissionId = String(body.submissionId || "").trim()
         const manpowerList = Array.isArray(body.manpowerList) ? body.manpowerList : []
         const role = body.role
+        const siteName = String(body.siteName || "").trim()
+        const siteType = body.siteType
+
+        console.log("👉 Incoming siteType from frontend:", siteType)
 
         const startDate = body.startDate
         const lastRenewalDate = body.lastRenewalDate
         const nextRenewalDate = body.nextRenewalDate
 
-        if (!submissionId) {
-            return NextResponse.json(
-                { success: false, message: "submissionId is required" },
-                { status: 400 }
-            )
+        // =========================
+        // 🆕 HR1 (NO SUBMISSION) → UPDATE SITE + TEMPLATE
+        // =========================
+        if (role === "level1" && !submissionId) {
+
+            const site = await prisma.site.findUnique({
+                where: { siteName },
+                include: { manpowerTemplate: true },
+            })
+
+            if (!site) {
+                return NextResponse.json(
+                    { success: false, message: "Site not found" },
+                    { status: 404 }
+                )
+            }
+
+            // ✅ Update site fields
+            await prisma.site.update({
+                where: { id: site.id },
+                data: {
+                    ...(startDate ? { startDate: parseDate(startDate) } : {}),
+                    ...(lastRenewalDate ? { lastRenewalDate: parseDate(lastRenewalDate) } : {}),
+                    ...(nextRenewalDate ? { nextRenewalDate: parseDate(nextRenewalDate) } : {}),
+                    ...(siteType ? { siteType } : {}),
+                },
+            })
+
+            // ✅ Replace manpower template (clean approach)
+            await prisma.siteManpower.deleteMany({
+                where: { siteId: site.id },
+            })
+
+            await prisma.siteManpower.createMany({
+                data: manpowerList.map((item: any) => ({
+                    siteId: site.id,
+                    designation: item.designation,
+                    authorised: Number(item.authorised || 0),
+                })),
+            })
+
+            return NextResponse.json({
+                success: true,
+                message: "Site updated successfully",
+            })
         }
 
-        const submission = await prisma.manpowerSubmission.findUnique({
-            where: { id: submissionId },
-            include: { items: true, site: true },
-        })
+        let submission = null
 
-        if (!submission) {
+        if (submissionId) {
+            submission = await prisma.manpowerSubmission.findUnique({
+                where: { id: submissionId },
+                include: { items: true, site: true },
+            })
+        }
+
+        if (submissionId && !submission) {
             return NextResponse.json(
                 { success: false, message: "Submission not found" },
                 { status: 404 }
             )
         }
 
+        const safeSubmission = submission as NonNullable<typeof submission>
+
         /* =========================
      ✅ 1. UPDATE SITE DATES (ONLY HR1)
   ========================= */
-        if (role === "level1") {
+        if (role === "level1" && submissionId) {
             await prisma.site.update({
-                where: { id: submission.siteId },
+                where: { id: safeSubmission.siteId },
                 data: {
                     ...(startDate ? { startDate: parseDate(startDate) } : {}),
                     ...(lastRenewalDate ? { lastRenewalDate: parseDate(lastRenewalDate) } : {}),
                     ...(nextRenewalDate ? { nextRenewalDate: parseDate(nextRenewalDate) } : {}),
+                    ...(siteType ? { siteType } : {}),
                 },
             })
+            const updatedSite = await prisma.site.findUnique({
+                where: { id: safeSubmission.siteId },
+            })
+
+            console.log("✅ DB siteType after update:", updatedSite?.siteType)
         }
 
         /* =========================
@@ -68,7 +124,7 @@ export async function POST(req: Request) {
         const incomingDesignations = manpowerList.map((i: any) => i.designation)
 
         if (role === "level1" || role === "level2") {
-            for (const existing of submission.items) {
+            for (const existing of safeSubmission.items) {
                 if (!incomingDesignations.includes(existing.designation)) {
                     await prisma.manpowerSubmissionItem.delete({
                         where: { id: existing.id },
@@ -81,7 +137,7 @@ export async function POST(req: Request) {
            ✅ 3. UPDATE + CREATE ROWS
         ========================== */
         for (const item of manpowerList) {
-            const existing = submission.items.find(
+            const existing = safeSubmission.items.find(
                 (m) => m.designation === item.designation
             )
 

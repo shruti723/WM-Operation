@@ -6,7 +6,7 @@ import {
   BarChart3, ClipboardList, FileText,
   Users, Wallet, BookOpen, Wrench,
   LogOut, ChevronRight, Building2,
-  Lock, Bell,
+  Lock, Briefcase, Bell,
 } from "lucide-react"
 
 // ─── Dashboard modules ────────────────────────────────────────────────────────
@@ -23,6 +23,16 @@ const adminModules = [
     available: true,
   },
   {
+    id: "bd",
+    title: "Business Development",
+    desc: "Manage proposals, tenders and client submissions",
+    icon: Briefcase,
+    path: "/md-reporting/bd",
+    gradient: "from-orange-600 to-amber-600",
+    badge: null,
+    available: true,
+  },
+  {
     id: "hr",
     title: "Manpower",
     desc: "Manpower tracking, site staffing, shortage reports & recruitment",
@@ -33,19 +43,19 @@ const adminModules = [
     available: true,
   },
 
-  {
-    id: "accounts",
-    title: "Finance",
-    desc: "Invoices, billing, vendor payments & financial summaries",
-    icon: BookOpen,
-    path: "/account-dashboard",
-    gradient: "from-amber-500 to-orange-500",
-    badge: null,
-    available: true,
-  },
+  // {
+  //   id: "accounts",
+  //   title: "Finance",
+  //   desc: "Invoices, billing, vendor payments & financial summaries",
+  //   icon: BookOpen,
+  //   path: "/account-dashboard",
+  //   gradient: "from-amber-500 to-orange-500",
+  //   badge: null,
+  //   available: true,
+  // },
   {
     id: "financeSheet",
-    title: "Finance Sheet",
+    title: "Finance",
     desc: "Monthly billing data from accounts team (Google Sheet based dashboard)",
     icon: Wallet,
     path: "/finance/finance-overview",
@@ -105,7 +115,7 @@ function ModuleCard({ mod, onClick }: { mod: any; onClick: () => void }) {
         }`}
     >
       {/* Top gradient strip */}
-      <div className={`h-1.5 w-full bg-gradient-to-r ${mod.gradient}`} />
+      <div className={`h-2.5 w-full bg-gradient-to-r ${mod.gradient}`} />
 
       <div className="p-5">
         {/* Icon + badge row */}

@@ -414,12 +414,12 @@ export default function Dashboard() {
             </div>
 
             {/* ================= KPI CARDS ================= */}
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                 <StatCard title="Total Bills" value={summary.totalBills} subtitle="Records" color="bg-indigo-500" />
                 <StatCard title="Total Billing" value={formatCurrency(summary.total)} subtitle="Amount" color="bg-blue-500" />
                 <StatCard title="Collected" value={formatCurrency(summary.collected)} subtitle="Received" color="bg-green-500" />
                 <StatCard title="Pending" value={formatCurrency(summary.pending)} subtitle="Outstanding" color="bg-red-500" />
-                <StatCard title="Efficiency" value={`${summary.efficiency}%`} subtitle="Collection rate" color="bg-purple-500" />
+                {/* <StatCard title="Efficiency" value={`${summary.efficiency}%`} subtitle="Collection rate" color="bg-purple-500" /> */}
 
             </div>
 

@@ -37,15 +37,23 @@ function normalizeYesNo(value: unknown): string {
 }
 
 function cleanDate(value: unknown): string | null {
-    if (value === null || value === undefined) return null
-    if (typeof value === "number") return null
+    if (!value) return null
 
     const str = String(value).trim()
 
-    // enforce dd-mm-yyyy
-    if (!/^\d{2}-\d{2}-\d{4}$/.test(str)) return null
+    // dd-mm-yyyy
+    if (/^\d{2}-\d{2}-\d{4}$/.test(str)) return str
 
-    return str
+    // fallback parse
+    const d = new Date(str)
+    if (!isNaN(d.getTime())) {
+        const day = String(d.getDate()).padStart(2, "0")
+        const month = String(d.getMonth() + 1).padStart(2, "0")
+        const year = d.getFullYear()
+        return `${day}-${month}-${year}`
+    }
+
+    return null
 }
 
 /* ---------------- MAIN API ---------------- */
@@ -80,17 +88,16 @@ export async function POST(req: NextRequest) {
 
         /* ---------------- STEP 1: MARK OLD DATA INACTIVE ---------------- */
 
-        if (months.length) {
-            await prisma.financeSheetRecord.updateMany({
-                where: {
-                    month: { in: months },
-                },
-                data: {
-                    isActive: false,
-                    lastSyncedAt: now,
-                },
-            })
-        }
+        await prisma.financeSheetRecord.updateMany({
+            where: {
+                month: { in: months },
+                source: "google-sheet-appscript",
+            },
+            data: {
+                isActive: false,
+                lastSyncedAt: now,
+            },
+        })
 
         let processed = 0
 
@@ -99,47 +106,27 @@ export async function POST(req: NextRequest) {
         for (const row of rows) {
             const normalizedMonth = normalizeMonth(row.month)
             const normalizedSrNo = Number(row.srNo)
-            const normalizedSiteName = String(row.siteName || "").trim()
+
+            const normalizedSiteName = String(row.siteName || "")
+                .trim()
+                .toUpperCase()
 
             if (!normalizedMonth || !normalizedSrNo || !normalizedSiteName) {
                 continue
             }
 
             // 🧪 DEBUG LOG
-            console.log("ROW DEBUG:", {
-                original: row,
-                normalizedMonth,
-                normalizedSrNo,
-                normalizedSiteName,
-            })
+            if (process.env.NODE_ENV === "development") {
+                console.log("ROW DEBUG:", {
+                    original: row,
+                    normalizedMonth,
+                    normalizedSrNo,
+                    normalizedSiteName,
+                })
+            }
 
-            await prisma.financeSheetRecord.upsert({
-                where: {
-                    month_srNo_siteName: {
-                        month: normalizedMonth,
-                        srNo: normalizedSrNo,
-                        siteName: normalizedSiteName,
-                    },
-                },
-                update: {
-                    siteName: normalizedSiteName,
-                    billAmount: row.billAmount ?? null,
-                    prepared: normalizeYesNo(row.prepared),
-                    prepareDate: cleanDate(row.prepareDate),
-                    dispatched: normalizeYesNo(row.dispatched),
-                    dispatchDate: cleanDate(row.dispatchDate),
-                    paymentCheque: normalizeYesNo(row.paymentCheque),
-                    receivedDate: cleanDate(row.receivedDate),
-                    paymentReceivedDays:
-                        row.paymentReceivedDays === null || row.paymentReceivedDays === undefined
-                            ? null
-                            : Number(row.paymentReceivedDays),
-                    salaryDisbursementDate: cleanDate(row.salaryDisbursementDate),
-                    source: "google-sheet-appscript",
-                    isActive: true,
-                    lastSyncedAt: now,
-                },
-                create: {
+            await prisma.financeSheetRecord.create({
+                data: {
                     month: normalizedMonth,
                     srNo: normalizedSrNo,
                     siteName: normalizedSiteName,

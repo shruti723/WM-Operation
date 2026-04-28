@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter, usePathname } from "next/navigation"
-import { LayoutDashboard, DollarSign, Wallet, Users } from "lucide-react"
+import { LayoutDashboard, DollarSign, Wallet, Users, FileText } from "lucide-react"
 import { useEffect, useState } from "react"
 
 export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
@@ -19,13 +19,19 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
     const menu = [
         { name: "Dashboard", icon: LayoutDashboard, path: "/hr", roles: ["level1", "level2"] },
+        {
+            name: "FM Business Developement",   // ✅ NEW
+            icon: FileText,         // reuse icon
+            path: "/hr/manpower/hr1-fm-bd-reporting", // create this page
+            roles: ["level1"],      // ONLY HR1
+        },
 
         // ✅ Finance → ONLY HR1
         {
             name: "Finance Form",
             icon: DollarSign,
             path: "/hr/finance",
-            roles: ["level1"],
+            roles: ["account2"],
         },
 
         // ✅ Petty Cash → ONLY account2
@@ -47,7 +53,14 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
     function isActive(path: string) {
         if (path === "/hr") return pathname === "/hr"
-        return pathname.startsWith(path)
+
+        // ✅ SPECIAL CASE: BD page should NOT activate Manpower
+        if (path === "/hr/manpower") {
+            return pathname === "/hr/manpower" || pathname === "/hr/manpower/hr1"
+        }
+
+        // ✅ Exact match OR nested (for others)
+        return pathname === path || pathname.startsWith(path + "/")
     }
 
     function handleNavigate(path: string) {

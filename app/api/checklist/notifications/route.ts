@@ -16,36 +16,13 @@ export async function GET(req: Request) {
         const lowerRole = role.toLowerCase()
 
         let unreadCount = 0
-        let notifications: any[] = []
 
+        // ✅ KEEP unread logic SAME (for bell)
         if (lowerRole === "admin") {
             unreadCount = await prisma.checklistComment.count({
                 where: {
                     readByAdmin: false,
-                    authorRole: {
-                        not: "admin",
-                    },
-                },
-            })
-
-            notifications = await prisma.checklistComment.findMany({
-                where: {
-                    readByAdmin: false,
-                    authorRole: {
-                        not: "admin",
-                    },
-                },
-                orderBy: {
-                    createdAt: "desc",
-                },
-                take: 10,
-                select: {
-                    id: true,
-                    submissionId: true,
-                    authorName: true,
-                    authorRole: true,
-                    message: true,
-                    createdAt: true,
+                    authorRole: { not: "admin" },
                 },
             })
         } else {
@@ -55,26 +32,23 @@ export async function GET(req: Request) {
                     authorRole: "admin",
                 },
             })
-
-            notifications = await prisma.checklistComment.findMany({
-                where: {
-                    readBySupervisor: false,
-                    authorRole: "admin",
-                },
-                orderBy: {
-                    createdAt: "desc",
-                },
-                take: 10,
-                select: {
-                    id: true,
-                    submissionId: true,
-                    authorName: true,
-                    authorRole: true,
-                    message: true,
-                    createdAt: true,
-                },
-            })
         }
+
+        // ✅ NEW: FETCH ALL RECENT MESSAGES (NOT ONLY UNREAD)
+        const notifications = await prisma.checklistComment.findMany({
+            orderBy: {
+                createdAt: "desc",
+            },
+            take: 10,
+            select: {
+                id: true,
+                submissionId: true,
+                authorName: true,
+                authorRole: true,
+                message: true,
+                createdAt: true,
+            },
+        })
 
         return NextResponse.json({
             success: true,
@@ -82,7 +56,7 @@ export async function GET(req: Request) {
             notifications,
         })
     } catch (error) {
-        console.error("Checklist notification count API error:", error)
+        console.error("Checklist notification API error:", error)
 
         return NextResponse.json(
             { success: false, message: "Failed to load notifications" },

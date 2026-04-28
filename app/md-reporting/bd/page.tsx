@@ -23,6 +23,7 @@ type RenewalItem = {
 type HistoryItem = {
     id: string
     createdAt: string
+    role?: string
 }
 
 
@@ -113,10 +114,11 @@ export default function BDPage() {
         misc: "",
     })
     const [filter, setFilter] = useState<
-        "All" | "Next 30 Days" | "Next 3 Months" | "Overdue"
-    >("All")
+        "All" | "Next 30 Days" | "Next 3 Months" | "Overdue" | "Internal Site"
+    >("Next 30 Days")
 
     const renewalsNext30Days = renewalData.filter((r) => {
+        if (r.siteType !== "CLIENT") return false
         const d = parseDate(r.nextRenewalDate)
         if (!d) return false
 
@@ -128,7 +130,7 @@ export default function BDPage() {
     }).length
 
     const renewalsNext3Months = renewalData.filter(
-        (r) => r.category === "Next 3 Months"
+        (r) => r.siteType === "CLIENT" && r.category === "Next 3 Months"
     ).length
 
     const handleChange = (
@@ -146,7 +148,11 @@ export default function BDPage() {
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify(form),
+                body: JSON.stringify({
+                    ...form,
+                    role: "admin",   // 👈 VERY IMPORTANT
+
+                }),
             })
 
             const data = await res.json()
@@ -190,27 +196,38 @@ export default function BDPage() {
         return renewalData.filter((item) => {
             const d = parseDate(item.nextRenewalDate)
 
-            // ✅ FILTER LOGIC
+            // ✅ CATEGORY FILTERS (CLIENT ONLY)
             if (filter === "Next 30 Days") {
-                const d = parseDate(item.nextRenewalDate)
-                if (!d) return false
+                if (item.siteType !== "CLIENT") return false
 
+                if (!d) return false
                 const today = new Date()
                 const next30 = new Date()
                 next30.setDate(today.getDate() + 30)
 
                 if (!(d >= today && d <= next30)) return false
             }
-            if (filter === "Next 3 Months" && item.category !== "Next 3 Months") return false
-            if (filter === "Overdue" && !item.isOverdue) return false
 
-            // ✅ DEFAULT (All)
-            if (filter === "All") {
+            if (filter === "Next 3 Months") {
+                if (item.siteType !== "CLIENT") return false
+                if (item.category !== "Next 3 Months") return false
             }
 
-            // ✅ SEARCH
-            if (!q) return true
+            if (filter === "Overdue") {
+                if (item.siteType !== "CLIENT") return false
+                if (!item.isOverdue) return false
+            }
 
+            if (filter === "Internal Site") {
+                if (item.siteType !== "INTERNAL") return false
+            }
+
+            // ✅ "All" → NO siteType filter (shows both)
+
+            // SEARCH
+            if (!search.trim()) return true
+
+            const q = search.toLowerCase()
             const dateStr = d
                 ? d.toLocaleDateString("en-GB").replace(/\//g, "-")
                 : ""
@@ -231,6 +248,7 @@ export default function BDPage() {
     )
 
     const overdue = renewalData.filter((r) => {
+        if (r.siteType !== "CLIENT") return false
         const d = parseDate(r.nextRenewalDate)
         if (!d) return false
 
@@ -249,13 +267,13 @@ export default function BDPage() {
                     <div className="border-b border-slate-200 px-5 sm:px-8 py-5 sm:py-6">
                         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                             <div>
-                                <button
+                                {/* <button
                                     onClick={() => router.push("/md-reporting")}
                                     className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition"
                                 >
                                     <ArrowLeft size={16} />
                                     Back
-                                </button>
+                                </button> */}
 
                                 <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">
                                     Business Development
@@ -350,7 +368,7 @@ export default function BDPage() {
 
                                             {/* FILTER BUTTONS */}
                                             <div className="flex flex-wrap gap-2">
-                                                {["All", "Next 30 Days", "Next 3 Months", "Overdue"].map((f) => (
+                                                {["All", "Next 30 Days", "Next 3 Months", "Overdue", "Internal Site"].map((f) => (
                                                     <button
                                                         key={f}
                                                         onClick={() => setFilter(f as any)}
@@ -601,6 +619,11 @@ export default function BDPage() {
                                                     hour: "2-digit",
                                                     minute: "2-digit",
                                                 })}
+                                            </p>
+
+                                            {/* ✅ NEW */}
+                                            <p className="mt-2 text-xs font-medium text-slate-600">
+                                                Role: <span className="capitalize">{item.role}</span>
                                             </p>
 
                                             <p className="mt-4 text-sm font-medium text-indigo-600">

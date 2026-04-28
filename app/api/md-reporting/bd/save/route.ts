@@ -5,7 +5,7 @@ export async function POST(req: Request) {
     try {
         const body = await req.json()
 
-        console.log("BODY:", body) // debug
+        console.log("BODY:", body)
 
         const record = await prisma.bDReport.create({
             data: {
@@ -14,6 +14,8 @@ export async function POST(req: Request) {
                 tendersUnderProcess: body.tendersUnderProcess || "",
                 tendersSubmitted: body.tendersSubmitted || "",
                 misc: body.misc || "",
+                role: body.role ? body.role.toLowerCase().trim() : "level1",
+
             },
         })
 

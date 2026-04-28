@@ -1,31 +1,33 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 
-export async function GET() {
+export async function GET(req: Request) {
     try {
+        const { searchParams } = new URL(req.url)
+
+        const search = searchParams.get("search")?.toLowerCase().trim() || ""
+        const status = searchParams.get("status") || "all"
+        const startDate = searchParams.get("startDate")
+        const endDate = searchParams.get("endDate")
+
         const sites = await prisma.site.findMany({
             include: {
                 manpowerTemplate: true,
                 manpowerSubmissions: {
-                    include: { items: true }
-                }
-            }
-        }) as any
+                    include: {
+                        items: true,
+                    },
+                },
+            },
+        }) as any[]
 
-        let totalAuthorised = 0
-        let totalDeployed = 0
-        let totalShortage = 0
-        let totalNeeded = 0
-        let pendingHR3 = 0
+        /* ---------------- HR1 SITE DETAILS ---------------- */
 
-        // HR1 site details
         const siteDetails = sites.map((site: any) => {
             const required = (site.manpowerTemplate || []).reduce(
-                (sum: number, i: any) => sum + (i.authorised || 0),
+                (sum: number, item: any) => sum + (item.authorised || 0),
                 0
             )
-
-            totalAuthorised += required
 
             return {
                 siteId: site.id,
@@ -33,34 +35,42 @@ export async function GET() {
                 startDate: site.startDate,
                 lastRenewalDate: site.lastRenewalDate,
                 nextRenewalDate: site.nextRenewalDate,
-                required
+                required,
             }
         })
 
-        // HR2/HR3 manpower history
+        /* ---------------- ALL HR2 SUBMISSIONS ---------------- */
+
         const manpowerDetails = sites.flatMap((site: any) => {
             const submissions = (site.manpowerSubmissions || [])
-                .filter((s: any) =>
-                    String(s.submittedByRole || "").toLowerCase().includes("level2")
+                .filter((sub: any) =>
+                    String(sub.submittedByRole || "")
+                        .toLowerCase()
+                        .includes("level2")
                 )
                 .sort(
                     (a: any, b: any) =>
-                        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                        new Date(b.createdAt).getTime() -
+                        new Date(a.createdAt).getTime()
                 )
 
             return submissions.map((sub: any) => {
                 let required = 0
                 let deployed = 0
                 let shortage = 0
-                let hr3Done = false
+                let siteNeeded = 0
 
                 const designationMap: Record<
                     string,
-                    { authorised: number; deployed: number; needed: number }
+                    {
+                        authorised: number
+                        deployed: number
+                        needed: number
+                    }
                 > = {}
 
                     ; (site.manpowerTemplate || []).forEach((item: any) => {
-                        const key = item.designation
+                        const key = item.designation || "Unknown"
 
                         if (!designationMap[key]) {
                             designationMap[key] = {
@@ -74,7 +84,7 @@ export async function GET() {
                     })
 
                     ; (sub.items || []).forEach((item: any) => {
-                        const key = item.designation
+                        const key = item.designation || "Unknown"
 
                         if (!designationMap[key]) {
                             designationMap[key] = {
@@ -85,29 +95,25 @@ export async function GET() {
                         }
 
                         designationMap[key].deployed += item.deployed || 0
-                        designationMap[key].needed = item.needed || 0
+                        designationMap[key].needed += item.needed || 0
                     })
+
+                Object.values(designationMap).forEach((item: any) => {
+                    required += item.authorised
+                    deployed += item.deployed
+                    shortage += item.authorised - item.deployed
+                    siteNeeded += item.needed || 0
+                })
 
                 const items = Array.isArray(sub.items) ? sub.items : []
 
-                hr3Done = items.some(
+                const hr3Done = items.some(
                     (item: any) =>
                         !!item.recruitmentProcess ||
                         !!item.responsible ||
                         !!item.cutoffDate ||
                         !!item.remarks
                 )
-
-                let siteNeeded = 0
-
-                Object.values(designationMap).forEach((d: any) => {
-                    required += d.authorised
-                    deployed += d.deployed
-                    shortage += d.authorised - d.deployed
-                    siteNeeded += d.needed || 0
-                })
-
-
 
                 return {
                     siteId: site.id,
@@ -128,12 +134,38 @@ export async function GET() {
             })
         })
 
-        const latestBySite = new Map()
+        /* ---------------- FILTER ALL SUBMISSIONS ---------------- */
 
-        manpowerDetails.forEach((item: any) => {
+        const filteredDetails = manpowerDetails.filter((item: any) => {
+            const matchesSearch =
+                !search || item.site?.toLowerCase().includes(search)
+
+            const matchesStatus =
+                status === "all" ||
+                (status === "completed" && item.hr3Done) ||
+                (status === "pending" && !item.hr3Done)
+
+            const itemDate = item.createdAt ? new Date(item.createdAt) : null
+            const start = startDate ? new Date(startDate + "T00:00:00") : null
+            const end = endDate ? new Date(endDate + "T23:59:59") : null
+
+            const matchesStart = !start || (itemDate && itemDate >= start)
+            const matchesEnd = !end || (itemDate && itemDate <= end)
+
+            return matchesSearch && matchesStatus && matchesStart && matchesEnd
+        })
+
+        /* ---------------- LATEST RECORD PER SITE FOR METRICS ---------------- */
+
+        const latestBySite = new Map<string, any>()
+
+        filteredDetails.forEach((item: any) => {
+            const existing = latestBySite.get(item.siteId)
+
             if (
-                !latestBySite.has(item.siteId) ||
-                new Date(item.createdAt) > new Date(latestBySite.get(item.siteId).createdAt)
+                !existing ||
+                new Date(item.createdAt).getTime() >
+                new Date(existing.createdAt).getTime()
             ) {
                 latestBySite.set(item.siteId, item)
             }
@@ -141,31 +173,137 @@ export async function GET() {
 
         const latestRecords = Array.from(latestBySite.values())
 
-        // RESET totals
-        totalDeployed = 0
-        totalShortage = 0
-        totalNeeded = 0
-        pendingHR3 = 0
+        /* ---------------- SUMMARY FROM LATEST RECORDS ONLY ---------------- */
 
-        latestRecords.forEach((item: any) => {
-            totalDeployed += item.deployed
-            totalShortage += item.shortage
-            totalNeeded += item.needed
+        const summary = {
+            totalSites: sites.length,
 
-            if (!item.hr3Done) pendingHR3++
+            authorised: latestRecords.reduce(
+                (sum: number, item: any) => sum + (item.required || 0),
+                0
+            ),
+
+            deployed: latestRecords.reduce(
+                (sum: number, item: any) => sum + (item.deployed || 0),
+                0
+            ),
+
+            shortage: latestRecords.reduce(
+                (sum: number, item: any) => sum + (item.shortage || 0),
+                0
+            ),
+
+            needed: latestRecords.reduce(
+                (sum: number, item: any) => sum + (item.needed || 0),
+                0
+            ),
+
+            pendingHR3: latestRecords.filter((item: any) => !item.hr3Done).length,
+        }
+
+        /* ---------------- CHARTS FROM LATEST RECORDS ---------------- */
+
+        const chartData = latestRecords.map((item: any) => ({
+            siteId: item.siteId,
+            name: item.site,
+            authorised: item.required,
+            deployed: item.deployed,
+            shortage: item.shortage,
+            needed: item.needed,
+        }))
+
+        const statusData = [
+            {
+                name: "Completed",
+                value: latestRecords.filter((item: any) => item.hr3Done).length,
+            },
+            {
+                name: "Pending",
+                value: latestRecords.filter((item: any) => !item.hr3Done).length,
+            },
+        ]
+
+        /* ---------------- TREND FROM ALL FILTERED SUBMISSIONS ---------------- */
+
+        const trendMap: Record<
+            string,
+            {
+                rawDate: Date
+                date: string
+                authorised: number
+                deployed: number
+                shortage: number
+                needed: number
+            }
+        > = {}
+
+        filteredDetails.forEach((item: any) => {
+            if (!item.createdAt) return
+
+            const rawDate = new Date(item.createdAt)
+
+            const date = rawDate.toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+            })
+
+            if (!trendMap[date]) {
+                trendMap[date] = {
+                    rawDate,
+                    date,
+                    authorised: 0,
+                    deployed: 0,
+                    shortage: 0,
+                    needed: 0,
+                }
+            }
+
+            trendMap[date].authorised += item.required || 0
+            trendMap[date].deployed += item.deployed || 0
+            trendMap[date].shortage += item.shortage || 0
+            trendMap[date].needed += item.needed || 0
         })
 
+        const trendData = Object.values(trendMap)
+            .sort(
+                (a: any, b: any) =>
+                    new Date(a.rawDate).getTime() -
+                    new Date(b.rawDate).getTime()
+            )
+            .map(({ rawDate, ...rest }: any) => rest)
+
+        /* ---------------- EXTRA DASHBOARD DATA ---------------- */
+
+        const allNeeded = [...latestRecords]
+            .sort((a, b) => (b.needed || 0) - (a.needed || 0))
+
+
+        const recentActivity = [...filteredDetails]
+            .sort(
+                (a: any, b: any) =>
+                    new Date(b.createdAt).getTime() -
+                    new Date(a.createdAt).getTime()
+            )
+            .slice(0, 5)
+
         return NextResponse.json({
-            summary: {
-                totalSites: sites.length,
-                authorised: totalAuthorised,
-                deployed: totalDeployed,
-                shortage: totalShortage,
-                needed: totalNeeded,
-                pendingHR3,
-            },
+            success: true,
+
+            summary,
+
+            // Site table
             siteDetails,
-            manpowerDetails,
+
+            // Manpower table: all records/forms visible
+            manpowerDetails: filteredDetails,
+
+            // Dashboard: latest per site only
+            latestRecords,
+            chartData,
+            statusData,
+            trendData,
+            allNeeded,
+            recentActivity,
         })
     } catch (error: any) {
         console.error("🔥 ADMIN DASHBOARD ERROR:", error)

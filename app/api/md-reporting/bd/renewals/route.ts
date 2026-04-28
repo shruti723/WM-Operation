@@ -28,13 +28,12 @@ export async function GET(req: NextRequest) {
             let isOverdue = false
 
             if (renewalDate) {
-                const isSameMonth =
-                    renewalDate.getMonth() === today.getMonth() &&
-                    renewalDate.getFullYear() === today.getFullYear()
+                const next30 = new Date(today)
+                next30.setDate(today.getDate() + 30)
 
-                if (isSameMonth) {
-                    category = "This Month"
-                } else if (renewalDate > endOfMonth && renewalDate <= next3Months) {
+                if (renewalDate >= today && renewalDate <= next30) {
+                    category = "Next 30 Days"
+                } else if (renewalDate > next30 && renewalDate <= next3Months) {
                     category = "Next 3 Months"
                 }
 
@@ -50,6 +49,7 @@ export async function GET(req: NextRequest) {
                 category,
                 status: "Pending",
                 isOverdue,
+                siteType: site.siteType || "CLIENT",
             }
         })
 

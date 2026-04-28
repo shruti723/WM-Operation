@@ -225,7 +225,7 @@ export default function HR2Table() {
                     Manpower
                 </button>
 
-                <button
+                {/* <button
                     onClick={() => setActiveTab("finance")}
                     className={`px-4 py-2 rounded ${activeTab === "finance"
                         ? "bg-blue-600 text-white"
@@ -233,7 +233,7 @@ export default function HR2Table() {
                         }`}
                 >
                     Finance
-                </button>
+                </button> */}
             </div>
 
             {activeTab === "manpower" && (

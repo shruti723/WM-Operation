@@ -111,7 +111,14 @@ export default function HR3ManpowerPage() {
         }
     }
 
-    if (!userLoaded) return null
+    // if (!userLoaded) return null
+    if (!userLoaded) {
+        return (
+            <div className="p-6 text-gray-500">
+                Loading user...
+            </div>
+        )
+    }
 
     return (
         <div className="max-w-4xl mx-auto">

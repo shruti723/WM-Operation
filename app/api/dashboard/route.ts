@@ -122,46 +122,46 @@ export async function GET() {
       const issueTags: string[] = []
 
       submission.answers.forEach((ans: any) => {
-        const q = (ans.questionText || "").toLowerCase().trim()
+        const q = (ans.questionText || "").toLowerCase()
         const val = (ans.answerValue || "").toLowerCase().trim()
 
         // ✅ EMAIL PENDING
-        if (q === "pendingemails" && val === "yes") {
+        if (q.includes("emails pending") && val === "yes") {
           issueTags.push("Emails Pending > 24h")
         }
 
-        // ✅ REPEAT COMPLAINT (COUNT > 0)
-        if (q === "repeatcomplaintcount" && Number(val) > 0) {
+        // ✅ REPEAT COMPLAINT
+        if (q.includes("repeat complaint") && val === "yes") {
           issueTags.push("Repeat Complaint")
         }
 
         // ✅ NOT RESOLVED
-        if (q === "complaintresolved" && val === "no") {
+        if (q.includes("complaint resolved") && val === "no") {
           issueTags.push("Complaint Not Resolved")
         }
 
         // ✅ URGENT ISSUE
-        if (q === "urgentissue" && val === "yes") {
+        if (q.includes("urgent issue") && val === "yes") {
           issueTags.push("Urgent Issue")
         }
 
         // ✅ MANPOWER
-        if (q === "manpowershortage" && val === "yes") {
+        if (q.includes("manpower shortage") && val === "yes") {
           issueTags.push("Manpower Shortage")
         }
 
         // ✅ REPLACEMENT
-        if (q === "replacementarranged" && val === "no") {
+        if (q.includes("replacement arranged") && val === "no") {
           issueTags.push("Replacement Not Arranged")
         }
 
         // ✅ HIRING
-        if (q === "hiringrequest" && val === "yes") {
+        if (q.includes("hiring request") && val === "yes") {
           issueTags.push("Hiring Request Raised")
         }
 
         // ✅ SAFETY
-        if (q === "safetyrisk" && val === "yes") {
+        if (q.includes("safety risk") && val === "yes") {
           issueTags.push("Safety Risk")
         }
       })

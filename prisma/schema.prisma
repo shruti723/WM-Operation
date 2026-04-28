@@ -29,6 +29,7 @@ model Site {
   lastRenewalDate     DateTime?
   nextRenewalDate     DateTime?
   startDate           DateTime?
+    siteType         String   @default("CLIENT") // CLIENT | INTERNAL
   manpowerSubmissions ManpowerSubmission[]
   manpowerTemplate    SiteManpower[]
   bdRenewals          BDRenewalLog[]
@@ -248,7 +249,7 @@ model BDReport {
   tendersUnderProcess   String?
   tendersSubmitted      String?
   misc                  String?
-
+ role                  String 
   createdAt DateTime @default(now())
 }
 
@@ -277,4 +278,12 @@ model Notification {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
+}
+
+model OperationReport {
+  id          String   @id @default(cuid())
+  site        String
+  note        String
+  submissionId String?   // optional link to checklist
+  createdAt   DateTime @default(now())
 }

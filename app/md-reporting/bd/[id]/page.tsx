@@ -8,7 +8,8 @@ export default function EditBDPage() {
     const router = useRouter()
     const params = useParams()
     const id = params.id as string
-
+    const [role, setRole] = useState("")
+    const [userRole, setUserRole] = useState("")
     const [loading, setLoading] = useState(true)
     const [form, setForm] = useState({
         proposalsUnderProcess: "",
@@ -17,6 +18,15 @@ export default function EditBDPage() {
         tendersSubmitted: "",
         misc: "",
     })
+
+    useEffect(() => {
+        const storedUser = sessionStorage.getItem("user")
+
+        if (storedUser) {
+            const parsedUser = JSON.parse(storedUser)
+            setUserRole(parsedUser.role)
+        }
+    }, [])
 
     useEffect(() => {
         if (!id) return
@@ -34,6 +44,7 @@ export default function EditBDPage() {
                         tendersSubmitted: data.data.tendersSubmitted || "",
                         misc: data.data.misc || "",
                     })
+                    setRole(data.data.role)
                 } else {
                     alert("Report not found ❌")
                     router.push("/md-reporting/bd")
@@ -68,7 +79,12 @@ export default function EditBDPage() {
 
             if (data.success) {
                 alert("Updated successfully ✅")
-                router.push("/md-reporting/bd")
+
+                if (userRole === "level1") {
+                    router.push("/hr/manpower/hr1-fm-bd-reporting")
+                } else {
+                    router.push("/md-reporting/bd")
+                }
             } else {
                 alert("Update failed ❌")
             }
@@ -90,7 +106,13 @@ export default function EditBDPage() {
                         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                             <div>
                                 <button
-                                    onClick={() => router.push("/md-reporting/bd")}
+                                    onClick={() => {
+                                        if (userRole === "level1") {
+                                            router.push("/hr/manpower/hr1-fm-bd-reporting")
+                                        } else {
+                                            router.push("/md-reporting/bd")
+                                        }
+                                    }}
                                     className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition"
                                 >
                                     <ArrowLeft size={16} />
@@ -100,9 +122,7 @@ export default function EditBDPage() {
                                 <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">
                                     Edit Business Development Report
                                 </h1>
-                                <p className="mt-1 text-base text-slate-500">
-                                    Update saved MD reporting entry
-                                </p>
+
                             </div>
                         </div>
                     </div>
@@ -217,7 +237,13 @@ export default function EditBDPage() {
                         <div className="flex items-center justify-end gap-3 border-t border-slate-200 pt-6">
                             <button
                                 type="button"
-                                onClick={() => router.push("/md-reporting/bd")}
+                                onClick={() => {
+                                    if (userRole === "level1") {
+                                        router.push("/hr/manpower/hr1-fm-bd-reporting")
+                                    } else {
+                                        router.push("/md-reporting/bd")
+                                    }
+                                }}
                                 className="h-12 rounded-2xl px-5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
                             >
                                 Cancel

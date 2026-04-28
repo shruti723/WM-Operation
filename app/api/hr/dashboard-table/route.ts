@@ -30,27 +30,60 @@ export async function GET(req: Request) {
         // ========================
         // 🔵 HR1 → ONLY LATEST PER SITE
         // ========================
+        // if (role === "level1") {
+
+        //     const latestMap = new Map()
+
+        //     for (const sub of submissions) {
+        //         if (!latestMap.has(sub.siteId)) {
+        //             latestMap.set(sub.siteId, sub)
+        //         }
+        //     }
+
+        //     const latestSubmissions = Array.from(latestMap.values())
+
+        //     const data = latestSubmissions.map((submission: any) => ({
+        //         submissionId: submission.id,
+        //         site: submission.site.siteName,
+
+        //         startDate: formatDate(submission.site.startDate),
+        //         lastRenewalDate: formatDate(submission.site.lastRenewalDate),
+        //         nextRenewalDate: formatDate(submission.site.nextRenewalDate),
+        //         siteType: submission.site.siteType || "CLIENT",
+
+        //         manpowerList: submission.items.map((item: any) => ({
+        //             designation: item.designation,
+        //             authorised: item.authorised,
+        //         })),
+        //     }))
+
+        //     return NextResponse.json({
+        //         success: true,
+        //         data,
+        //     })
+        // }
+
         if (role === "level1") {
 
-            const latestMap = new Map()
+            const sites = await prisma.site.findMany({
+                orderBy: { createdAt: "desc" },
+                include: {
+                    manpowerTemplate: {
+                        orderBy: { createdAt: "asc" },
+                    },
+                },
+            })
 
-            for (const sub of submissions) {
-                if (!latestMap.has(sub.siteId)) {
-                    latestMap.set(sub.siteId, sub)
-                }
-            }
+            const data = sites.map((site: any) => ({
+                submissionId: null, // ❗ no submission yet
+                site: site.siteName,
 
-            const latestSubmissions = Array.from(latestMap.values())
+                startDate: formatDate(site.startDate),
+                lastRenewalDate: formatDate(site.lastRenewalDate),
+                nextRenewalDate: formatDate(site.nextRenewalDate),
+                siteType: site.siteType || "CLIENT",
 
-            const data = latestSubmissions.map((submission: any) => ({
-                submissionId: submission.id,
-                site: submission.site.siteName,
-
-                startDate: formatDate(submission.site.startDate),
-                lastRenewalDate: formatDate(submission.site.lastRenewalDate),
-                nextRenewalDate: formatDate(submission.site.nextRenewalDate),
-
-                manpowerList: submission.items.map((item: any) => ({
+                manpowerList: site.manpowerTemplate.map((item: any) => ({
                     designation: item.designation,
                     authorised: item.authorised,
                 })),
@@ -102,7 +135,6 @@ export async function GET(req: Request) {
                 siteId: submission.siteId,
                 site: submission.site.siteName,
                 createdAt: submission.createdAt,
-
                 totalAuthorised,
                 totalDeployed,
                 totalNeeded,
@@ -113,7 +145,6 @@ export async function GET(req: Request) {
                         : submission.items.some((i: any) => i.recruitmentProcess)
                             ? "Completed"
                             : "Pending",
-
                 manpowerList,
             }
         })
