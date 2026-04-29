@@ -103,52 +103,87 @@ export async function POST(req: NextRequest) {
 
         /* ---------------- STEP 2: UPSERT ROWS ---------------- */
 
-        for (const row of rows) {
-            const normalizedMonth = normalizeMonth(row.month)
-            const normalizedSrNo = Number(row.srNo)
+        const batchSize = 50
 
-            const normalizedSiteName = String(row.siteName || "")
-                .trim()
-                .toUpperCase()
+        for (let i = 0; i < rows.length; i += batchSize) {
+            const batch = rows.slice(i, i + batchSize)
 
-            if (!normalizedMonth || !normalizedSrNo || !normalizedSiteName) {
-                continue
-            }
+            await Promise.all(
+                batch.map(async (row) => {
+                    const normalizedMonth = normalizeMonth(row.month)
+                    const normalizedSrNo = Number(row.srNo)
 
-            // 🧪 DEBUG LOG
-            if (process.env.NODE_ENV === "development") {
-                console.log("ROW DEBUG:", {
-                    original: row,
-                    normalizedMonth,
-                    normalizedSrNo,
-                    normalizedSiteName,
+                    const normalizedSiteName = String(row.siteName || "")
+                        .trim()
+                        .toUpperCase()
+
+                    if (!normalizedMonth || !normalizedSrNo || !normalizedSiteName) {
+                        return
+                    }
+
+                    // 🧪 DEBUG LOG
+                    if (process.env.NODE_ENV === "development") {
+                        console.log("ROW DEBUG:", {
+                            original: row,
+                            normalizedMonth,
+                            normalizedSrNo,
+                            normalizedSiteName,
+                        })
+                    }
+
+                    try {
+                        await prisma.financeSheetRecord.upsert({
+                            where: {
+                                month_srNo_siteName: {
+                                    month: normalizedMonth,
+                                    srNo: normalizedSrNo,
+                                    siteName: normalizedSiteName,
+                                },
+                            },
+                            update: {
+                                billAmount: row.billAmount ? Number(row.billAmount) : null,
+                                prepared: normalizeYesNo(row.prepared),
+                                prepareDate: cleanDate(row.prepareDate),
+                                dispatched: normalizeYesNo(row.dispatched),
+                                dispatchDate: cleanDate(row.dispatchDate),
+                                paymentCheque: normalizeYesNo(row.paymentCheque),
+                                receivedDate: cleanDate(row.receivedDate),
+                                paymentReceivedDays:
+                                    row.paymentReceivedDays != null
+                                        ? Number(row.paymentReceivedDays)
+                                        : null,
+                                salaryDisbursementDate: cleanDate(row.salaryDisbursementDate),
+                                isActive: true,
+                                lastSyncedAt: now,
+                            },
+                            create: {
+                                month: normalizedMonth,
+                                srNo: normalizedSrNo,
+                                siteName: normalizedSiteName,
+                                billAmount: row.billAmount ? Number(row.billAmount) : null,
+                                prepared: normalizeYesNo(row.prepared),
+                                prepareDate: cleanDate(row.prepareDate),
+                                dispatched: normalizeYesNo(row.dispatched),
+                                dispatchDate: cleanDate(row.dispatchDate),
+                                paymentCheque: normalizeYesNo(row.paymentCheque),
+                                receivedDate: cleanDate(row.receivedDate),
+                                paymentReceivedDays:
+                                    row.paymentReceivedDays != null
+                                        ? Number(row.paymentReceivedDays)
+                                        : null,
+                                salaryDisbursementDate: cleanDate(row.salaryDisbursementDate),
+                                source: "google-sheet-appscript",
+                                isActive: true,
+                                lastSyncedAt: now,
+                            },
+                        })
+
+                        processed++
+                    } catch (err) {
+                        console.error("❌ ROW FAILED:", row, err)
+                    }
                 })
-            }
-
-            await prisma.financeSheetRecord.create({
-                data: {
-                    month: normalizedMonth,
-                    srNo: normalizedSrNo,
-                    siteName: normalizedSiteName,
-                    billAmount: row.billAmount ?? null,
-                    prepared: normalizeYesNo(row.prepared),
-                    prepareDate: cleanDate(row.prepareDate),
-                    dispatched: normalizeYesNo(row.dispatched),
-                    dispatchDate: cleanDate(row.dispatchDate),
-                    paymentCheque: normalizeYesNo(row.paymentCheque),
-                    receivedDate: cleanDate(row.receivedDate),
-                    paymentReceivedDays:
-                        row.paymentReceivedDays === null || row.paymentReceivedDays === undefined
-                            ? null
-                            : Number(row.paymentReceivedDays),
-                    salaryDisbursementDate: cleanDate(row.salaryDisbursementDate),
-                    source: "google-sheet-appscript",
-                    isActive: true,
-                    lastSyncedAt: now,
-                },
-            })
-
-            processed++
+            )
         }
 
         /* ---------------- RESPONSE ---------------- */
@@ -158,11 +193,15 @@ export async function POST(req: NextRequest) {
             processed,
             monthsSynced: months.length,
         })
-    } catch (error) {
-        console.error("❌ sync-from-sheet error:", error)
+    } catch (error: any) {
+        console.error("🔥 FULL ERROR:", error)
 
         return NextResponse.json(
-            { success: false, message: "Sync failed" },
+            {
+                success: false,
+                message: error?.message || "Unknown error",
+                stack: error?.stack || null,   // 👈 VERY IMPORTANT
+            },
             { status: 500 }
         )
     }

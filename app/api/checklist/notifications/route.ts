@@ -1,41 +1,40 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
-
 export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url)
-        const role = searchParams.get("role")
+        const userName = searchParams.get("userName")
 
-        if (!role) {
+        if (!userName) {
             return NextResponse.json(
-                { success: false, message: "Role is required" },
+                { success: false, message: "UserName is required" },
                 { status: 400 }
             )
         }
 
-        const lowerRole = role.toLowerCase()
-
         let unreadCount = 0
 
-        // ✅ KEEP unread logic SAME (for bell)
-        if (lowerRole === "admin") {
-            unreadCount = await prisma.checklistComment.count({
-                where: {
-                    readByAdmin: false,
-                    authorRole: { not: "admin" },
+        // ✅ unread count per user (FIXED)
+        unreadCount = await prisma.checklistComment.count({
+            where: {
+                submission: {
+                    supervisorName: userName,
                 },
-            })
-        } else {
-            unreadCount = await prisma.checklistComment.count({
-                where: {
-                    readBySupervisor: false,
-                    authorRole: "admin",
+                authorRole: "admin",            // ✅ ONLY admin messages
+                readBySupervisor: false,        // ✅ unread
+                NOT: {
+                    authorName: userName,         // ✅ exclude own messages
                 },
-            })
-        }
+            },
+        })
 
-        // ✅ NEW: FETCH ALL RECENT MESSAGES (NOT ONLY UNREAD)
+        // ✅ ONLY USER-SPECIFIC DATA
         const notifications = await prisma.checklistComment.findMany({
+            where: {
+                submission: {
+                    supervisorName: userName,
+                },
+            },
             orderBy: {
                 createdAt: "desc",
             },

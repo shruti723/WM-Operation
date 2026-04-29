@@ -230,16 +230,25 @@ export default function DashboardPage() {
     const storedUser = sessionStorage.getItem("user")
     const user = storedUser ? JSON.parse(storedUser) : null
 
-    if (!user?.role) return
+    if (!user?.name) return
 
     try {
-      const res = await fetch(`/api/checklist/notifications?role=${user.role}`)
+      // 🔔 Bell (user-specific)
+      const res = await fetch(`/api/checklist/admin-notification`)
       const result = await res.json()
 
       if (result.success) {
         setUnreadCount(result.unreadCount || 0)
-        setNotifications(result.notifications || [])
       }
+
+      // 💬 Latest Discussion (global)
+      const res2 = await fetch(`/api/checklist/all-notifications`)
+      const result2 = await res2.json()
+
+      if (result2.success) {
+        setNotifications(result2.notifications || [])
+      }
+
     } catch (err) {
       console.error(err)
     }
@@ -525,6 +534,37 @@ export default function DashboardPage() {
     }
   }, [selectedIssue, filteredSubmissions])
 
+  const siteIssueData = useMemo(() => {
+    if (!filteredSubmissions.length) return []
+
+    const map: Record<string, { site: string; issue: string; count: number }> = {}
+
+    filteredSubmissions.forEach((item) => {
+      const tags = item.issueTags || []
+
+      tags.forEach((issue) => {
+        // 👉 filter if selectedIssue is applied
+        if (selectedIssue && issue !== selectedIssue) return
+
+        const key = `${item.site}-${issue}`
+
+        if (!map[key]) {
+          map[key] = {
+            site: item.site,
+            issue: issue,
+            count: 0,
+          }
+        }
+
+        map[key].count++
+      })
+    })
+
+    return Object.values(map)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6) // top 6
+  }, [filteredSubmissions, selectedIssue])
+
   const submissionsOverTime = useMemo(() => {
     const map: Record<string, number> = {}
 
@@ -571,12 +611,24 @@ export default function DashboardPage() {
     { name: "Telephonic", value: telephonicCount },
   ]
 
-  const topIssuesData = customIssues.slice(0, 5).map((i: any) => ({
-    name: formatReadableLabel(i.label),
-    value: i.count,
-  }))
+
+  const [issuePage, setIssuePage] = useState(0)
+  const ITEMS_PER_PAGE = 4
+
+  const topIssuesData = useMemo(() => {
+    return (customIssues || []).map((i: any) => ({
+      name: formatReadableLabel(i.label),
+      value: i.count,
+    }))
+  }, [customIssues])
+
+  const paginatedIssues = useMemo(() => {
+    const start = issuePage * ITEMS_PER_PAGE
+    return topIssuesData.slice(start, start + ITEMS_PER_PAGE)
+  }, [topIssuesData, issuePage])
 
   const totalForms = filteredSubmissions.length
+
 
 
 
@@ -593,6 +645,30 @@ export default function DashboardPage() {
   useEffect(() => {
     setCurrentPage(1)
   }, [siteFilter, fromDate, toDate, selectedCard, selectedIssue, supervisorFilter, search])
+
+  useEffect(() => {
+    setIssuePage(0)
+  }, [topIssuesData])
+
+  const CustomXAxisTick = (props: any) => {
+    const { x, y, payload } = props
+
+    const words = payload.value.split(" ")
+    const mid = Math.ceil(words.length / 2)
+
+    const line1 = words.slice(0, mid).join(" ")
+    const line2 = words.slice(mid).join(" ")
+
+    return (
+      <g transform={`translate(${x},${y + 10})`}> {/* 👈 push text down */}
+        <text textAnchor="middle" fill="#64748b" fontSize={12}>
+          <tspan x="0" dy="0">{line1}</tspan>
+          {line2 && <tspan x="0" dy="16">{line2}</tspan>} {/* 👈 more spacing */}
+        </text>
+      </g>
+    )
+  }
+
 
   if (loading) {
     return <div className="p-6">Loading dashboard...</div>
@@ -783,10 +859,10 @@ export default function DashboardPage() {
 
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
         {/* 📈 LINE CHART */}
-        <div className="bg-white rounded-2xl border p-5">
+        <div className="bg-white rounded-2xl border p-5 h-full flex flex-col">
           <h3 className="font-semibold text-slate-800">Submissions Over Time</h3>
           <p className="text-xs text-slate-500 mb-3">Last 7 days</p>
 
@@ -842,38 +918,69 @@ export default function DashboardPage() {
             <p>Telephonic: <b>{telephonicCount}</b></p>
           </div>
         </div>
-      </div>
+        {/* </div> */}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="flex flex-col gap-6">
-          {/* 📊 BAR CHART */}
-          <div className="bg-white rounded-2xl border p-5">
-            <h3 className="font-semibold text-slate-800">Top Issues</h3>
-            <p className="text-xs text-slate-500 mb-3">By category</p>
+        <div className="bg-white rounded-2xl border p-5 flex flex-col">
 
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={topIssuesData}>
-                <defs>
-                  <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#6366f1" stopOpacity={0.9} />
-                    <stop offset="100%" stopColor="#6366f1" stopOpacity={0.4} />
-                  </linearGradient>
-                </defs>
+          {/* HEADER */}
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-semibold text-slate-800">Top Issues</h3>
+              <p className="text-xs text-slate-500">By category</p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIssuePage((p) => Math.max(p - 1, 0))}
+                disabled={issuePage === 0}
+                className="w-8 h-8 rounded-lg border bg-white disabled:opacity-40"
+              >
+                ←
+              </button>
+
+              <span className="text-xs text-slate-400">
+                {topIssuesData.length === 0
+                  ? "0 / 0"
+                  : `${issuePage + 1} / ${Math.ceil(topIssuesData.length / ITEMS_PER_PAGE)}`
+                }
+              </span>
+
+              <button
+                onClick={() =>
+                  setIssuePage((p) =>
+                    (p + 1) * ITEMS_PER_PAGE < topIssuesData.length ? p + 1 : p
+                  )
+                }
+                disabled={(issuePage + 1) * ITEMS_PER_PAGE >= topIssuesData.length}
+                className="w-8 h-8 rounded-lg border bg-white disabled:opacity-40"
+              >
+                →
+              </button>
+            </div>
+          </div>
+
+          {/* CHART */}
+          <div className="h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                key={issuePage}
+                data={paginatedIssues}
+                margin={{ top: 20, right: 20, left: 0, bottom: 60 }} // 👈 increase bottom
+              >
                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
                 <XAxis
                   dataKey="name"
-                  angle={-20}
-                  textAnchor="end"
                   interval={0}
-                  height={90}
-                  tick={{ fontSize: 12 }}
+                  height={70}
+                  tick={<CustomXAxisTick />}
                 />
-                <YAxis allowDecimals={false} tickCount={6} />
+                <YAxis allowDecimals={false} />
                 <Tooltip />
-                <Bar dataKey="value" fill="url(#barGradient)" radius={[8, 8, 0, 0]}>
-                  {topIssuesData.map((entry: { name: string; value: number }, index: number) => (
+
+                <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                  {paginatedIssues.map((entry: { name: string; value: number }, index: number) => (
                     <Cell
-                      key={index}
+                      key={entry.name}
                       fill={BAR_COLORS[index % BAR_COLORS.length]}
                     />
                   ))}
@@ -881,49 +988,91 @@ export default function DashboardPage() {
               </BarChart>
             </ResponsiveContainer>
           </div>
+        </div>
 
-          <div className="bg-white rounded-2xl border p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <MessageSquare size={18} />
-              <h3 className="font-semibold text-slate-800">Latest Discussion</h3>
-            </div>
+        <div className="bg-white rounded-2xl border p-5 h-full flex flex-col">
+          <h3 className="font-semibold text-slate-800 mb-3">
+            Site Issues
+          </h3>
 
-            <div className="space-y-3 max-h-[350px] overflow-y-auto">
-              {notifications.length === 0 ? (
-                <p className="text-sm text-slate-400">No recent messages</p>
-              ) : (
-                notifications.slice(0, 10).map((item, i) => (
-                  <div
-                    key={i}
-                    onClick={() => openDetail(item.submissionId)}
-                    className={`cursor-pointer p-3 rounded-xl border transition
-            ${item.authorRole === "admin"
-                        ? "bg-red-50 border-red-200"
-                        : "bg-slate-50 border-slate-200"
-                      }`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <p className="text-sm font-semibold text-slate-800">
-                        {item.authorName} ({item.authorRole})
+          <p className="text-xs text-slate-500 mb-4">
+            Sites with reported issues
+          </p>
+
+          {siteIssueData.length === 0 ? (
+            <p className="text-sm text-slate-400">No issues found</p>
+          ) : (
+            <div className="space-y-3 flex-1 overflow-y-auto pr-1">
+              {siteIssueData.map((item, i) => (
+                <div
+                  key={i}
+                  className="p-3 rounded-xl border bg-slate-50 hover:bg-slate-100 transition"
+                >
+                  <div className="flex justify-between items-center">
+                    {/* LEFT */}
+                    <div>
+                      <p className="text-sm font-medium text-slate-800">
+                        {item.site}
                       </p>
-                      <span className="text-xs text-slate-400">
-                        {formatDateTime(item.createdAt)}
-                      </span>
+
+                      <p className="text-xs text-slate-500 mt-1">
+                        {formatReadableLabel(item.issue)}
+                      </p>
                     </div>
 
-                    <p className="text-sm text-slate-700 mt-1 line-clamp-2">
-                      {item.message}
-                    </p>
-
-                    <p className="text-xs text-indigo-600 mt-2">
-                      Click to open conversation →
-                    </p>
+                    {/* RIGHT */}
+                    <div className="text-sm font-bold text-red-500">
+                      {item.count}
+                    </div>
                   </div>
-                ))
-              )}
+                </div>
+              ))}
             </div>
+          )}
+        </div>
+
+        <div className="bg-white rounded-2xl border p-5 flex flex-col h-[690px]">
+          <div className="flex items-center gap-2 mb-4">
+            <MessageSquare size={18} />
+            <h3 className="font-semibold text-slate-800">Latest Discussion</h3>
+          </div>
+
+          <div className="space-y-3 flex-1 overflow-y-auto pr-2">
+            {notifications.length === 0 ? (
+              <p className="text-sm text-slate-400">No recent messages</p>
+            ) : (
+              notifications.slice(0, 10).map((item, i) => (
+                <div
+                  key={i}
+                  onClick={() => openDetail(item.submissionId)}
+                  className={`cursor-pointer p-3 rounded-xl border transition
+            ${item.authorRole === "admin"
+                      ? "bg-red-50 border-red-200"
+                      : "bg-slate-50 border-slate-200"
+                    }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm font-semibold text-slate-800">
+                      {item.authorName} ({item.authorRole})
+                    </p>
+                    <span className="text-xs text-slate-400">
+                      {formatDateTime(item.createdAt)}
+                    </span>
+                  </div>
+
+                  <p className="text-sm text-slate-700 mt-1 line-clamp-2">
+                    {item.message}
+                  </p>
+
+                  <p className="text-xs text-indigo-600 mt-2">
+                    Click to open conversation →
+                  </p>
+                </div>
+              ))
+            )}
           </div>
         </div>
+
 
 
         <div className="bg-white rounded-2xl border p-5">
@@ -991,8 +1140,6 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
-
-
 
       {
         cardAnalyticsOpen && (

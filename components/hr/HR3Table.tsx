@@ -55,7 +55,7 @@ export default function HR3Table() {
     const [chatOpen, setChatOpen] = useState(false)
     const [chatSubmissionId, setChatSubmissionId] = useState<string | null>(null)
     const [currentUser, setCurrentUser] = useState<any>(null)
-
+    const [onlyNeeded, setOnlyNeeded] = useState(false)
 
     const filteredData = data.filter((item) => {
 
@@ -70,7 +70,11 @@ export default function HR3Table() {
         const matchesTo =
             !toDate || itemDate <= new Date(toDate)
 
-        return matchesSearch && matchesFrom && matchesTo
+        // ✅ ADD THIS
+        const matchesNeeded =
+            !onlyNeeded || item.totalNeeded > 0
+
+        return matchesSearch && matchesFrom && matchesTo && matchesNeeded
     })
 
     /* ✅ LATEST RECORD PER SITE */
@@ -259,6 +263,17 @@ export default function HR3Table() {
                                 />
                             </PopoverContent>
                         </Popover>
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={onlyNeeded}
+                                onChange={(e) => {
+                                    setOnlyNeeded(e.target.checked)
+                                    setPage(1)
+                                }}
+                            />
+                            <span>Needed &gt; 0</span>
+                        </label>
 
                         {(search || fromDate || toDate) && (
                             <button

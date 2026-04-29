@@ -213,10 +213,30 @@ export default function BDPage() {
                 if (item.category !== "Next 3 Months") return false
             }
 
+            // if (filter === "Overdue") {
+            //     if (item.siteType !== "CLIENT") return false
+            //     if (!item.isOverdue) return false
+            // }
             if (filter === "Overdue") {
                 if (item.siteType !== "CLIENT") return false
-                if (!item.isOverdue) return false
+
+                const d = parseDate(item.nextRenewalDate)
+                if (!d) return false
+
+                const today = new Date()
+                today.setHours(0, 0, 0, 0)
+                d.setHours(0, 0, 0, 0)
+
+                if (!(d < today)) return false
             }
+            console.log(
+                "Overdue mismatch:",
+                renewalData.map(r => ({
+                    site: r.siteName,
+                    isOverdue: r.isOverdue,
+                    date: r.nextRenewalDate
+                }))
+            )
 
             if (filter === "Internal Site") {
                 if (item.siteType !== "INTERNAL") return false

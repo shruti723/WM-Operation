@@ -330,6 +330,8 @@ export default function Dashboard() {
             .slice(0, 5)
     }, [filteredData])
 
+    const isRightDisabled = monthIndex + PAGE_SIZE >= monthChart.length
+
     if (loading) return <div className="p-6">Loading...</div>
 
     return (
@@ -469,7 +471,10 @@ export default function Dashboard() {
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setMonthIndex(prev => Math.max(prev - 1, 0))}
-                                className="px-3 py-1 border rounded hover:bg-gray-100"
+                                disabled={monthIndex === 0}
+                                className={`px-3 py-1 border rounded 
+  ${monthIndex === 0 ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-100"}`}
+
                             >
                                 ←
                             </button>
@@ -482,7 +487,9 @@ export default function Dashboard() {
                                             : prev
                                     )
                                 }
-                                className="px-3 py-1 border rounded hover:bg-gray-100"
+                                disabled={isRightDisabled}
+                                className={`px-3 py-1 border rounded 
+  ${isRightDisabled ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-100"}`}
                             >
                                 →
                             </button>
@@ -491,7 +498,11 @@ export default function Dashboard() {
 
                     {/* CHART */}
                     <ResponsiveContainer width="100%" height={320}>
-                        <BarChart data={paginatedMonths} barCategoryGap={20}>
+                        <BarChart
+                            data={paginatedMonths}
+                            barCategoryGap={30}
+                            margin={{ bottom: 20 }}   // 🔥 important
+                        >
                             <defs>
                                 <linearGradient id="billGradient" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="0%" stopColor="#6366f1" stopOpacity={0.9} />
@@ -506,7 +517,24 @@ export default function Dashboard() {
 
                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
 
-                            <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                            {/* <XAxis dataKey="month" tick={{ fontSize: 12 }} /> */}
+                            <XAxis
+                                dataKey="month"
+                                interval={0}   // 🔥 THIS FIXES IT
+                                height={60}
+                                tick={({ x, y, payload }) => {
+                                    const [month, year] = payload.value.split(" ")
+
+                                    return (
+                                        <g transform={`translate(${x},${Number(y) + 10})`}>
+                                            <text textAnchor="middle" fontSize={12} fill="#666">
+                                                <tspan x="0" dy="0">{month}</tspan>
+                                                <tspan x="0" dy="14">{year}</tspan>
+                                            </text>
+                                        </g>
+                                    )
+                                }}
+                            />
 
                             <YAxis
                                 tickFormatter={(val) => `₹${(val / 100000).toFixed(1)}L`}
@@ -669,7 +697,7 @@ export default function Dashboard() {
             {/* ================= INSIGHTS ================= */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
-                <ChartCard title="Top Pending Sites">
+                <ChartCard title="Payment Pending Sites">
                     {topPendingSites.map((site, i) => (
                         <div
                             key={i}
@@ -679,9 +707,7 @@ export default function Dashboard() {
                                 <p className="text-sm font-medium text-gray-800">
                                     {site.siteName}
                                 </p>
-                                <p className="text-xs text-gray-400">
-                                    Rank #{i + 1}
-                                </p>
+
                             </div>
 
                             <span className="text-sm font-semibold text-red-600">

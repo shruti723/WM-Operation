@@ -338,6 +338,15 @@ export default function ReportsPage() {
         return <div className="p-6">Loading dashboard...</div>
     }
 
+    function clearFilters() {
+        setSiteFilter("All")
+        setSupervisorFilter("All")
+        setFromDate("")
+        setToDate("")
+        setSearch("")
+        setCurrentPage(1)
+    }
+
     function getIssuesFromAnswers(item: any) {
         const issues: string[] = []
         const answers = (item as any).answers || []
@@ -459,6 +468,16 @@ export default function ReportsPage() {
             </div>
 
             <div className="bg-white rounded-2xl border p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-3">
+                <div className="relative">
+                    <Search size={16} className="absolute left-3 top-3.5 text-slate-400" />
+                    <input
+                        placeholder="Search site..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="w-full h-11 pl-9 pr-3 rounded-xl border"
+                    />
+                </div>
+
                 <select
                     value={siteFilter}
                     onChange={(e) => setSiteFilter(e.target.value)}
@@ -501,15 +520,14 @@ export default function ReportsPage() {
                     placeholder="To date"
                 />
 
-                <div className="relative">
-                    <Search size={16} className="absolute left-3 top-3.5 text-slate-400" />
-                    <input
-                        placeholder="Search site or supervisor"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="w-full h-11 pl-9 pr-3 rounded-xl border"
-                    />
-                </div>
+
+
+                <button
+                    onClick={clearFilters}
+                    className="h-11 px-4 rounded-xl bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition text-sm font-medium"
+                >
+                    Clear Filters
+                </button>
             </div>
 
 

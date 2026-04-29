@@ -92,7 +92,7 @@ function buildSummary(month: string, rows: any[]): Summary {
 export async function GET() {
     try {
         const records = await prisma.financeSheetRecord.findMany({
-            where: { isActive: true },
+            // where: { isActive: true },
             orderBy: [{ month: "asc" }, { srNo: "asc" }],
         })
 
