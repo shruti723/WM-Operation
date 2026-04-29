@@ -191,7 +191,13 @@ model FinanceSheetRecord {
   paymentCheque          String
   receivedDate           String?
   paymentReceivedDays    Int?
+
+  // ✅ KEEP OLD
   salaryDisbursementDate String?
+
+  // ✅ ADD NEW
+  salaryStatus           String?
+
   source                 String?
   isActive               Boolean   @default(true)
   lastSyncedAt           DateTime?

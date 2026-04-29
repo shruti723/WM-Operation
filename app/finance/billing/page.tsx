@@ -19,6 +19,7 @@ type FinanceRecord = {
     receivedDate: string | null
     paymentReceivedDays: number | null
     salaryDisbursementDate: string | null
+    salaryStatus: string | null
 }
 
 const PAGE_SIZE = 15
@@ -278,7 +279,7 @@ export default function BillingPage() {
                             </th>
 
                             <th className="p-3 text-center">
-                                Salary<br />Disbursement Date
+                                Salary<br />Status
                             </th>
                         </tr>
                     </thead>
@@ -325,7 +326,14 @@ export default function BillingPage() {
                                 </td>
 
                                 <td className="p-3 text-center whitespace-nowrap">
-                                    {row.salaryDisbursementDate || "—"}
+                                    {row.salaryStatus ? (
+                                        <span className={`px-2 py-1 rounded-full text-xs ${row.salaryStatus.toLowerCase() === "paid"
+                                            ? "bg-green-100 text-green-700"
+                                            : "bg-red-100 text-red-700"
+                                            }`}>
+                                            {row.salaryStatus}
+                                        </span>
+                                    ) : "—"}
                                 </td>
                             </tr>
                         ))}

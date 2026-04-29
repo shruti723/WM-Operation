@@ -59,7 +59,9 @@ function buildSummary(month: string, rows: any[]): Summary {
 
     const preparedBills = rows.filter((row) => row.prepared === "Yes").length
     const dispatchedBills = rows.filter((row) => row.dispatched === "Yes").length
-    const salaryDisbursed = rows.filter((row) => !!row.salaryDisbursementDate).length
+    const salaryDisbursed = rows.filter(
+        (row) => row.salaryStatus?.toLowerCase() === "paid"
+    ).length
     const highDelay = rows.filter(
         (row) =>
             typeof row.paymentReceivedDays === "number" &&

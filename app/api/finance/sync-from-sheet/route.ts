@@ -15,7 +15,7 @@ type IncomingRow = {
     paymentCheque: string
     receivedDate: string | null
     paymentReceivedDays: number | null
-    salaryDisbursementDate: string | null
+    salaryStatus: string | null
 }
 
 type IncomingPayload = {
@@ -109,7 +109,9 @@ export async function POST(req: NextRequest) {
             const batch = rows.slice(i, i + batchSize)
 
             await Promise.all(
+
                 batch.map(async (row) => {
+                    console.log("SALARY STATUS API:", row.salaryStatus)
                     const normalizedMonth = normalizeMonth(row.month)
                     const normalizedSrNo = Number(row.srNo)
 
@@ -152,7 +154,11 @@ export async function POST(req: NextRequest) {
                                     row.paymentReceivedDays != null
                                         ? Number(row.paymentReceivedDays)
                                         : null,
-                                salaryDisbursementDate: cleanDate(row.salaryDisbursementDate),
+                                salaryStatus: row.salaryStatus
+                                    ? String(row.salaryStatus).trim().toLowerCase() === "paid"
+                                        ? "Paid"
+                                        : "Unpaid"
+                                    : null,
                                 isActive: true,
                                 lastSyncedAt: now,
                             },
@@ -171,7 +177,11 @@ export async function POST(req: NextRequest) {
                                     row.paymentReceivedDays != null
                                         ? Number(row.paymentReceivedDays)
                                         : null,
-                                salaryDisbursementDate: cleanDate(row.salaryDisbursementDate),
+                                salaryStatus: row.salaryStatus
+                                    ? String(row.salaryStatus).trim().toLowerCase() === "paid"
+                                        ? "Paid"
+                                        : "Unpaid"
+                                    : null,
                                 source: "google-sheet-appscript",
                                 isActive: true,
                                 lastSyncedAt: now,
