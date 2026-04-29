@@ -327,7 +327,6 @@ export default function Dashboard() {
         return filteredData
             .filter(r => !r.receivedDate)
             .sort((a, b) => (b.billAmount || 0) - (a.billAmount || 0))
-            .slice(0, 5)
     }, [filteredData])
 
     const isRightDisabled = monthIndex + PAGE_SIZE >= monthChart.length
@@ -698,44 +697,43 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
                 <ChartCard title="Payment Pending Sites">
-                    {topPendingSites.map((site, i) => (
-                        <div
-                            key={i}
-                            className="flex justify-between items-center py-3 px-3 rounded-lg hover:bg-gray-50 transition"
-                        >
-                            <div>
+                    <div className="max-h-[300px] overflow-y-auto pr-1">
+                        {topPendingSites.map((site, i) => (
+                            <div
+                                key={i}
+                                className="flex justify-between items-center py-3 px-3 rounded-lg hover:bg-gray-50 transition"
+                            >
                                 <p className="text-sm font-medium text-gray-800">
                                     {site.siteName}
                                 </p>
 
+                                <span className="text-sm font-semibold text-red-600">
+                                    {formatCurrency(site.billAmount || 0)}
+                                </span>
                             </div>
-
-                            <span className="text-sm font-semibold text-red-600">
-                                {formatCurrency(site.billAmount || 0)}
-                            </span>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </ChartCard>
 
-                <ChartCard title="Operational Summary">
+                <ChartCard title="Bill Summary">
                     <div className="grid grid-cols-3 gap-4 mt-2">
 
                         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-center">
-                            <p className="text-xs text-gray-500">Prepared</p>
+                            <p className="text-xs text-gray-500">Bill Amount Prepared</p>
                             <p className="text-lg font-bold text-yellow-600">
                                 {summary.prepared}
                             </p>
                         </div>
 
                         <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-center">
-                            <p className="text-xs text-gray-500">Dispatched</p>
+                            <p className="text-xs text-gray-500">Bill Amount Dispatched</p>
                             <p className="text-lg font-bold text-blue-600">
                                 {summary.dispatched}
                             </p>
                         </div>
 
                         <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
-                            <p className="text-xs text-gray-500">Missing Bills</p>
+                            <p className="text-xs text-gray-500">Missing Bills (Bill amount not mention)</p>
                             <p className="text-lg font-bold text-red-600">
                                 {summary.missingBill}
                             </p>
