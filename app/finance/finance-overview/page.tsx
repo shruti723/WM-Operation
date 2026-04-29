@@ -31,6 +31,7 @@ type FinanceRecord = {
     salaryDisbursementDate: string | null
     prepared?: string
     dispatched?: string
+    paymentCheque?: string   // ✅ ADD THIS
 }
 
 /* ================= HELPERS ================= */
@@ -104,10 +105,10 @@ export default function Dashboard() {
                 return false
 
             // Status
-            if (filters.status === "Paid" && !row.receivedDate)
+            if (filters.status === "Paid" && row.paymentCheque !== "Yes")
                 return false
 
-            if (filters.status === "Pending" && row.receivedDate)
+            if (filters.status === "Pending" && row.paymentCheque !== "No")
                 return false
 
             // Delay
@@ -124,7 +125,7 @@ export default function Dashboard() {
     const highDelayAmount = useMemo(() => {
         let total = 0
         filteredData.forEach(row => {
-            if (!row.receivedDate && (row.paymentReceivedDays || 0) > 15) {
+            if (row.paymentCheque === "No" && (row.paymentReceivedDays || 0) > 15) {
                 total += row.billAmount || 0
             }
         })
@@ -147,7 +148,7 @@ export default function Dashboard() {
             const bill = row.billAmount || 0
 
             item.bill += bill
-            if (row.receivedDate) item.collected += bill
+            if (row.paymentCheque === "Yes") item.collected += bill
         })
 
         const monthOrder: any = {
@@ -228,12 +229,15 @@ export default function Dashboard() {
             const bill = row.billAmount || 0
             total += bill
 
-            if (row.receivedDate) collected += bill
-            else pendingPayments++
+            if (row.paymentCheque === "Yes") {
+                collected += bill
+            } else if (row.paymentCheque === "No") {
+                pendingPayments++
+            }
 
             if (row.salaryDisbursementDate) salaryDone++
 
-            if (!row.receivedDate && (row.paymentReceivedDays || 0) > 15) {
+            if (row.paymentCheque === "No" && (row.paymentReceivedDays || 0) > 15) {
                 highDelay++
             }
 
@@ -263,7 +267,7 @@ export default function Dashboard() {
         }
     }, [filteredData])
 
-    const completedPayments = filteredData.filter(r => r.receivedDate).length
+    const completedPayments = filteredData.filter(r => r.paymentCheque === "Yes").length
 
     const pipelineData = useMemo(() => {
         const prepared = summary.prepared
@@ -293,8 +297,8 @@ export default function Dashboard() {
         filteredData.forEach(row => {
             const bill = row.billAmount || 0
 
-            if (row.receivedDate) paidAmount += bill
-            else pendingAmount += bill
+            if (row.paymentCheque === "Yes") paidAmount += bill
+            else if (row.paymentCheque === "No") pendingAmount += bill
         })
 
         return [
@@ -325,7 +329,7 @@ export default function Dashboard() {
 
     const topPendingSites = useMemo(() => {
         return filteredData
-            .filter(r => !r.receivedDate)
+            .filter(r => r.paymentCheque === "No")
             .sort((a, b) => (b.billAmount || 0) - (a.billAmount || 0))
     }, [filteredData])
 
@@ -339,65 +343,70 @@ export default function Dashboard() {
             <h2 className="text-2xl font-bold">Finance Dashboard</h2>
 
             {/* ================= FILTER BAR ================= */}
-            <div className="flex flex-wrap gap-3 bg-white p-4 rounded-xl border shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-xl border shadow-sm w-full">
 
-                {/* Search */}
-                <input
-                    placeholder="Search site..."
-                    value={filters.search}
-                    onChange={(e) =>
-                        setFilters(prev => ({ ...prev, search: e.target.value }))
-                    }
-                    className="border px-3 py-2 rounded-md"
-                />
+                {/* LEFT SIDE */}
+                <div className="flex flex-wrap items-center gap-3">
 
-                {/* Month */}
-                <select
-                    value={filters.month}
-                    onChange={(e) =>
-                        setFilters(prev => ({ ...prev, month: e.target.value }))
-                    }
-                    className="border px-3 py-2 rounded-md"
-                >
-                    <option value="All">All Months</option>
-                    {[...new Set(data.map(d => d.month))]
-                        .sort((a, b) => {
-                            const parse = (val: string) => new Date(val)
-                            return parse(b).getTime() - parse(a).getTime()
-                        })
-                        .map(m => (
-                            <option key={m} value={m}>{m}</option>
-                        ))}
-                </select>
+                    <input
+                        placeholder="Search site..."
+                        value={filters.search}
+                        onChange={(e) =>
+                            setFilters(prev => ({ ...prev, search: e.target.value }))
+                        }
+                        className="border px-3 py-2 rounded-md w-[200px]"
+                    />
 
-                {/* Status */}
-                <select
-                    value={filters.status}
-                    onChange={(e) =>
-                        setFilters(prev => ({ ...prev, status: e.target.value }))
-                    }
-                    className="border px-3 py-2 rounded-md"
-                >
-                    <option value="All">All Status</option>
-                    <option value="Paid">Paid</option>
-                    <option value="Pending">Pending</option>
-                </select>
+                    <select
+                        value={filters.month}
+                        onChange={(e) =>
+                            setFilters(prev => ({ ...prev, month: e.target.value }))
+                        }
+                        className="border px-3 py-2 rounded-md"
+                    >
+                        <option value="All">All Months</option>
+                        {[...new Set(data.map(d => d.month))]
+                            .sort((a, b) => {
+                                const parse = (val: string) => {
+                                    const [month, year] = val.split(" ")
+                                    return new Date(`${month} 1, ${year}`)
+                                }
 
-                {/* Delay */}
-                <select
-                    value={filters.delay}
-                    onChange={(e) =>
-                        setFilters(prev => ({ ...prev, delay: e.target.value }))
-                    }
-                    className="border px-3 py-2 rounded-md"
-                >
-                    <option value="All">All Delay</option>
-                    <option value="0-7">0-7 Days</option>
-                    <option value="8-15">8-15 Days</option>
-                    <option value="15+">15+ Days</option>
-                </select>
+                                return parse(b).getTime() - parse(a).getTime() // DESC order
+                            })
+                            .map(m => (
+                                <option key={m} value={m}>{m}</option>
+                            ))}
+                    </select>
 
-                {/* Clear */}
+                    <select
+                        value={filters.status}
+                        onChange={(e) =>
+                            setFilters(prev => ({ ...prev, status: e.target.value }))
+                        }
+                        className="border px-3 py-2 rounded-md"
+                    >
+                        <option value="All">All Status</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Pending">Pending</option>
+                    </select>
+
+                    <select
+                        value={filters.delay}
+                        onChange={(e) =>
+                            setFilters(prev => ({ ...prev, delay: e.target.value }))
+                        }
+                        className="border px-3 py-2 rounded-md"
+                    >
+                        <option value="All">All Delay</option>
+                        <option value="0-7">0-7 Days</option>
+                        <option value="8-15">8-15 Days</option>
+                        <option value="15+">15+ Days</option>
+                    </select>
+
+                </div>
+
+                {/* RIGHT SIDE */}
                 <button
                     onClick={() =>
                         setFilters({
@@ -719,21 +728,22 @@ export default function Dashboard() {
                     <div className="grid grid-cols-3 gap-4 mt-2">
 
                         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-center">
-                            <p className="text-xs text-gray-500">Bill Amount Prepared</p>
+                            <p className="text-xs text-gray-500">Bill Prepared</p>
                             <p className="text-lg font-bold text-yellow-600">
                                 {summary.prepared}
                             </p>
                         </div>
 
                         <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-center">
-                            <p className="text-xs text-gray-500">Bill Amount Dispatched</p>
+                            <p className="text-xs text-gray-500">Bill Dispatched</p>
                             <p className="text-lg font-bold text-blue-600">
                                 {summary.dispatched}
                             </p>
                         </div>
 
                         <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
-                            <p className="text-xs text-gray-500">Missing Bills (Bill amount not mention)</p>
+                            <p className="text-xs text-gray-500">Missing Bills</p>
+                            <p className="text-xs text-gray-500">(Amount not mention)</p>
                             <p className="text-lg font-bold text-red-600">
                                 {summary.missingBill}
                             </p>

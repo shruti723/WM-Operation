@@ -377,10 +377,6 @@ export default function SupervisorPage() {
         </div >
 
 
-        {/* Footer note */}
-        < p className="text-center text-[11px] text-slate-300 mt-16" >
-          FM Operations Platform & nbsp;·& nbsp; {new Date().getFullYear()}
-        </p >
 
       </main >
     </div >

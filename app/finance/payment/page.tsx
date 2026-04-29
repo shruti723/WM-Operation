@@ -8,8 +8,9 @@ type FinanceRecord = {
     siteName: string
     billAmount: number | null
     receivedDate: string | null
-    dispatchDate?: string | null   // ✅ ADD
+    dispatchDate?: string | null
     paymentReceivedDays: number | null
+    paymentCheque?: string   // ✅ ADD THIS
 }
 
 function formatCurrency(val: number) {
@@ -88,16 +89,18 @@ export default function PaymentPage() {
             const item = map.get(key)
 
             const bill = row.billAmount || 0
-            const received = row.receivedDate ? bill : 0
+
+            const isPaid = row.paymentCheque === "Yes"
+            const received = isPaid ? bill : 0
 
             item.totalBill += bill
             item.collected += received
             item.pending += (bill - received)
 
-            if (row.paymentReceivedDays) {
+            // ✅ only pending records for delay
+            if (!isPaid && row.paymentReceivedDays) {
                 item.daysList.push(row.paymentReceivedDays)
             }
-
         })
 
         return Array.from(map.values()).map((item) => {
@@ -242,11 +245,10 @@ export default function PaymentPage() {
             </div>
 
             {/* CARDS */}
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-3 gap-4">
                 <Card title="Total Billing" value={formatCurrency(summary.total)} />
                 <Card title="Collected" value={formatCurrency(summary.collected)} />
                 <Card title="Pending" value={formatCurrency(summary.pending)} />
-                <Card title="Efficiency" value={`${summary.efficiency}%`} />
             </div>
 
             {/* TABLE */}

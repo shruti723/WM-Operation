@@ -234,7 +234,7 @@ export default function DashboardPage() {
 
     try {
       // 🔔 Bell (user-specific)
-      const res = await fetch(`/api/checklist/admin-notification`)
+      const res = await fetch(`/api/checklist/admin-notification`, { cache: "no-store" })
       const result = await res.json()
 
       if (result.success) {
@@ -242,7 +242,7 @@ export default function DashboardPage() {
       }
 
       // 💬 Latest Discussion (global)
-      const res2 = await fetch(`/api/checklist/all-notifications`)
+      const res2 = await fetch(`/api/checklist/all-notifications`, { cache: "no-store" })
       const result2 = await res2.json()
 
       if (result2.success) {
