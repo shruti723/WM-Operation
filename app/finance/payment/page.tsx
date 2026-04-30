@@ -10,7 +10,7 @@ type FinanceRecord = {
     receivedDate: string | null
     dispatchDate?: string | null
     paymentReceivedDays: number | null
-    paymentCheque?: string   // ✅ ADD THIS
+    paymentCheque?: string
 }
 
 function formatCurrency(val: number) {
@@ -81,8 +81,8 @@ export default function PaymentPage() {
                     collected: 0,
                     pending: 0,
                     daysList: [] as number[],
-                    lastDispatchDate: null as string | null,   // ✅ ADD
-                    lastReceivedDate: null as string | null,   // ✅ ADD
+                    lastDispatchDate: null as string | null,
+                    lastReceivedDate: null as string | null,
                 })
             }
 
@@ -257,15 +257,10 @@ export default function PaymentPage() {
                     <thead className="bg-gray-100 text-gray-600">
                         <tr>
                             <th className="p-3 text-left">Site</th>
-
                             <th className="p-3 text-right">Bill</th>
                             <th className="p-3 text-right">Received</th>
-
                             <th className="p-3 text-right">Pending</th>
-
                             <th className="p-3 text-center">Status</th>
-
-
                         </tr>
                     </thead>
 
@@ -318,8 +313,6 @@ export default function PaymentPage() {
             </div>
 
         </div>
-
-
     )
 }
 

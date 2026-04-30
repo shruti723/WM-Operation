@@ -17,8 +17,6 @@ import {
 } from "recharts"
 import { LabelList } from "recharts"
 
-
-
 /* ================= TYPES ================= */
 
 type FinanceRecord = {
@@ -31,7 +29,7 @@ type FinanceRecord = {
     salaryDisbursementDate: string | null
     prepared?: string
     dispatched?: string
-    paymentCheque?: string   // ✅ ADD THIS
+    paymentCheque?: string
 }
 
 /* ================= HELPERS ================= */
@@ -210,8 +208,6 @@ export default function Dashboard() {
             .then(res => setData(res.records || []))
             .finally(() => setLoading(false))
     }, [])
-
-
 
     /* ================= SUMMARY ================= */
 
@@ -429,7 +425,6 @@ export default function Dashboard() {
                 <StatCard title="Total Billing" value={formatCurrency(summary.total)} subtitle="Amount" color="bg-blue-500" />
                 <StatCard title="Collected" value={formatCurrency(summary.collected)} subtitle="Received" color="bg-green-500" />
                 <StatCard title="Pending" value={formatCurrency(summary.pending)} subtitle="Outstanding" color="bg-red-500" />
-                {/* <StatCard title="Efficiency" value={`${summary.efficiency}%`} subtitle="Collection rate" color="bg-purple-500" /> */}
 
             </div>
 
@@ -509,7 +504,7 @@ export default function Dashboard() {
                         <BarChart
                             data={paginatedMonths}
                             barCategoryGap={30}
-                            margin={{ bottom: 20 }}   // 🔥 important
+                            margin={{ bottom: 20 }}
                         >
                             <defs>
                                 <linearGradient id="billGradient" x1="0" y1="0" x2="0" y2="1">

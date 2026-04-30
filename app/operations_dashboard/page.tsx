@@ -866,7 +866,7 @@ export default function DashboardPage() {
           <h3 className="font-semibold text-slate-800">Submissions Over Time</h3>
           <p className="text-xs text-slate-500 mb-3">Last 7 days</p>
 
-          <ResponsiveContainer width="100%" height={180}>
+          <ResponsiveContainer width="100%" height={220}>
             <LineChart data={submissionsOverTime} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
               <XAxis
@@ -920,7 +920,7 @@ export default function DashboardPage() {
         </div>
         {/* </div> */}
 
-        <div className="bg-white rounded-2xl border p-5 flex flex-col">
+        <div className="bg-white rounded-2xl border p-5 flex flex-col h-[420px]">
 
           {/* HEADER */}
           <div className="flex items-center justify-between mb-4">
@@ -960,8 +960,8 @@ export default function DashboardPage() {
           </div>
 
           {/* CHART */}
-          <div className="h-[350px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height={370}>
               <BarChart
                 key={issuePage}
                 data={paginatedIssues}
@@ -990,7 +990,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border p-5 h-full flex flex-col">
+        <div className="bg-white rounded-2xl border p-5 flex flex-col h-[420px]">
           <h3 className="font-semibold text-slate-800 mb-3">
             Site Issues
           </h3>

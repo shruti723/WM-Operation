@@ -121,47 +121,116 @@ export async function GET() {
 
       const issueTags: string[] = []
 
+      // submission.answers.forEach((ans: any) => {
+      //   const q = (ans.questionText || "").toLowerCase()
+      //   const val = (ans.answerValue || "").toLowerCase().trim()
+
+      //   // ✅ EMAIL PENDING
+      //   if (q.includes("emails pending") && val === "yes") {
+      //     issueTags.push("Emails Pending > 24h")
+      //   }
+
+      //   // ✅ REPEAT COMPLAINT
+      //   if (q.includes("repeat complaint") && val === "yes") {
+      //     issueTags.push("Repeat Complaint")
+      //   }
+
+      //   // ✅ NOT RESOLVED
+      //   if (q.includes("complaint resolved") && val === "no") {
+      //     issueTags.push("Complaint Not Resolved")
+      //   }
+
+      //   // ✅ URGENT ISSUE
+      //   if (q.includes("urgent issue") && val === "yes") {
+      //     issueTags.push("Urgent Issue")
+      //   }
+
+      //   // ✅ MANPOWER
+      //   if (q.includes("manpower shortage") && val === "yes") {
+      //     issueTags.push("Manpower Shortage")
+      //   }
+
+      //   // ✅ REPLACEMENT
+      //   if (q.includes("replacement arranged") && val === "no") {
+      //     issueTags.push("Replacement Not Arranged")
+      //   }
+
+      //   // ✅ HIRING
+      //   if (q.includes("hiring request") && val === "yes") {
+      //     issueTags.push("Hiring Request Raised")
+      //   }
+
+      //   // ✅ SAFETY
+      //   if (q.includes("safety risk") && val === "yes") {
+      //     issueTags.push("Safety Risk")
+      //   }
+      // })
+
       submission.answers.forEach((ans: any) => {
-        const q = (ans.questionText || "").toLowerCase()
+        const q = (ans.questionText || "").toLowerCase().trim()
         const val = (ans.answerValue || "").toLowerCase().trim()
 
-        // ✅ EMAIL PENDING
-        if (q.includes("emails pending") && val === "yes") {
+        // ✅ EMAIL PENDING > 24h
+        if (
+          (q.includes("pending more than 24") || q.includes("emails pending")) &&
+          val === "yes"
+        ) {
           issueTags.push("Emails Pending > 24h")
         }
 
         // ✅ REPEAT COMPLAINT
-        if (q.includes("repeat complaint") && val === "yes") {
+        if (
+          (q.includes("repeat complaint") || q.includes("same site")) &&
+          val === "yes"
+        ) {
           issueTags.push("Repeat Complaint")
         }
 
-        // ✅ NOT RESOLVED
-        if (q.includes("complaint resolved") && val === "no") {
+        // ✅ COMPLAINT NOT RESOLVED
+        if (
+          (q.includes("complaint resolved") || q.includes("resolved")) &&
+          val === "no"
+        ) {
           issueTags.push("Complaint Not Resolved")
         }
 
         // ✅ URGENT ISSUE
-        if (q.includes("urgent issue") && val === "yes") {
+        if (
+          (q.includes("urgent issue") || q.includes("urgent")) &&
+          val === "yes"
+        ) {
           issueTags.push("Urgent Issue")
         }
 
-        // ✅ MANPOWER
-        if (q.includes("manpower shortage") && val === "yes") {
+        // ✅ MANPOWER SHORTAGE
+        if (
+          (q.includes("manpower shortage") || q.includes("shortfall")) &&
+          val === "yes"
+        ) {
           issueTags.push("Manpower Shortage")
         }
 
-        // ✅ REPLACEMENT
-        if (q.includes("replacement arranged") && val === "no") {
+        // ✅ REPLACEMENT NOT ARRANGED
+        if (
+          (q.includes("replacement arranged") || q.includes("replacement")) &&
+          val === "no"
+        ) {
           issueTags.push("Replacement Not Arranged")
         }
 
-        // ✅ HIRING
-        if (q.includes("hiring request") && val === "yes") {
+        // ✅ HIRING REQUEST
+        if (
+          (q.includes("hiring request") || q.includes("request raised")) &&
+          val === "yes"
+        ) {
           issueTags.push("Hiring Request Raised")
         }
 
-        // ✅ SAFETY
-        if (q.includes("safety risk") && val === "yes") {
+        // ✅ SAFETY RISK
+        if (
+          (q.includes("safety risk") || q.includes("risk")) &&
+          val === "yes"
+        ) {
           issueTags.push("Safety Risk")
         }
       })
