@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 
-
 export async function GET(req: NextRequest) {
     try {
+
         const sites = await prisma.site.findMany()
 
         const today = new Date()
@@ -17,7 +17,6 @@ export async function GET(req: NextRequest) {
 
         const next90 = new Date(today)
         next90.setDate(today.getDate() + 90)
-
 
         const data = sites.map((site: any) => {
             let renewalDate = site.nextRenewalDate
@@ -53,7 +52,6 @@ export async function GET(req: NextRequest) {
                 siteType: site.siteType || "CLIENT",
             }
         })
-
         return NextResponse.json({
             success: true,
             data,
