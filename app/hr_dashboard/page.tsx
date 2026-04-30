@@ -75,7 +75,7 @@ export default function HRAdminDashboard() {
     const [loading, setLoading] = useState(true)
 
     const [chartIndex, setChartIndex] = useState(0)
-    const ITEMS_PER_CHART = 5
+    const ITEMS_PER_CHART = 4
 
     const [neededIndex, setNeededIndex] = useState(0)
     const ITEMS_PER_CARD = 7
@@ -164,39 +164,43 @@ export default function HRAdminDashboard() {
                     </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3 bg-white/80 backdrop-blur rounded-2xl border border-gray-200 p-5 shadow-md hover:shadow-xl transition">
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-white/80 backdrop-blur rounded-2xl border border-gray-200 p-5 shadow-md hover:shadow-xl transition">
 
-                    <input
-                        placeholder="Search site..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="border px-4 py-2 rounded-lg text-sm w-56"
-                    />
+                    {/* LEFT SIDE */}
+                    <div className="flex flex-wrap items-center gap-3">
+                        <input
+                            placeholder="Search site..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="border px-4 py-2 rounded-lg text-sm w-56"
+                        />
 
-                    <select
-                        value={status}
-                        onChange={(e) => setStatus(e.target.value)}
-                        className="border px-4 py-2 rounded-lg text-sm"
-                    >
-                        <option value="all">All</option>
-                        <option value="completed">Completed</option>
-                        <option value="pending">Pending</option>
-                    </select>
+                        <select
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value)}
+                            className="border px-4 py-2 rounded-lg text-sm"
+                        >
+                            <option value="all">All</option>
+                            <option value="completed">Completed</option>
+                            <option value="pending">Pending</option>
+                        </select>
 
-                    <input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="border px-3 py-2 rounded-lg text-sm"
-                    />
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="border px-3 py-2 rounded-lg text-sm"
+                        />
 
-                    <input
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="border px-3 py-2 rounded-lg text-sm"
-                    />
+                        <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="border px-3 py-2 rounded-lg text-sm"
+                        />
+                    </div>
 
+                    {/* RIGHT SIDE */}
                     <button
                         onClick={clearFilters}
                         className="px-4 py-2 text-sm rounded-lg border border-gray-300 bg-gray-100 hover:bg-gray-200 transition"
@@ -303,7 +307,7 @@ export default function HRAdminDashboard() {
                             </div>
                         </div>
 
-                        <div className="h-[300px]">
+                        <div className="h-[350px]">
                             <ResponsiveContainer>
                                 <BarChart
                                     data={chartData}
@@ -311,13 +315,33 @@ export default function HRAdminDashboard() {
                                 >
                                     <CartesianGrid vertical={false} strokeDasharray="2 6" stroke="#e5e7eb" />
 
+
+
                                     <XAxis
                                         dataKey="name"
-                                        angle={-25}
-                                        textAnchor="end"
                                         interval={0}
-                                        height={50}
-                                        tick={{ fontSize: 11, fill: "#6b7280" }}
+                                        height={60}
+                                        tick={(props) => {
+                                            const { x, y, payload } = props
+
+                                            const words = payload.value.split(" ")
+
+                                            const firstLine = words.slice(0, Math.ceil(words.length / 2)).join(" ")
+                                            const secondLine = words.slice(Math.ceil(words.length / 2)).join(" ")
+
+                                            return (
+                                                <g transform={`translate(${x},${Number(y) + 10})`}>
+                                                    <text
+                                                        textAnchor="middle"
+                                                        fill="#6b7280"
+                                                        fontSize={11}
+                                                    >
+                                                        <tspan x="0" dy="0">{firstLine}</tspan>
+                                                        <tspan x="0" dy="14">{secondLine}</tspan>
+                                                    </text>
+                                                </g>
+                                            )
+                                        }}
                                     />
 
                                     <YAxis
@@ -483,8 +507,8 @@ export default function HRAdminDashboard() {
                                     }
                                     disabled={neededIndex + ITEMS_PER_CARD >= filteredNeeded.length}
                                     className={`border rounded px-2 py-1 ${neededIndex + ITEMS_PER_CARD >= filteredNeeded.length
-                                            ? "opacity-40 cursor-not-allowed"
-                                            : "hover:bg-gray-100"
+                                        ? "opacity-40 cursor-not-allowed"
+                                        : "hover:bg-gray-100"
                                         }`}
                                 >
                                     →

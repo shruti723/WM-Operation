@@ -12,9 +12,12 @@ export async function GET(req: NextRequest) {
         const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0)
         endOfMonth.setHours(0, 0, 0, 0)
 
-        const next3Months = new Date(today)
-        next3Months.setMonth(today.getMonth() + 3)
-        next3Months.setHours(0, 0, 0, 0)
+        const next30 = new Date(today)
+        next30.setDate(today.getDate() + 30)
+
+        const next90 = new Date(today)
+        next90.setDate(today.getDate() + 90)
+
 
         const data = sites.map((site: any) => {
             let renewalDate = site.nextRenewalDate
@@ -28,17 +31,15 @@ export async function GET(req: NextRequest) {
             let isOverdue = false
 
             if (renewalDate) {
-                const next30 = new Date(today)
-                next30.setDate(today.getDate() + 30)
-
-                if (renewalDate >= today && renewalDate <= next30) {
-                    category = "Next 30 Days"
-                } else if (renewalDate > next30 && renewalDate <= next3Months) {
-                    category = "Next 3 Months"
-                }
-
                 if (renewalDate < today) {
+                    category = "Overdue"
                     isOverdue = true
+                } else if (renewalDate <= next30) {
+                    category = "Next 30 Days"
+                } else if (renewalDate <= next90) {
+                    category = "Next 3 Months"
+                } else {
+                    category = "Later"
                 }
             }
 

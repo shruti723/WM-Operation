@@ -117,20 +117,12 @@ export default function BDPage() {
         "All" | "Next 30 Days" | "Next 3 Months" | "Overdue" | "Internal Site"
     >("Next 30 Days")
 
-    const renewalsNext30Days = renewalData.filter((r) => {
-        if (r.siteType !== "CLIENT") return false
-        const d = parseDate(r.nextRenewalDate)
-        if (!d) return false
-
-        const today = new Date()
-        const next30 = new Date()
-        next30.setDate(today.getDate() + 30)
-
-        return d >= today && d <= next30
-    }).length
+    const renewalsNext30Days = renewalData.filter(
+        r => r.category === "Next 30 Days" && r.siteType === "CLIENT"
+    ).length
 
     const renewalsNext3Months = renewalData.filter(
-        (r) => r.siteType === "CLIENT" && r.category === "Next 3 Months"
+        r => r.category === "Next 3 Months" && r.siteType === "CLIENT"
     ).length
 
     const handleChange = (
@@ -191,74 +183,27 @@ export default function BDPage() {
     const historyPerPage = 12
 
     const filteredRenewals = useMemo(() => {
-        const q = search.trim().toLowerCase()
-
         return renewalData.filter((item) => {
-            const d = parseDate(item.nextRenewalDate)
 
-            // ✅ CATEGORY FILTERS (CLIENT ONLY)
             if (filter === "Next 30 Days") {
-                if (item.siteType !== "CLIENT") return false
-
-                if (!d) return false
-                const today = new Date()
-                const next30 = new Date()
-                next30.setDate(today.getDate() + 30)
-
-                if (!(d >= today && d <= next30)) return false
+                return item.category === "Next 30 Days" && item.siteType === "CLIENT"
             }
 
             if (filter === "Next 3 Months") {
-                if (item.siteType !== "CLIENT") return false
-                if (item.category !== "Next 3 Months") return false
+                return item.category === "Next 3 Months" && item.siteType === "CLIENT"
             }
 
-            // if (filter === "Overdue") {
-            //     if (item.siteType !== "CLIENT") return false
-            //     if (!item.isOverdue) return false
-            // }
             if (filter === "Overdue") {
-                if (item.siteType !== "CLIENT") return false
-
-                const d = parseDate(item.nextRenewalDate)
-                if (!d) return false
-
-                const today = new Date()
-                today.setHours(0, 0, 0, 0)
-                d.setHours(0, 0, 0, 0)
-
-                if (!(d < today)) return false
+                return item.category === "Overdue" && item.siteType === "CLIENT"
             }
-            console.log(
-                "Overdue mismatch:",
-                renewalData.map(r => ({
-                    site: r.siteName,
-                    isOverdue: r.isOverdue,
-                    date: r.nextRenewalDate
-                }))
-            )
 
             if (filter === "Internal Site") {
-                if (item.siteType !== "INTERNAL") return false
+                return item.siteType === "INTERNAL"
             }
 
-            // ✅ "All" → NO siteType filter (shows both)
-
-            // SEARCH
-            if (!search.trim()) return true
-
-            const q = search.toLowerCase()
-            const dateStr = d
-                ? d.toLocaleDateString("en-GB").replace(/\//g, "-")
-                : ""
-
-            return (
-                item.siteName.toLowerCase().includes(q) ||
-                item.status.toLowerCase().includes(q) ||
-                dateStr.includes(q)
-            )
+            return true // All
         })
-    }, [search, renewalData, filter])
+    }, [renewalData, filter])
 
     const totalHistoryPages = Math.ceil(historyData.length / historyPerPage)
 
