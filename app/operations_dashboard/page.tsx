@@ -1031,7 +1031,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="bg-white rounded-2xl border p-5 flex flex-col h-[690px]">
+        <div className="bg-white rounded-2xl border p-5 flex flex-col h-[610px]">
           <div className="flex items-center gap-2 mb-4">
             <MessageSquare size={18} />
             <h3 className="font-semibold text-slate-800">Latest Discussion</h3>

@@ -121,68 +121,29 @@ export async function GET() {
 
       const issueTags: string[] = []
 
-      // submission.answers.forEach((ans: any) => {
-      //   const q = (ans.questionText || "").toLowerCase()
-      //   const val = (ans.answerValue || "").toLowerCase().trim()
-
-      //   // ✅ EMAIL PENDING
-      //   if (q.includes("emails pending") && val === "yes") {
-      //     issueTags.push("Emails Pending > 24h")
-      //   }
-
-      //   // ✅ REPEAT COMPLAINT
-      //   if (q.includes("repeat complaint") && val === "yes") {
-      //     issueTags.push("Repeat Complaint")
-      //   }
-
-      //   // ✅ NOT RESOLVED
-      //   if (q.includes("complaint resolved") && val === "no") {
-      //     issueTags.push("Complaint Not Resolved")
-      //   }
-
-      //   // ✅ URGENT ISSUE
-      //   if (q.includes("urgent issue") && val === "yes") {
-      //     issueTags.push("Urgent Issue")
-      //   }
-
-      //   // ✅ MANPOWER
-      //   if (q.includes("manpower shortage") && val === "yes") {
-      //     issueTags.push("Manpower Shortage")
-      //   }
-
-      //   // ✅ REPLACEMENT
-      //   if (q.includes("replacement arranged") && val === "no") {
-      //     issueTags.push("Replacement Not Arranged")
-      //   }
-
-      //   // ✅ HIRING
-      //   if (q.includes("hiring request") && val === "yes") {
-      //     issueTags.push("Hiring Request Raised")
-      //   }
-
-      //   // ✅ SAFETY
-      //   if (q.includes("safety risk") && val === "yes") {
-      //     issueTags.push("Safety Risk")
-      //   }
-      // })
-
       submission.answers.forEach((ans: any) => {
-        const q = (ans.questionText || "").toLowerCase().trim()
-        const val = (ans.answerValue || "").toLowerCase().trim()
+        const qRaw = ans.questionText
+        const vRaw = ans.answerValue
+
+        const q = (qRaw || "").toLowerCase().trim()
+        const val = normalizeValue(vRaw)
+
+        console.log("---- DEBUG ----")
+        console.log("QUESTION:", qRaw)
+        console.log("NORMALIZED Q:", q)
+        console.log("VALUE:", vRaw)
+        console.log("NORMALIZED VALUE:", val)
 
         // ✅ EMAIL PENDING > 24h
-        if (
-          (q.includes("pending more than 24") || q.includes("emails pending")) &&
+        if
+          (q === "pendingemails" &&
           val === "yes"
         ) {
           issueTags.push("Emails Pending > 24h")
         }
 
         // ✅ REPEAT COMPLAINT
-        if (
-          (q.includes("repeat complaint") || q.includes("same site")) &&
-          val === "yes"
-        ) {
+        if (q === "repeatcomplaint" && val === "yes") {
           issueTags.push("Repeat Complaint")
         }
 
@@ -194,13 +155,7 @@ export async function GET() {
           issueTags.push("Complaint Not Resolved")
         }
 
-        // ✅ URGENT ISSUE
-        if (
-          (q.includes("urgent issue") || q.includes("urgent")) &&
-          val === "yes"
-        ) {
-          issueTags.push("Urgent Issue")
-        }
+
 
         // ✅ MANPOWER SHORTAGE
         if (
@@ -327,7 +282,6 @@ export async function GET() {
       "Emails Pending > 24h": 0,
       "Repeat Complaint": 0,
       "Complaint Not Resolved": 0,
-      "Urgent Issue": 0,
       "Manpower Shortage": 0,
       "Replacement Not Arranged": 0,
       "Hiring Request Raised": 0,
