@@ -16,7 +16,7 @@ type RenewalItem = {
     id: string
     siteName: string
     nextRenewalDate: string | null
-    category: "Next 30 Days" | "Next 3 Months" | "Later"
+    category: "Next 30 Days" | "Next 3 Months" | "Later" | "Overdue"
     status: "Pending" | "In Progress" | "Confirmed"
 }
 
@@ -43,6 +43,8 @@ function getStatusClasses(status: RenewalItem["status"]) {
 
 function getCategoryClasses(category: RenewalItem["category"]) {
     switch (category) {
+        case "Overdue":
+            return "bg-red-50 text-red-700 border-red-200"
         case "Next 30 Days":
             return "bg-indigo-50 text-indigo-700 border-indigo-200"
         case "Next 3 Months":
@@ -54,20 +56,40 @@ function getCategoryClasses(category: RenewalItem["category"]) {
     }
 }
 
-function parseDate(dateStr: string) {
+function parseDate(dateStr: string | null): Date | null {
     if (!dateStr) return null
 
     const parts = dateStr.split("-")
     if (parts.length !== 3) return null
 
-    // ✅ Case 1: yyyy-mm-dd (from input/API)
+    // yyyy-mm-dd
     if (parts[0].length === 4) {
         return new Date(dateStr)
     }
 
-    // ✅ Case 2: dd-mm-yyyy (your old format)
+    // dd-mm-yyyy
     const [day, month, year] = parts
     return new Date(`${year}-${month}-${day}`)
+}
+
+function getCategoryFromDate(dateStr: string | null) {
+    const d = parseDate(dateStr)
+    if (!d) return "Later"
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    d.setHours(0, 0, 0, 0)
+
+    const diffDays = Math.ceil(
+        (d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+    )
+
+    if (diffDays < 0) return "Overdue"
+    if (diffDays <= 30) return "Next 30 Days"
+    if (diffDays <= 90) return "Next 3 Months"
+
+    return "Later"
 }
 
 export default function BDPage() {
@@ -118,11 +140,15 @@ export default function BDPage() {
     >("Next 30 Days")
 
     const renewalsNext30Days = renewalData.filter(
-        r => r.category === "Next 30 Days" && r.siteType === "CLIENT"
+        r =>
+            getCategoryFromDate(r.nextRenewalDate) === "Next 30 Days" &&
+            r.siteType === "CLIENT"
     ).length
 
     const renewalsNext3Months = renewalData.filter(
-        r => r.category === "Next 3 Months" && r.siteType === "CLIENT"
+        r =>
+            getCategoryFromDate(r.nextRenewalDate) === "Next 3 Months" &&
+            r.siteType === "CLIENT"
     ).length
 
     const handleChange = (
@@ -185,23 +211,25 @@ export default function BDPage() {
     const filteredRenewals = useMemo(() => {
         return renewalData.filter((item) => {
 
+            const category = getCategoryFromDate(item.nextRenewalDate)
+
             if (filter === "Next 30 Days") {
-                return item.category === "Next 30 Days" && item.siteType === "CLIENT"
+                return category === "Next 30 Days" && item.siteType === "CLIENT"
             }
 
             if (filter === "Next 3 Months") {
-                return item.category === "Next 3 Months" && item.siteType === "CLIENT"
+                return category === "Next 3 Months" && item.siteType === "CLIENT"
             }
 
             if (filter === "Overdue") {
-                return item.category === "Overdue" && item.siteType === "CLIENT"
+                return category === "Overdue" && item.siteType === "CLIENT"
             }
 
             if (filter === "Internal Site") {
                 return item.siteType === "INTERNAL"
             }
 
-            return true // All
+            return true
         })
     }, [renewalData, filter])
 
@@ -389,9 +417,15 @@ export default function BDPage() {
                                                         </td>
 
                                                         <td className="px-6 py-4">
-                                                            <span className={`px-3 py-1 text-xs rounded-full border ${getCategoryClasses(item.category)}`}>
-                                                                {item.category}
-                                                            </span>
+                                                            {(() => {
+                                                                const category = getCategoryFromDate(item.nextRenewalDate)
+
+                                                                return (
+                                                                    <span className={`px-3 py-1 text-xs rounded-full border ${getCategoryClasses(category as any)}`}>
+                                                                        {category}
+                                                                    </span>
+                                                                )
+                                                            })()}
                                                         </td>
                                                     </tr>
                                                 ))}

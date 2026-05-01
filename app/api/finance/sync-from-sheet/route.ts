@@ -102,7 +102,6 @@ export async function POST(req: NextRequest) {
         let processed = 0
 
         /* ---------------- STEP 2: UPSERT ROWS ---------------- */
-
         const batchSize = 50
 
         for (let i = 0; i < rows.length; i += batchSize) {
