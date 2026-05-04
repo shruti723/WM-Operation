@@ -254,7 +254,7 @@ export default function HRAdminDashboard() {
                     />
 
                     <MetricCard
-                        title="Recruitment Pending Action"
+                        title="Recruitment Pending Form"
                         value={summary.pendingHR3}
                         icon={<CheckCircle2 className="h-6 w-6 text-indigo-600" />}
                         border="border-indigo-200"
@@ -375,7 +375,7 @@ export default function HRAdminDashboard() {
 
                     {/* Pie */}
                     <div className="bg-white rounded-2xl border p-5">
-                        <h3 className="text-sm font-semibold">HR3 Status</h3>
+                        <h3 className="text-sm font-semibold">Form Status</h3>
 
                         <div className="h-[220px] flex flex-col justify-center">
                             <ResponsiveContainer>
@@ -442,7 +442,7 @@ export default function HRAdminDashboard() {
                 </div>
 
                 {/* Trend */}
-                <div className="bg-white rounded-2xl border p-5">
+                {/* <div className="bg-white rounded-2xl border p-5">
                     <h3 className="text-sm font-semibold">Manpower Trend</h3>
 
                     <div className="h-[300px]">
@@ -469,7 +469,7 @@ export default function HRAdminDashboard() {
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
-                </div>
+                </div> */}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
