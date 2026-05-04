@@ -132,7 +132,6 @@ export async function POST(req: Request) {
                 where: { id: safeSubmission.siteId },
             })
 
-            console.log("✅ DB siteType after update:", updatedSite?.siteType)
         }
 
         /* =========================
