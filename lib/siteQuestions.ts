@@ -1,7 +1,12 @@
 export const siteQuestions: any = {
 
-    "Collector Office": [
-
+    "Collectorate HK": [
+        {
+            id: "matrixAttendance",  // 🔥 ADD THIS
+            question: "Is attendance being recorded on matrix track?",
+            type: "yesno",
+            requireReasonOnNo: true
+        },
         { question: "Cleanliness and maintenance of the entry and parking area", type: "rating" },
         { question: "Cleanliness and maintenance of the main garden", type: "rating" },
         { question: "Cleanliness and maintenance of the DM office and attached washroom", type: "rating" },
@@ -18,22 +23,13 @@ export const siteQuestions: any = {
         { question: "Any urgent issue observed at the site", type: "yesno", requireReasonOnYes: true }
 
     ],
-    "MPSEDC": [
-        { question: "Cleanliness and maintenance of the outer area", type: "rating" },
-        { question: "Cleanliness and maintenance of the reception area", type: "rating" },
-        { question: "Cleanliness and maintenance of the ground floor washrooms", type: "rating" },
-        { question: "Cleanliness and maintenance of the first floor washrooms", type: "rating" },
-        { question: "Cleanliness and maintenance of the second floor washrooms", type: "rating" },
-        { question: "Cleanliness and maintenance of the Project Director's office (First Floor)", type: "rating" },
-        { question: "Cleanliness of the meeting room (First Floor) and availability of room freshener", type: "rating" },
-        { question: "Cleanliness of the meeting room (Second Floor) and availability of room freshener", type: "rating" },
-        { question: "Cleanliness of the meeting room (Third Floor) and availability of room freshener", type: "rating" },
-        { question: "Cleanliness and maintenance of the CGM office", type: "rating" },
-        { question: "Cleanliness and maintenance of the coffee area (Second Floor)", type: "rating" },
-        { question: "Cleanliness and maintenance of the coffee area (Third Floor)", type: "rating" },
-        { question: "Any urgent issue observed at the site", type: "yesno", requireReasonOnYes: true }
-    ],
-    "Pitampur Municipal Corporation": [
+
+    "Pithampur Muncipal Corporation": [
+        {
+            id: "matrixAttendance",  // 🔥 ADD THIS
+            question: "Is attendance being recorded on matrix track?",
+            type: "yesno"
+        },
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -59,7 +55,8 @@ export const siteQuestions: any = {
 
     ],
 
-    "Hotel sunder ( EDN)": [
+    "Hotel EDEN": [
+        { question: "Is attendance being recorded on matrix track?", type: "yesno", requireReasonOnNo: true },
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -85,6 +82,7 @@ export const siteQuestions: any = {
 
     ],
     "Crystal IT Park": [
+        { question: "Is attendance being recorded on matrix track?", type: "yesno", requireReasonOnNo: true },
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -108,32 +106,9 @@ export const siteQuestions: any = {
         { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
         { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
     ],
-    "Anik industry": [
-        { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
-        { question: "Were CCTV cameras checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Were fire safety systems inspected?", type: "yesno", requireReasonOnNo: true },
-        { question: "Were electrical panels checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was plumbing leakage checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was material stock physically verified?", type: "yesno", requireReasonOnNo: true },
-        { question: "Total sanctioned manpower for the site", type: "number" },
-        { question: "Number of staff present today", type: "number" },
-        { question: "Number of staff absent", type: "number" },
-        { question: "Is manpower shortage affecting operations?", type: "yesno", requireReasonOnYes: true },
-        { question: "Is replacement arranged?", type: "yesno", requireReasonOnNo: true },
-        { id: "hiringRequest", question: "Is hiring request raised?", type: "yesno" },
-        { question: "Is cleaning schedule followed?", type: "yesno", requireReasonOnNo: true },
-        { question: "Are toilets cleaned as per frequency?", type: "yesno", requireReasonOnNo: true },
-        { question: "Is garbage disposal done on time?", type: "yesno", requireReasonOnNo: true },
-        { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
-        { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
-        { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
-        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
-    ],
     "HMS  Office": [
+        { question: "Is attendance being recorded on matrix track?", type: "yesno", requireReasonOnNo: true },
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -159,6 +134,7 @@ export const siteQuestions: any = {
 
     ],
     "Solaris Office": [
+        { question: "Is attendance being recorded on matrix track?", type: "yesno", requireReasonOnNo: true },
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -184,6 +160,7 @@ export const siteQuestions: any = {
 
     ],
     "Ida Pro": [
+        { question: "Is attendance being recorded on matrix track?", type: "yesno", requireReasonOnNo: true },
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -209,6 +186,7 @@ export const siteQuestions: any = {
 
     ],
     "khajrana Ganesh Mandir": [
+        { question: "Is attendance being recorded on matrix track?", type: "yesno", requireReasonOnNo: true },
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -234,6 +212,7 @@ export const siteQuestions: any = {
 
     ],
     "Ida Indore": [
+        { question: "Is attendance being recorded on matrix track?", type: "yesno", requireReasonOnNo: true },
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -260,6 +239,7 @@ export const siteQuestions: any = {
     ],
 
     "Daly College (Consulting)": [
+        { question: "Is attendance being recorded on matrix track?", type: "yesno", requireReasonOnNo: true },
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -285,6 +265,7 @@ export const siteQuestions: any = {
 
     ],
     "MPIDC Gwalior ": [
+        { question: "Is attendance being recorded on matrix track?", type: "yesno", requireReasonOnNo: true },
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -310,6 +291,7 @@ export const siteQuestions: any = {
 
     ],
     "MPSEDC Bhopal": [
+        { question: "Is attendance being recorded on matrix track?", type: "yesno", requireReasonOnNo: true },
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -334,7 +316,8 @@ export const siteQuestions: any = {
         { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
-    "Dewas Municipal Corporation": [
+    "Dewas Muncipal Corporation": [
+        { question: "Is attendance being recorded on matrix track?", type: "yesno", requireReasonOnNo: true },
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -359,57 +342,10 @@ export const siteQuestions: any = {
         { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
-    "MPSED Lift": [
-        { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
-        { question: "Were CCTV cameras checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Were fire safety systems inspected?", type: "yesno", requireReasonOnNo: true },
-        { question: "Were electrical panels checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was plumbing leakage checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was material stock physically verified?", type: "yesno", requireReasonOnNo: true },
-        { question: "Total sanctioned manpower for the site", type: "number" },
-        { question: "Number of staff present today", type: "number" },
-        { question: "Number of staff absent", type: "number" },
-        { question: "Is manpower shortage affecting operations?", type: "yesno", requireReasonOnYes: true },
-        { question: "Is replacement arranged?", type: "yesno", requireReasonOnNo: true },
-        { id: "hiringRequest", question: "Is hiring request raised?", type: "yesno" },
-        { question: "Is cleaning schedule followed?", type: "yesno", requireReasonOnNo: true },
-        { question: "Are toilets cleaned as per frequency?", type: "yesno", requireReasonOnNo: true },
-        { question: "Is garbage disposal done on time?", type: "yesno", requireReasonOnNo: true },
-        { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
-        { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
-        { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
-        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
-    ],
-    "22 Janni Surksha Yojana": [
-        { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
-        { question: "Were CCTV cameras checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Were fire safety systems inspected?", type: "yesno", requireReasonOnNo: true },
-        { question: "Were electrical panels checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was plumbing leakage checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was material stock physically verified?", type: "yesno", requireReasonOnNo: true },
-        { question: "Total sanctioned manpower for the site", type: "number" },
-        { question: "Number of staff present today", type: "number" },
-        { question: "Number of staff absent", type: "number" },
-        { question: "Is manpower shortage affecting operations?", type: "yesno", requireReasonOnYes: true },
-        { question: "Is replacement arranged?", type: "yesno", requireReasonOnNo: true },
-        { id: "hiringRequest", question: "Is hiring request raised?", type: "yesno" },
-        { question: "Is cleaning schedule followed?", type: "yesno", requireReasonOnNo: true },
-        { question: "Are toilets cleaned as per frequency?", type: "yesno", requireReasonOnNo: true },
-        { question: "Is garbage disposal done on time?", type: "yesno", requireReasonOnNo: true },
-        { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
-        { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
-        { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
-        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
-    ],
     "ISBT Raipur": [
+        { question: "Is attendance being recorded on matrix track?", type: "yesno", requireReasonOnNo: true },
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -434,57 +370,10 @@ export const siteQuestions: any = {
         { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
-    "ADM House": [
-        { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
-        { question: "Were CCTV cameras checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Were fire safety systems inspected?", type: "yesno", requireReasonOnNo: true },
-        { question: "Were electrical panels checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was plumbing leakage checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was material stock physically verified?", type: "yesno", requireReasonOnNo: true },
-        { question: "Total sanctioned manpower for the site", type: "number" },
-        { question: "Number of staff present today", type: "number" },
-        { question: "Number of staff absent", type: "number" },
-        { question: "Is manpower shortage affecting operations?", type: "yesno", requireReasonOnYes: true },
-        { question: "Is replacement arranged?", type: "yesno", requireReasonOnNo: true },
-        { id: "hiringRequest", question: "Is hiring request raised?", type: "yesno" },
-        { question: "Is cleaning schedule followed?", type: "yesno", requireReasonOnNo: true },
-        { question: "Are toilets cleaned as per frequency?", type: "yesno", requireReasonOnNo: true },
-        { question: "Is garbage disposal done on time?", type: "yesno", requireReasonOnNo: true },
-        { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
-        { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
-        { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
-        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
-    ],
-    "MPSEDC indore": [
-        { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
-        { question: "Were CCTV cameras checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Were fire safety systems inspected?", type: "yesno", requireReasonOnNo: true },
-        { question: "Were electrical panels checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was plumbing leakage checked?", type: "yesno", requireReasonOnNo: true },
-        { question: "Was material stock physically verified?", type: "yesno", requireReasonOnNo: true },
-        { question: "Total sanctioned manpower for the site", type: "number" },
-        { question: "Number of staff present today", type: "number" },
-        { question: "Number of staff absent", type: "number" },
-        { question: "Is manpower shortage affecting operations?", type: "yesno", requireReasonOnYes: true },
-        { question: "Is replacement arranged?", type: "yesno", requireReasonOnNo: true },
-        { id: "hiringRequest", question: "Is hiring request raised?", type: "yesno" },
-        { question: "Is cleaning schedule followed?", type: "yesno", requireReasonOnNo: true },
-        { question: "Are toilets cleaned as per frequency?", type: "yesno", requireReasonOnNo: true },
-        { question: "Is garbage disposal done on time?", type: "yesno", requireReasonOnNo: true },
-        { question: "Are machines functioning properly?", type: "yesno", requireReasonOnNo: true },
-        { question: "Are all guards present?", type: "yesno", requireReasonOnNo: true },
-        { question: "Is patrolling done as per schedule?", type: "yesno", requireReasonOnNo: true },
-        { question: "Any electrical complaints received?", type: "yesno", requireReasonOnYes: true },
-        { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
-    ],
     "Daly college": [
+        { question: "Is attendance being recorded on matrix track?", type: "yesno", requireReasonOnNo: true },
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -510,6 +399,7 @@ export const siteQuestions: any = {
 
     ],
     "MRF Kabir khedi": [
+        { question: "Is attendance being recorded on matrix track?", type: "yesno", requireReasonOnNo: true },
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -535,6 +425,7 @@ export const siteQuestions: any = {
 
     ],
     "ICICI Banks": [
+        { question: "Is attendance being recorded on matrix track?", type: "yesno", requireReasonOnNo: true },
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -559,7 +450,8 @@ export const siteQuestions: any = {
         { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
-    "Hotel Sundar van": [
+    "Hotel Sundervan": [
+        { question: "Is attendance being recorded on matrix track?", type: "yesno", requireReasonOnNo: true },
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -585,6 +477,7 @@ export const siteQuestions: any = {
 
     ],
     "MD  House": [
+        { question: "Is attendance being recorded on matrix track?", type: "yesno", requireReasonOnNo: true },
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -610,6 +503,7 @@ export const siteQuestions: any = {
 
     ],
     "county walk": [
+        { question: "Is attendance being recorded on matrix track?", type: "yesno", requireReasonOnNo: true },
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },

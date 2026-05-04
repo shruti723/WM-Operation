@@ -37,7 +37,7 @@ export default function ManpowerDetailsPage() {
 
     const [data, setData] = useState<any>(null)
     const [loading, setLoading] = useState(true)
-
+    const [processFilter, setProcessFilter] = useState("all")
     const [search, setSearch] = useState("")
     const [status, setStatus] = useState("all")
     const [startDate, setStartDate] = useState("")
@@ -89,12 +89,27 @@ export default function ManpowerDetailsPage() {
             const matchesNeeded =
                 !onlyNeeded || Number(site.needed || 0) > 0
 
+            const matchesProcess =
+                processFilter === "all" ||
+
+                // ✅ check inside full list
+                (processFilter !== "multiple" &&
+                    processFilter !== "empty" &&
+                    site.processList?.includes(processFilter)) ||
+
+                // multiple
+                (processFilter === "multiple" && site.processCount > 1) ||
+
+                // empty
+                (processFilter === "empty" && site.processCount === 0)
+
             return (
                 matchesSearch &&
                 matchesStatus &&
                 matchesStart &&
                 matchesEnd &&
-                matchesNeeded
+                matchesNeeded &&
+                matchesProcess
             )
         })
         .sort((a: any, b: any) =>
@@ -111,6 +126,16 @@ export default function ManpowerDetailsPage() {
     useEffect(() => {
         if (page > totalPages) setPage(1)
     }, [filtered.length, totalPages])
+
+    function clearFilters() {
+        setSearch("")
+        setStatus("all")
+        setStartDate("")
+        setEndDate("")
+        setOnlyNeeded(false)
+        setProcessFilter("all")
+        setPage(1)
+    }
 
     /* ---------- RETURN AFTER ALL HOOKS ---------- */
     if (loading) return <div className="p-6">Loading...</div>
@@ -190,6 +215,29 @@ export default function ManpowerDetailsPage() {
                     <span>Needed &gt; 0</span>
                 </label>
 
+                <select
+                    value={processFilter}
+                    onChange={(e) => {
+                        setProcessFilter(e.target.value)
+                        setPage(1)
+                    }}
+                    className="border px-4 py-2 rounded-lg text-sm"
+                >
+                    <option value="all">All Process</option>
+                    <option value="Under Process">Under Process</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Not Required">Not Required</option>
+                    <option value="Unknown">Unknown</option>
+
+                </select>
+
+                <button
+                    onClick={clearFilters}
+                    className="px-4 py-2 text-sm rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition"
+                >
+                    Clear
+                </button>
+
             </div>
 
             {/* Table */}
@@ -204,8 +252,8 @@ export default function ManpowerDetailsPage() {
                             <th className="p-3 text-center">Deployed</th>
                             <th className="p-3 text-center">Shortage</th>
                             <th className="p-3 text-center">Needed</th>
-                            <th className="p-3 text-center">HR3</th>
-                            <th className="p-3 text-center">Action</th>
+                            <th className="p-3 text-center">Recruitment Process</th>
+                            <th className="p-3 text-center">View</th>
                         </tr>
                     </thead>
 
@@ -245,11 +293,13 @@ export default function ManpowerDetailsPage() {
                                     </td>
 
                                     <td className="p-3 text-center">
-                                        <span className={`px-2 py-1 text-xs rounded-full ${site.hr3Done
-                                            ? "bg-green-100 text-green-700"
-                                            : "bg-red-100 text-red-700"
+                                        <span className={`px-2 py-1 text-xs rounded-full ${site.processLabel === "-"
+                                            ? "bg-gray-100 text-gray-500"
+                                            : site.processCount > 1
+                                                ? "bg-blue-100 text-blue-700"
+                                                : "bg-green-100 text-green-700"
                                             }`}>
-                                            {site.hr3Done ? "Completed" : "Pending"}
+                                            {site.processLabel}
                                         </span>
                                     </td>
 

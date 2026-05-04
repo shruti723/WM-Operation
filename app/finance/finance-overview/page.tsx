@@ -30,6 +30,7 @@ type FinanceRecord = {
     prepared?: string
     dispatched?: string
     paymentCheque?: string
+    salaryStatus?: "Paid" | "Unpaid"
 }
 
 /* ================= HELPERS ================= */
@@ -250,6 +251,7 @@ export default function Dashboard() {
         let dispatched = 0
         let prepared = 0
         let missingBill = 0
+        let salaryPending = 0
 
         filteredData.forEach(row => {
             const bill = row.billAmount || 0
@@ -271,6 +273,10 @@ export default function Dashboard() {
             if (row.prepared === "Yes") prepared++
 
             if (row.billAmount === null) missingBill++
+
+            if (row.salaryStatus === "Unpaid") {
+                salaryPending++
+            }
         })
 
 
@@ -289,12 +295,29 @@ export default function Dashboard() {
             dispatched,
             prepared,
             missingBill,
-            totalBills: filteredData.length
+            totalBills: filteredData.length,
+            salaryPending,
         }
     }, [filteredData])
 
+
+
+
     const completedPayments = filteredData.filter(r => r.paymentCheque === "Yes").length
 
+    const normalize = (val?: string) => val?.trim().toLowerCase()
+
+    const salaryPaid = filteredData.filter(
+        r => normalize(r.salaryStatus) === "paid"
+    ).length
+
+    const salaryUnpaid = filteredData.filter(
+        r => normalize(r.salaryStatus) === "unpaid"
+    ).length
+
+    const salaryMissing = filteredData.filter(
+        r => !normalize(r.salaryStatus)
+    ).length
     const pipelineData = useMemo(() => {
         const prepared = summary.prepared
         const dispatched = summary.dispatched
@@ -480,6 +503,32 @@ export default function Dashboard() {
                     </h3>
                     <p className="text-xs text-green-500 mt-1">
                         Successfully collected
+                    </p>
+                </div>
+
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                {/* Salary Paid */}
+                <div className="rounded-2xl p-5 bg-green-50 border border-green-200 shadow-sm hover:shadow-md transition">
+                    <p className="text-sm text-green-600 font-medium">Salary Paid</p>
+                    <h3 className="text-3xl font-bold text-green-700 mt-1">
+                        {salaryPaid}
+                    </h3>
+                    <p className="text-xs text-green-500 mt-1">
+                        Successfully disbursed
+                    </p>
+                </div>
+
+                {/* Salary Unpaid */}
+                <div className="rounded-2xl p-5 bg-red-50 border border-red-200 shadow-sm hover:shadow-md transition">
+                    <p className="text-sm text-red-600 font-medium">Salary Unpaid</p>
+                    <h3 className="text-3xl font-bold text-red-700 mt-1">
+                        {summary.salaryPending}
+                    </h3>
+                    <p className="text-xs text-red-400 mt-1">
+                        Pending disbursement
                     </p>
                 </div>
 
@@ -769,6 +818,30 @@ export default function Dashboard() {
                             <p className="text-xs text-gray-500">(Amount not mention)</p>
                             <p className="text-lg font-bold text-red-600">
                                 {summary.missingBill}
+                            </p>
+                        </div>
+
+                        {/* Salary Paid */}
+                        <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-center">
+                            <p className="text-xs text-gray-500">Salary Paid</p>
+                            <p className="text-lg font-bold text-green-600">
+                                {salaryPaid}
+                            </p>
+                        </div>
+
+                        {/* Salary Unpaid */}
+                        <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
+                            <p className="text-xs text-gray-500">Salary Unpaid</p>
+                            <p className="text-lg font-bold text-red-600">
+                                {salaryUnpaid}
+                            </p>
+                        </div>
+
+                        {/* Salary Missing */}
+                        <div className="bg-gray-50 border border-gray-300 rounded-xl p-3 text-center">
+                            <p className="text-xs text-gray-500">Salary Missing</p>
+                            <p className="text-lg font-bold text-gray-600">
+                                {salaryMissing}
                             </p>
                         </div>
 

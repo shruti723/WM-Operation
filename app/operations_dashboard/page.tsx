@@ -611,10 +611,63 @@ export default function DashboardPage() {
     { name: "Telephonic", value: telephonicCount },
   ]
 
+  const visitInsights = useMemo(() => {
+    return filteredSubmissions
+      .map((item) => ({
+        id: item.id,
+        site: item.site,
+        supervisor: item.supervisorName,
+        type:
+          item.siteVisitConducted === "Yes"
+            ? "Site Visit"
+            : item.telephonicCalling === "Yes"
+              ? "Telephonic"
+              : "Pending",
+        date: item.date,
+      }))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    // show latest 6
+  }, [filteredSubmissions])
 
   const [issuePage, setIssuePage] = useState(0)
   const ITEMS_PER_PAGE = 4
+  const visitData = useMemo(() => {
+    const siteVisitMap: Record<string, any> = {}
+    const telephonicMap: Record<string, any> = {}
 
+    filteredSubmissions.forEach((item) => {
+      const key = `${item.site}-${item.supervisorName}`
+
+      // SITE VISIT
+      if (item.siteVisitConducted === "Yes") {
+        if (!siteVisitMap[key]) {
+          siteVisitMap[key] = {
+            site: item.site,
+            supervisor: item.supervisorName,
+            count: 0,
+          }
+        }
+        siteVisitMap[key].count++
+      }
+
+      // TELEPHONIC
+      else if (item.telephonicCalling === "Yes") {
+        if (!telephonicMap[key]) {
+          telephonicMap[key] = {
+            site: item.site,
+            supervisor: item.supervisorName,
+            count: 0,
+          }
+        }
+        telephonicMap[key].count++
+      }
+    })
+
+    return {
+      siteVisit: Object.values(siteVisitMap),
+      telephonic: Object.values(telephonicMap),
+    }
+  }, [filteredSubmissions])
   const topIssuesData = useMemo(() => {
     return (customIssues || []).map((i: any) => ({
       name: formatReadableLabel(i.label),
@@ -859,7 +912,7 @@ export default function DashboardPage() {
 
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
         {/* 📈 LINE CHART */}
         <div className="bg-white rounded-2xl border p-5 h-full flex flex-col">
@@ -892,6 +945,70 @@ export default function DashboardPage() {
           </ResponsiveContainer>
         </div>
 
+        <div className="bg-white rounded-2xl border p-5 flex flex-col h-[360px]">
+
+
+          <div className="space-y-4 overflow-y-auto pr-1 flex-1">
+
+            {/* SITE VISIT */}
+            <div>
+              <p className="text-xs font-semibold text-indigo-600 mb-2">
+                Site Visit ({siteVisitCount})
+              </p>
+
+              {visitData.siteVisit.length === 0 ? (
+                <p className="text-xs text-slate-400">No site visits</p>
+              ) : (
+                visitData.siteVisit.map((item: any, i: number) => (
+                  <div key={i} className="flex justify-between items-center p-2 rounded-lg hover:bg-slate-50">
+                    <div>
+                      <p className="text-sm font-medium text-slate-800">
+                        {item.site}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {item.supervisor}
+                      </p>
+                    </div>
+
+                    <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">
+                      {item.count}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* TELEPHONIC */}
+            <div>
+              <p className="text-xs font-semibold text-cyan-600 mb-2">
+                Telephonic ({telephonicCount})
+              </p>
+
+              {visitData.telephonic.length === 0 ? (
+                <p className="text-xs text-slate-400">No telephonic</p>
+              ) : (
+                visitData.telephonic.map((item: any, i: number) => (
+                  <div key={i} className="flex justify-between items-center p-2 rounded-lg hover:bg-slate-50">
+                    <div>
+                      <p className="text-sm font-medium text-slate-800">
+                        {item.site}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {item.supervisor}
+                      </p>
+                    </div>
+
+                    <span className="text-xs bg-cyan-100 text-cyan-700 px-2 py-1 rounded-full">
+                      {item.count}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+
+          </div>
+        </div>
+
         {/* 🥧 PIE CHART */}
         <div className="bg-white rounded-2xl border p-5">
           <h3 className="font-semibold text-slate-800">Visit Type Breakdown</h3>
@@ -919,7 +1036,8 @@ export default function DashboardPage() {
           </div>
         </div>
         {/* </div> */}
-
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         <div className="bg-white rounded-2xl border p-5 flex flex-col h-[420px]">
 
           {/* HEADER */}

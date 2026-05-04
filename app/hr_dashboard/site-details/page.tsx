@@ -163,7 +163,7 @@ export default function SiteDetailsPage() {
                             <th className="p-3 text-center">Last Renewal</th>
                             <th className="p-3 text-center">Next Renewal</th>
                             <th className="p-3 text-center">Total Authorised</th>
-                            <th className="p-3 text-center">Action</th>
+                            <th className="p-3 text-center">View</th>
                         </tr>
                     </thead>
 

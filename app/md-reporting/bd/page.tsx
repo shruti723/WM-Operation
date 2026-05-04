@@ -82,7 +82,7 @@ function getCategoryFromDate(dateStr: string | null) {
 
     d.setHours(0, 0, 0, 0)
 
-    const diffDays = Math.ceil(
+    const diffDays = Math.floor(
         (d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
     )
 
@@ -137,19 +137,19 @@ export default function BDPage() {
         misc: "",
     })
     const [filter, setFilter] = useState<
-        "All" | "Next 30 Days" | "Next 3 Months" | "Overdue" | "Internal Site"
+        "All" | "Next 30 Days" | "Next 3 Months" | "Overdue" | "Own Site"
     >("Next 30 Days")
 
     const renewalsNext30Days = renewalData.filter(
         r =>
             getCategoryFromDate(r.nextRenewalDate) === "Next 30 Days" &&
-            r.siteType === "CLIENT"
+            r.siteCategory === "EXTERNAL"
     ).length
 
     const renewalsNext3Months = renewalData.filter(
         r =>
             getCategoryFromDate(r.nextRenewalDate) === "Next 3 Months" &&
-            r.siteType === "CLIENT"
+            r.siteCategory === "EXTERNAL"
     ).length
     const [remarksMap, setRemarksMap] = useState<Record<string, string>>({})
 
@@ -223,19 +223,21 @@ export default function BDPage() {
             const category = getCategoryFromDate(item.nextRenewalDate)
 
             if (filter === "Next 30 Days") {
-                return category === "Next 30 Days" && item.siteType === "CLIENT"
+                return category === "Next 30 Days" && item.siteCategory === "EXTERNAL"
             }
 
             if (filter === "Next 3 Months") {
-                return category === "Next 3 Months" && item.siteType === "CLIENT"
+                return category === "Next 3 Months" && item.siteCategory === "EXTERNAL"
             }
 
             if (filter === "Overdue") {
-                return category === "Overdue" && item.siteType === "CLIENT"
+                return category === "Overdue" && item.siteCategory === "EXTERNAL"
             }
 
-            if (filter === "Internal Site") {
-                return item.siteType === "INTERNAL"
+            if (filter === "Own Site") {
+                return ["OWN", "MISC"].includes(
+                    (item.siteCategory || "").toUpperCase()
+                )
             }
 
             return true
@@ -250,7 +252,7 @@ export default function BDPage() {
     )
 
     const overdue = renewalData.filter((r) => {
-        if (r.siteType !== "CLIENT") return false
+        if (r.siteCategory !== "EXTERNAL") return false
         const d = parseDate(r.nextRenewalDate)
         if (!d) return false
 
@@ -258,7 +260,11 @@ export default function BDPage() {
         today.setHours(0, 0, 0, 0)
         d.setHours(0, 0, 0, 0)
 
-        return d < today
+        const diffDays = Math.floor(
+            (d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+        )
+
+        return diffDays < 0
     }).length
 
     return (
@@ -370,7 +376,7 @@ export default function BDPage() {
 
                                             {/* FILTER BUTTONS */}
                                             <div className="flex flex-wrap gap-2">
-                                                {["All", "Next 30 Days", "Next 3 Months", "Overdue", "Internal Site"].map((f) => (
+                                                {["All", "Next 30 Days", "Next 3 Months", "Overdue", "Own Site"].map((f) => (
                                                     <button
                                                         key={f}
                                                         onClick={() => setFilter(f as any)}
@@ -400,17 +406,28 @@ export default function BDPage() {
 
                                     {/* Table */}
                                     <div className="overflow-x-auto">
-                                        <table className="min-w-full">
+                                        <table className="min-w-full table-fixed">
+
                                             <thead className="bg-slate-50">
                                                 <tr>
-                                                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-500">Site</th>
-                                                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-500">Next Renewal Date</th>
-                                                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-500">Category</th>
-                                                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-500">
+                                                    <th className="w-[20%] px-4 py-4 text-left text-sm font-semibold text-slate-500">
+                                                        Site
+                                                    </th>
+
+                                                    <th className="w-[15%] px-4 py-4 text-left text-sm font-semibold text-slate-500">
+                                                        Next Renewal Date
+                                                    </th>
+
+                                                    <th className="w-[15%] px-4 py-4 text-left text-sm font-semibold text-slate-500">
+                                                        Status
+                                                    </th>
+
+                                                    <th className="w-[50%] px-4 py-4 text-left text-sm font-semibold text-slate-500">
                                                         Remarks
                                                     </th>
                                                 </tr>
                                             </thead>
+
 
                                             <tbody>
                                                 {filteredRenewals.map((item, index) => (
@@ -430,10 +447,22 @@ export default function BDPage() {
 
                                                         <td className="px-6 py-4">
                                                             {(() => {
-                                                                const category = getCategoryFromDate(item.nextRenewalDate)
+                                                                let category
+                                                                const siteCategory = (item.siteCategory || "").toUpperCase()
+
+                                                                if (["OWN", "MISC"].includes(siteCategory)) {
+                                                                    category = siteCategory
+                                                                } else {
+                                                                    category = getCategoryFromDate(item.nextRenewalDate)
+                                                                }
 
                                                                 return (
-                                                                    <span className={`px-3 py-1 text-xs rounded-full border ${getCategoryClasses(category as any)}`}>
+                                                                    <span
+                                                                        className={`px-3 py-1 text-xs rounded-full border ${["OWN", "MISC"].includes((item.siteCategory || "").toUpperCase())
+                                                                            ? "bg-slate-100 text-slate-700 border-slate-200"
+                                                                            : getCategoryClasses(category as any)
+                                                                            }`}
+                                                                    >
                                                                         {category}
                                                                     </span>
                                                                 )
@@ -443,8 +472,7 @@ export default function BDPage() {
                                                         <td className="px-6 py-4">
                                                             <textarea
                                                                 rows={2}
-                                                                placeholder="Add remark..."
-                                                                value={remarksMap[item.id] || ""}
+                                                                value={item.siteRemark || ""}
                                                                 onChange={(e) => handleRemarkChange(item.id, e.target.value)}
                                                                 className="w-full min-w-[200px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-indigo-300 focus:bg-white"
                                                             />

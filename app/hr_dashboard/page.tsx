@@ -237,13 +237,13 @@ export default function HRAdminDashboard() {
                         bg="bg-emerald-100/60"
                     />
 
-                    <MetricCard
+                    {/* <MetricCard
                         title="Total Shortage"
                         value={summary.shortage}
                         icon={<AlertCircle className="h-6 w-6 text-red-600" />}
                         border="border-red-200"
                         bg="bg-rose-100/60"
-                    />
+                    /> */}
 
                     <MetricCard
                         title="Recruitment Needed"
@@ -254,7 +254,7 @@ export default function HRAdminDashboard() {
                     />
 
                     <MetricCard
-                        title="Pending HR3 Action"
+                        title="Recruitment Pending Action"
                         value={summary.pendingHR3}
                         icon={<CheckCircle2 className="h-6 w-6 text-indigo-600" />}
                         border="border-indigo-200"

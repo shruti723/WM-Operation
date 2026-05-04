@@ -49,7 +49,12 @@ export async function GET(req: NextRequest) {
                 category,
                 status: "Pending",
                 isOverdue,
+
                 siteType: site.siteType || "CLIENT",
+
+                // ✅ ADD THESE TWO
+                siteRemark: site.siteRemark || "",
+                siteCategory: site.siteCategory || "",
             }
         })
         return NextResponse.json({

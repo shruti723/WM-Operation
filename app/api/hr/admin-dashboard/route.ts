@@ -54,6 +54,28 @@ export async function GET(req: Request) {
                         new Date(a.createdAt).getTime()
                 )
 
+            function getProcessSummary(items: any[]) {
+                const processes = items
+                    .map(i => i.recruitmentProcess)
+                    .filter(p => p && p !== "Select")
+
+                const unique = [...new Set(processes)]
+
+                if (unique.length === 0) {
+                    return { label: "-", count: 0, all: [] }
+                }
+
+                if (unique.length === 1) {
+                    return { label: unique[0], count: 1, all: unique }
+                }
+
+                return {
+                    label: `${unique[0]} + ${unique.length - 1} more`,
+                    count: unique.length,
+                    all: unique, // ✅ IMPORTANT
+                }
+            }
+
             return submissions.map((sub: any) => {
                 let required = 0
                 let deployed = 0
@@ -106,7 +128,7 @@ export async function GET(req: Request) {
                 })
 
                 const items = Array.isArray(sub.items) ? sub.items : []
-
+                const processSummary = getProcessSummary(items)
                 const hr3Done = items.some(
                     (item: any) =>
                         !!item.recruitmentProcess ||
@@ -130,6 +152,12 @@ export async function GET(req: Request) {
                     shortage,
                     needed: siteNeeded,
                     hr3Done,
+
+
+                    // ✅ NEW PROCESS DATA
+                    processLabel: processSummary.label,
+                    processCount: processSummary.count,
+                    processList: processSummary.all,
                 }
             })
         })

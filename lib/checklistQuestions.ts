@@ -48,6 +48,12 @@ export const checklistQuestions = {
 
     "site visit telephonic": [
         {
+            id: "matrixAttendance",  // 🔥 ADD THIS
+            question: "Is attendance being recorded on matrix track?",
+            type: "yesno",
+            requireReasonOnNo: true
+        },
+        {
             id: "telephonicCalling",
             question: "Was any site contact made today?",
             type: "yesno"
