@@ -33,6 +33,9 @@ export async function POST(req: Request) {
         const lastRenewalDate = body.lastRenewalDate
         const nextRenewalDate = body.nextRenewalDate
 
+        const siteCategory = body.siteCategory
+        const siteRemark = body.siteRemark
+
         // =========================
         // 🆕 HR1 (NO SUBMISSION) → UPDATE SITE + TEMPLATE
         // =========================
@@ -58,6 +61,14 @@ export async function POST(req: Request) {
                     ...(lastRenewalDate ? { lastRenewalDate: parseDate(lastRenewalDate) } : {}),
                     ...(nextRenewalDate ? { nextRenewalDate: parseDate(nextRenewalDate) } : {}),
                     ...(siteType ? { siteType } : {}),
+
+                    ...(siteCategory !== undefined
+                        ? { siteCategory: siteCategory ? String(siteCategory).toUpperCase() : null }
+                        : {}),
+
+                    ...(siteRemark !== undefined
+                        ? { siteRemark: siteRemark ? String(siteRemark).trim() : null }
+                        : {}),
                 },
             })
 
@@ -109,6 +120,12 @@ export async function POST(req: Request) {
                     ...(lastRenewalDate ? { lastRenewalDate: parseDate(lastRenewalDate) } : {}),
                     ...(nextRenewalDate ? { nextRenewalDate: parseDate(nextRenewalDate) } : {}),
                     ...(siteType ? { siteType } : {}),
+                    ...(siteCategory !== undefined
+                        ? { siteCategory: siteCategory ? String(siteCategory).toUpperCase() : null }
+                        : {}),
+                    ...(siteRemark !== undefined
+                        ? { siteRemark: siteRemark ? String(siteRemark).trim() : null }
+                        : {}),
                 },
             })
             const updatedSite = await prisma.site.findUnique({

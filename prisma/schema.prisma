@@ -21,18 +21,22 @@ model User {
 }
 
 model Site {
-  id                  String               @id @default(cuid())
-  siteName            String               @unique
-  incharge            String?
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
+  id                  String   @id @default(cuid())
+  siteName            String   @unique
+
+  startDate           DateTime?
   lastRenewalDate     DateTime?
   nextRenewalDate     DateTime?
-  startDate           DateTime?
-    siteType         String   @default("CLIENT") // CLIENT | INTERNAL
+
+  siteCategory        String?   // OWN | EXTERNAL | MISC
+  siteRemark          String?
+
   manpowerSubmissions ManpowerSubmission[]
   manpowerTemplate    SiteManpower[]
   bdRenewals          BDRenewalLog[]
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }
 
 model SiteManpower {

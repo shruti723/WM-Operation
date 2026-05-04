@@ -14,6 +14,10 @@ type FormType = {
     startDate: string
     lastRenewalDate: string
     nextRenewalDate: string
+
+    siteCategory: string
+    siteRemark: string
+
     manpowerList: ManpowerItem[]
 }
 
@@ -24,6 +28,10 @@ export default function HR1ManpowerPage() {
         startDate: "",
         lastRenewalDate: "",
         nextRenewalDate: "",
+
+        siteCategory: "",
+        siteRemark: "",
+
         manpowerList: [{ designation: "", authorised: 0 }]
     })
 
@@ -140,6 +148,41 @@ export default function HR1ManpowerPage() {
                             <input type="date" name="nextRenewalDate" value={form.nextRenewalDate} onChange={handleChange}
                                 className="w-full border border-gray-300 rounded-xl px-3 py-2 mt-1" />
                         </div>
+
+
+                    </div>
+
+                    {/* CATEGORY + REMARK */}
+                    <div className="grid grid-cols-3 gap-4">
+
+                        {/* CATEGORY */}
+                        <div>
+                            <label className="text-sm text-gray-600">Category</label>
+                            <select
+                                name="siteCategory"
+                                value={form.siteCategory}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 rounded-xl px-4 py-2 mt-1 focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">Select Category</option>
+                                <option value="OWN">Own</option>
+                                <option value="EXTERNAL">External</option>
+                                <option value="MISC">Miscellaneous</option>
+                            </select>
+                        </div>
+
+                        {/* REMARK */}
+                        <div className="col-span-2">
+                            <label className="text-sm text-gray-600">Remark</label>
+                            <input
+                                name="siteRemark"
+                                value={form.siteRemark}
+                                onChange={handleChange}
+                                placeholder="Enter remark"
+                                className="w-full border border-gray-300 rounded-xl px-4 py-2 mt-1 focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+
                     </div>
 
 

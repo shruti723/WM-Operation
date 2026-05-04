@@ -209,6 +209,36 @@ export default function Dashboard() {
             .finally(() => setLoading(false))
     }, [])
 
+    useEffect(() => {
+        fetch("/api/finance/dashboard", {
+            cache: "no-store",
+        })
+            .then(res => res.json())
+            .then(res => {
+                const records = res.records || []
+                setData(records)
+
+                // ✅ SET DEFAULT MONTH TO LATEST
+                if (records.length) {
+                    const latestMonth = records
+                        .map((r: any) => r.month)
+                        .sort((a: string, b: string) => {
+                            const parse = (val: string) => {
+                                const [month, year] = val.split(" ")
+                                return new Date(`${month} 1, ${year}`)
+                            }
+                            return parse(b).getTime() - parse(a).getTime()
+                        })[0]
+
+                    setFilters(prev => ({
+                        ...prev,
+                        month: latestMonth
+                    }))
+                }
+            })
+            .finally(() => setLoading(false))
+    }, [])
+
     /* ================= SUMMARY ================= */
 
     const summary = useMemo(() => {
@@ -670,9 +700,7 @@ export default function Dashboard() {
                                 data={pipelineData}
                                 dataKey="value"
                                 outerRadius={100}
-                                label={({ name, percent }) =>
-                                    `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
-                                }
+                                label={({ name }) => name}
                             >
                                 {/* Prepared */}
                                 <Cell fill="#f59e0b" />

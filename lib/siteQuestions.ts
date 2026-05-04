@@ -409,7 +409,7 @@ export const siteQuestions: any = {
         { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
-    "24 ISBT Raipur": [
+    "ISBT Raipur": [
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -434,7 +434,7 @@ export const siteQuestions: any = {
         { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
-    "ADM House।": [
+    "ADM House": [
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },
@@ -584,7 +584,7 @@ export const siteQuestions: any = {
         { question: "Any plumbing leakage observed?", type: "yesno", requireReasonOnYes: true }
 
     ],
-    "MD  sahab resi": [
+    "MD  House": [
         { question: "Was attendance physically verified?", type: "yesno", requireReasonOnNo: true },
         { question: "Was grooming and uniform checked?", type: "yesno", requireReasonOnNo: true },
         { question: "Was housekeeping checklist verified?", type: "yesno", requireReasonOnNo: true },

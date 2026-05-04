@@ -18,6 +18,7 @@ type RenewalItem = {
     nextRenewalDate: string | null
     category: "Next 30 Days" | "Next 3 Months" | "Later" | "Overdue"
     status: "Pending" | "In Progress" | "Confirmed"
+    remarks: string | null
 }
 
 type HistoryItem = {
@@ -150,6 +151,14 @@ export default function BDPage() {
             getCategoryFromDate(r.nextRenewalDate) === "Next 3 Months" &&
             r.siteType === "CLIENT"
     ).length
+    const [remarksMap, setRemarksMap] = useState<Record<string, string>>({})
+
+    const handleRemarkChange = (id: string, value: string) => {
+        setRemarksMap((prev) => ({
+            ...prev,
+            [id]: value,
+        }))
+    }
 
     const handleChange = (
         key: keyof typeof form,
@@ -376,7 +385,7 @@ export default function BDPage() {
                                             </div>
 
                                             {/* SEARCH */}
-                                            <div className="relative w-full lg:w-[260px]">
+                                            {/* <div className="relative w-full lg:w-[260px]">
                                                 <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                                                 <input
                                                     type="text"
@@ -385,7 +394,7 @@ export default function BDPage() {
                                                     onChange={(e) => setSearch(e.target.value)}
                                                     className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm outline-none focus:border-indigo-300 focus:bg-white"
                                                 />
-                                            </div>
+                                            </div> */}
                                         </div>
                                     </div>
 
@@ -397,6 +406,9 @@ export default function BDPage() {
                                                     <th className="px-6 py-4 text-left text-sm font-semibold text-slate-500">Site</th>
                                                     <th className="px-6 py-4 text-left text-sm font-semibold text-slate-500">Next Renewal Date</th>
                                                     <th className="px-6 py-4 text-left text-sm font-semibold text-slate-500">Category</th>
+                                                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-500">
+                                                        Remarks
+                                                    </th>
                                                 </tr>
                                             </thead>
 
@@ -426,6 +438,16 @@ export default function BDPage() {
                                                                     </span>
                                                                 )
                                                             })()}
+                                                        </td>
+
+                                                        <td className="px-6 py-4">
+                                                            <textarea
+                                                                rows={2}
+                                                                placeholder="Add remark..."
+                                                                value={remarksMap[item.id] || ""}
+                                                                onChange={(e) => handleRemarkChange(item.id, e.target.value)}
+                                                                className="w-full min-w-[200px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-indigo-300 focus:bg-white"
+                                                            />
                                                         </td>
                                                     </tr>
                                                 ))}

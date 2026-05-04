@@ -80,10 +80,28 @@ export default function BillingPage() {
         })
             .then(res => res.json())
             .then(res => {
-                setData(res.records || [])
+                const records = res.records || []
+                setData(records)
+
+                // ✅ AUTO SELECT LATEST MONTH
+                if (records.length) {
+                    const latestMonth = records
+                        .map((r: any) => r.month)
+                        .sort((a: string, b: string) => {
+                            const parse = (val: string) => {
+                                const [month, year] = val.split(" ")
+                                return new Date(`${month} 1, ${year}`)
+                            }
+                            return parse(b).getTime() - parse(a).getTime()
+                        })[0]
+
+                    setMonthFilter(latestMonth)
+                }
             })
             .finally(() => setLoading(false))
     }, [])
+
+
 
     // ✅ FILTER LOGIC
     const filtered = useMemo(() => {

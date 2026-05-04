@@ -59,6 +59,8 @@ export async function GET(req: Request) {
                 startDate: toDateString(site.startDate),
                 lastRenewalDate: toDateString(site.lastRenewalDate),
                 nextRenewalDate: toDateString(site.nextRenewalDate),
+                siteCategory: site.siteCategory ?? "",
+                siteRemark: site.siteRemark ?? "",
                 manpowerList: site.manpowerTemplate.map((item) => ({
                     designation: item.designation,
                     authorised: item.authorised,
@@ -74,6 +76,8 @@ export async function GET(req: Request) {
                 startDate: toDateString(site.startDate),
                 lastRenewalDate: toDateString(site.lastRenewalDate),
                 nextRenewalDate: toDateString(site.nextRenewalDate),
+                siteCategory: site.siteCategory ?? "",
+                siteRemark: site.siteRemark ?? "",
                 manpowerList: site.manpowerTemplate.map((item) => ({
                     designation: item.designation,
                     authorised: item.authorised,
@@ -100,6 +104,8 @@ export async function GET(req: Request) {
                 lastRenewalDate: toDateString(site.lastRenewalDate),
                 nextRenewalDate: toDateString(site.nextRenewalDate),
                 submittedAt: toDateString(latestSubmission.submittedAt),
+                siteCategory: site.siteCategory ?? "",
+                siteRemark: site.siteRemark ?? "",
                 manpowerList: latestSubmission.items.map((item) => ({
                     designation: item.designation,
                     authorised: item.authorised,
@@ -127,6 +133,8 @@ export async function GET(req: Request) {
                 startDate: toDateString(site.startDate),
                 lastRenewalDate: toDateString(site.lastRenewalDate),
                 nextRenewalDate: toDateString(site.nextRenewalDate),
+                siteCategory: site.siteCategory ?? "",
+                siteRemark: site.siteRemark ?? "",
                 submittedAt: toDateString(latestSubmission.submittedAt),
                 manpowerList: latestSubmission.items.map((item) => ({
                     designation: item.designation,
@@ -148,6 +156,8 @@ export async function GET(req: Request) {
             startDate: toDateString(site.startDate),
             lastRenewalDate: toDateString(site.lastRenewalDate),
             nextRenewalDate: toDateString(site.nextRenewalDate),
+            siteCategory: site.siteCategory ?? "",
+            siteRemark: site.siteRemark ?? "",
             manpowerList: site.manpowerTemplate.map((item) => ({
                 designation: item.designation,
                 authorised: item.authorised,
@@ -211,6 +221,10 @@ export async function POST(req: Request) {
                     startDate: parseDate(body.startDate),
                     lastRenewalDate: parseDate(body.lastRenewalDate),
                     nextRenewalDate: parseDate(body.nextRenewalDate),
+                    siteCategory: body.siteCategory
+                        ? String(body.siteCategory).toUpperCase()
+                        : null,
+                    siteRemark: body.siteRemark || null,
                     manpowerTemplate: {
                         create: manpowerList.map((item: any) => ({
                             designation: String(item.designation || "").trim(),

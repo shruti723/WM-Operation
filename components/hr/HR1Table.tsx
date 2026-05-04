@@ -20,7 +20,8 @@ type ManpowerRecord = {
     lastRenewalDate: string
     nextRenewalDate: string
     manpowerList: ManpowerItem[]
-    siteType?: "CLIENT" | "INTERNAL"
+    siteCategory?: string
+    siteRemark?: string
 }
 
 type FinanceRecord = {
@@ -170,7 +171,8 @@ function HR1Manpower() {
                 lastRenewalDate: item.lastRenewalDate,
                 nextRenewalDate: item.nextRenewalDate,
                 manpowerList: item.manpowerList,
-                siteType: item.siteType ?? "CLIENT",
+                siteCategory: item.siteCategory ?? "",
+                siteRemark: item.siteRemark ?? "",
             }))
 
             setData(formatted)
@@ -204,7 +206,8 @@ function HR1Manpower() {
                     startDate: selected.startDate,
                     lastRenewalDate: selected.lastRenewalDate,
                     nextRenewalDate: selected.nextRenewalDate,
-                    siteType: selected.siteType || "CLIENT",
+                    siteCategory: selected.siteCategory,
+                    siteRemark: selected.siteRemark,
                 }),
             })
 
@@ -566,31 +569,7 @@ function HR1Manpower() {
                                 />
                             </div>
 
-                            <div>
-                                <label className="text-sm text-gray-600">Site Type</label>
 
-                                {editMode ? (
-                                    <select
-                                        value={selected.siteType || "CLIENT"}
-                                        onChange={(e) =>
-                                            setSelected({
-                                                ...selected,
-                                                siteType: e.target.value as "CLIENT" | "INTERNAL",
-                                            })
-                                        }
-                                        className="w-full border rounded-lg px-3 py-2 mt-1"
-                                    >
-                                        <option value="CLIENT">Client Site</option>
-                                        <option value="INTERNAL">Internal Site</option>
-                                    </select>
-                                ) : (
-                                    <p className="mt-1">
-                                        {selected.siteType === "INTERNAL"
-                                            ? "Internal Site"
-                                            : "Client Site"}
-                                    </p>
-                                )}
-                            </div>
 
                             <div>
                                 <label className="text-sm text-gray-600">Start Date</label>
@@ -641,6 +620,60 @@ function HR1Manpower() {
                                 }
                                 className="w-full border rounded-lg px-3 py-2 mt-1"
                             />
+                        </div>
+
+                        {/* CATEGORY + REMARK */}
+                        <div className="grid grid-cols-12 gap-4 mb-6">
+
+                            {/* CATEGORY */}
+                            <div className="col-span-4">
+                                <label className="text-sm text-gray-600">Category</label>
+
+                                {editMode ? (
+                                    <select
+                                        value={selected.siteCategory || ""}
+                                        onChange={(e) =>
+                                            setSelected({
+                                                ...selected,
+                                                siteCategory: e.target.value,
+                                            })
+                                        }
+                                        className="w-full border rounded-lg px-3 py-2 mt-1"
+                                    >
+                                        <option value="">Select</option>
+                                        <option value="OWN">Own</option>
+                                        <option value="EXTERNAL">External</option>
+                                        <option value="MISC">Miscellaneous</option>
+                                    </select>
+                                ) : (
+                                    <p className="mt-1">
+                                        {selected.siteCategory || "-"}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* REMARK */}
+                            <div className="col-span-8">
+                                <label className="text-sm text-gray-600">Remark</label>
+
+                                {editMode ? (
+                                    <input
+                                        value={selected.siteRemark || ""}
+                                        onChange={(e) =>
+                                            setSelected({
+                                                ...selected,
+                                                siteRemark: e.target.value,
+                                            })
+                                        }
+                                        className="w-full border rounded-lg px-3 py-2 mt-1"
+                                    />
+                                ) : (
+                                    <p className="mt-1">
+                                        {selected.siteRemark || "-"}
+                                    </p>
+                                )}
+                            </div>
+
                         </div>
 
                         {/* MANPOWER */}
