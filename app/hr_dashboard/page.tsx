@@ -80,6 +80,8 @@ export default function HRAdminDashboard() {
     const [neededIndex, setNeededIndex] = useState(0)
     const ITEMS_PER_CARD = 7
 
+    const [siteType, setSiteType] = useState("all")
+
     const filteredNeeded = (data?.allNeeded || []).filter(
         (site: any) => (site.needed || 0) > 0
     )
@@ -98,6 +100,7 @@ export default function HRAdminDashboard() {
         setStatus("all")
         setStartDate("")
         setEndDate("")
+        setSiteType("all")
         setChartIndex(0)
     }
 
@@ -114,6 +117,7 @@ export default function HRAdminDashboard() {
                     status,
                     startDate,
                     endDate,
+                    siteType,
                 })
 
                 const res = await fetch(`/api/hr/admin-dashboard?${query}`, {
@@ -132,6 +136,33 @@ export default function HRAdminDashboard() {
         loadData()
     }, [search, status, startDate, endDate])
 
+    useEffect(() => {
+        async function loadData() {
+            try {
+                const query = new URLSearchParams({
+                    search,
+                    status,
+                    startDate,
+                    endDate,
+                    siteType,
+                })
+
+                const res = await fetch(`/api/hr/admin-dashboard?${query}`, {
+                    cache: "no-store",
+                })
+
+                const result = await res.json()
+                setData(result)
+            } catch (err) {
+                console.error(err)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        loadData()
+    }, [search, status, startDate, endDate, siteType]) // ✅ ADD THIS
+
     if (loading) return <div className="p-6">Loading...</div>
 
     /* ---------- CHART DATA ---------- */
@@ -147,7 +178,19 @@ export default function HRAdminDashboard() {
         chartIndex + ITEMS_PER_CHART
     )
 
+    const allSites = data?.siteDetails || []
 
+    const externalSites = allSites.filter(
+        (s: any) => (s.siteCategory || "").toUpperCase() === "EXTERNAL"
+    )
+
+    const ownSites = allSites.filter(
+        (s: any) => (s.siteCategory || "").toUpperCase() === "OWN"
+    )
+
+    const miscSites = allSites.filter(
+        (s: any) => (s.siteCategory || "").toUpperCase() === "MISC"
+    )
 
     /* ---------- UI ---------- */
 
@@ -198,6 +241,17 @@ export default function HRAdminDashboard() {
                             onChange={(e) => setEndDate(e.target.value)}
                             className="border px-3 py-2 rounded-lg text-sm"
                         />
+
+                        {/* <select
+                            value={siteType}
+                            onChange={(e) => setSiteType(e.target.value)}
+                            className="border px-4 py-2 rounded-lg text-sm"
+                        >
+                            <option value="all">All Types</option>
+                            <option value="EXTERNAL">External</option>
+                            <option value="OWN">Own</option>
+                            <option value="MISC">Misc</option>
+                        </select> */}
                     </div>
 
                     {/* RIGHT SIDE */}
@@ -534,38 +588,66 @@ export default function HRAdminDashboard() {
                         )}
                     </div>
 
-                    {/* 🟢 Recent Activity */}
+                    {/* 🟣 Sites by Type */}
                     <div className="bg-white rounded-2xl border p-5 shadow-sm">
-                        <div className="flex items-center justify-between mb-3">
-                            <div>
-                                <h3 className="text-sm font-semibold text-slate-800">
-                                    Recent Activity
-                                </h3>
-                                <p className="text-xs text-slate-400">
-                                    Latest manpower submissions
-                                </p>
-                            </div>
-                            <CheckCircle2 className="text-blue-500" size={18} />
+
+                        <div className="mb-3">
+                            <h3 className="text-sm font-semibold text-slate-800">
+                                Sites by Type
+                            </h3>
+                            <p className="text-xs text-slate-400">
+                                External / Own / Misc distribution
+                            </p>
                         </div>
 
-                        {recentActivity.length ? (
-                            <div className="space-y-3">
-                                {recentActivity.map((item: any, i: number) => (
-                                    <div key={i} className="text-sm">
-                                        <p className="text-gray-700 font-medium">
-                                            {item.site}
+                        <div className="grid grid-cols-3 gap-4">
+
+                            {/* EXTERNAL */}
+                            <div className="border rounded-xl p-3">
+                                <p className="text-xs font-semibold text-purple-600 mb-2">
+                                    External ({externalSites.length})
+                                </p>
+
+                                <div className="max-h-[220px] overflow-y-auto space-y-2 pr-1">
+                                    {externalSites.map((site: any, i: number) => (
+                                        <p key={i} className="text-sm text-gray-700">
+                                            {site.site}
                                         </p>
-                                        <p className="text-xs text-gray-400">
-                                            {formatDate(item.createdAt)}
-                                        </p>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        ) : (
-                            <p className="text-sm text-gray-400">
-                                No recent submissions
-                            </p>
-                        )}
+
+                            {/* OWN */}
+                            <div className="border rounded-xl p-3">
+                                <p className="text-xs font-semibold text-green-600 mb-2">
+                                    Own ({ownSites.length})
+                                </p>
+
+                                <div className="max-h-[220px] overflow-y-auto space-y-2 pr-1">
+                                    {ownSites.map((site: any, i: number) => (
+                                        <p key={i} className="text-sm text-gray-700">
+                                            {site.site}
+                                        </p>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* MISC */}
+                            <div className="border rounded-xl p-3">
+                                <p className="text-xs font-semibold text-orange-600 mb-2">
+                                    Misc ({miscSites.length})
+                                </p>
+
+                                <div className="max-h-[220px] overflow-y-auto space-y-2 pr-1">
+                                    {miscSites.map((site: any, i: number) => (
+                                        <p key={i} className="text-sm text-gray-700">
+                                            {site.site}
+                                        </p>
+                                    ))}
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
 
                 </div>

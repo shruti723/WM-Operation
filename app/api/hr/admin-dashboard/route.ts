@@ -9,6 +9,7 @@ export async function GET(req: Request) {
         const status = searchParams.get("status") || "all"
         const startDate = searchParams.get("startDate")
         const endDate = searchParams.get("endDate")
+        const siteType = searchParams.get("siteType") || "all"
 
         const sites = await prisma.site.findMany({
             include: {
@@ -36,6 +37,7 @@ export async function GET(req: Request) {
                 lastRenewalDate: site.lastRenewalDate,
                 nextRenewalDate: site.nextRenewalDate,
                 required,
+                siteCategory: site.siteCategory,
             }
         })
 
@@ -141,6 +143,7 @@ export async function GET(req: Request) {
                     siteId: site.id,
                     submissionId: sub.id,
                     site: site.siteName,
+                    siteCategory: site.siteCategory,
                     createdAt: sub.createdAt,
 
                     startDate: site.startDate,
@@ -180,7 +183,17 @@ export async function GET(req: Request) {
             const matchesStart = !start || (itemDate && itemDate >= start)
             const matchesEnd = !end || (itemDate && itemDate <= end)
 
-            return matchesSearch && matchesStatus && matchesStart && matchesEnd
+            const matchesSiteType =
+                siteType === "all" ||
+                (item.siteCategory || "").toUpperCase() === siteType
+
+            return (
+                matchesSearch &&
+                matchesStatus &&
+                matchesStart &&
+                matchesEnd &&
+                matchesSiteType
+            )
         })
 
         /* ---------------- LATEST RECORD PER SITE FOR METRICS ---------------- */

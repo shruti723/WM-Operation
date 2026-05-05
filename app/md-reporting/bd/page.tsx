@@ -267,6 +267,42 @@ export default function BDPage() {
         return diffDays < 0
     }).length
 
+    const handleRemarkSave = async (item: any) => {
+        try {
+            const remark = remarksMap[item.id] ?? item.siteRemark ?? ""
+
+            const res = await fetch("/api/md-reporting/bd/update-remark", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    id: item.id,
+                    remark,
+                }),
+            })
+
+            const data = await res.json()
+
+            if (data.success) {
+                alert("Remark updated ✅")
+
+                setRenewalData(prev =>
+                    prev.map(r =>
+                        r.id === item.id
+                            ? { ...r, siteRemark: remark }
+                            : r
+                    )
+                )
+            } else {
+                alert("Failed ❌")
+            }
+        } catch (err) {
+            console.error(err)
+            alert("Error ❌")
+        }
+    }
+
     return (
         <div className="min-h-screen bg-slate-50">
             <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-6 sm:py-8">
@@ -469,13 +505,22 @@ export default function BDPage() {
                                                             })()}
                                                         </td>
 
-                                                        <td className="px-6 py-4">
+                                                        <td className="px-6 py-4 space-y-2">
                                                             <textarea
                                                                 rows={2}
-                                                                value={item.siteRemark || ""}
+                                                                value={
+                                                                    remarksMap[item.id] ?? item.siteRemark ?? ""
+                                                                }
                                                                 onChange={(e) => handleRemarkChange(item.id, e.target.value)}
                                                                 className="w-full min-w-[200px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-indigo-300 focus:bg-white"
                                                             />
+
+                                                            <button
+                                                                onClick={() => handleRemarkSave(item)}
+                                                                className="text-xs bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700"
+                                                            >
+                                                                Save
+                                                            </button>
                                                         </td>
                                                     </tr>
                                                 ))}

@@ -41,7 +41,21 @@ export default function SiteDetailsPage() {
     const [messages, setMessages] = useState<any[]>([])
     const [newMessage, setNewMessage] = useState("")
 
+    const [onlyNeeded, setOnlyNeeded] = useState(false)
+    const [processFilter, setProcessFilter] = useState("all")
+    const [siteType, setSiteType] = useState("all")
 
+    const filteredDesignations = (data?.designations || []).filter((d: any) => {
+
+        const matchesNeeded =
+            !onlyNeeded || Number(d.needed || 0) > 0
+
+        const matchesProcess =
+            processFilter === "all" ||
+            (d.process || "").toLowerCase() === processFilter.toLowerCase()
+
+        return matchesNeeded && matchesProcess
+    })
 
     useEffect(() => {
         const type = searchParams.get("type")
@@ -63,7 +77,30 @@ export default function SiteDetailsPage() {
         load()
     }, [params.siteId, searchParams])
 
+    useEffect(() => {
+        const type = searchParams.get("type")
 
+        if (type === "hr1") {
+            setIsHR1(true)
+        }
+
+        // ✅ INIT FILTERS FROM URL
+        setOnlyNeeded(searchParams.get("onlyNeeded") === "true")
+        setProcessFilter(searchParams.get("process") || "all")
+        setSiteType(searchParams.get("siteType") || "all")
+
+        async function load() {
+            const submissionId = searchParams.get("submissionId")
+
+            const res = await fetch(
+                `/api/hr/admin-dashboard/site/${params.siteId}?submissionId=${submissionId || ""}`
+            )
+            const result = await res.json()
+            setData(result)
+        }
+
+        load()
+    }, [params.siteId])
 
     if (!data) return <div className="p-6">Loading...</div>
 
@@ -82,6 +119,47 @@ export default function SiteDetailsPage() {
             {/* 🔹 HEADER */}
             <div>
                 <h1 className="text-2xl font-bold">Site Details</h1>
+
+
+                <div className="flex flex-wrap gap-3 mt-3 bg-white p-4 rounded-xl border shadow-sm">
+
+                    {/* Needed */}
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={onlyNeeded}
+                            onChange={(e) => setOnlyNeeded(e.target.checked)}
+                        />
+                        Needed &gt; 0
+                    </label>
+
+                    {/* Process */}
+                    <select
+                        value={processFilter}
+                        onChange={(e) => setProcessFilter(e.target.value)}
+                        className="border px-3 py-2 rounded-lg text-sm"
+                    >
+                        <option value="all">All Process</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Under Process">Under Process</option>
+                        <option value="Not Required">Not Required</option>
+                    </select>
+
+
+
+                    {/* Clear */}
+                    <button
+                        onClick={() => {
+                            setOnlyNeeded(false)
+                            setProcessFilter("all")
+                            setSiteType("all")
+                        }}
+                        className="px-3 py-2 text-sm rounded-lg border bg-gray-100 hover:bg-gray-200"
+                    >
+                        Clear
+                    </button>
+
+                </div>
             </div>
 
             {/* 🔹 SITE INFO */}
@@ -144,7 +222,7 @@ export default function SiteDetailsPage() {
                         </thead>
 
                         <tbody>
-                            {data.designations?.map((d: any, i: number) => (
+                            {filteredDesignations.map((d: any, i: number) => (
                                 <tr key={i} className="border-t hover:bg-gray-50">
 
                                     <td className="p-3 font-medium">{d.designation}</td>

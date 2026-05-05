@@ -43,7 +43,7 @@ export default function ManpowerDetailsPage() {
     const [startDate, setStartDate] = useState("")
     const [endDate, setEndDate] = useState("")
     const [onlyNeeded, setOnlyNeeded] = useState(false)
-
+    const [siteType, setSiteType] = useState("all")
     const [page, setPage] = useState(1)
     const ITEMS_PER_PAGE = 12
 
@@ -74,6 +74,10 @@ export default function ManpowerDetailsPage() {
                 status === "all" ||
                 (status === "completed" && site.hr3Done) ||
                 (status === "pending" && !site.hr3Done)
+
+            const matchesType =
+                siteType === "all" ||
+                (site.siteCategory || "").toUpperCase() === siteType
 
             const itemDate = site.createdAt ? new Date(site.createdAt) : null
 
@@ -109,7 +113,9 @@ export default function ManpowerDetailsPage() {
                 matchesStart &&
                 matchesEnd &&
                 matchesNeeded &&
+                matchesType &&
                 matchesProcess
+
             )
         })
         .sort((a: any, b: any) =>
@@ -170,7 +176,7 @@ export default function ManpowerDetailsPage() {
                     className="border px-4 py-2 rounded-lg text-sm w-60"
                 />
 
-                <select
+                {/* <select
                     value={status}
                     onChange={(e) => {
                         setStatus(e.target.value)
@@ -181,7 +187,7 @@ export default function ManpowerDetailsPage() {
                     <option value="all">All Status</option>
                     <option value="completed">Completed</option>
                     <option value="pending">Pending</option>
-                </select>
+                </select> */}
 
                 <input
                     type="date"
@@ -231,6 +237,20 @@ export default function ManpowerDetailsPage() {
 
                 </select>
 
+                <select
+                    value={siteType}
+                    onChange={(e) => {
+                        setSiteType(e.target.value)
+                        setPage(1)
+                    }}
+                    className="border px-4 py-2 rounded-lg text-sm"
+                >
+                    <option value="all">All Types</option>
+                    <option value="EXTERNAL">External</option>
+                    <option value="OWN">Own</option>
+                    <option value="MISC">Misc</option>
+                </select>
+
                 <button
                     onClick={clearFilters}
                     className="px-4 py-2 text-sm rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition"
@@ -241,7 +261,9 @@ export default function ManpowerDetailsPage() {
             </div>
 
             {/* Table */}
-            <TableCard title="Manpower Details">
+            <TableCard
+                title={`Manpower Details (${filtered.length})`}
+            >
 
                 <table className="w-full text-sm">
                     <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
@@ -306,7 +328,12 @@ export default function ManpowerDetailsPage() {
                                     <td className="p-3 text-center">
                                         <button
                                             onClick={() =>
-                                                router.push(`/hr_dashboard/${site.siteId}?submissionId=${site.submissionId}`)
+                                                router.push(
+                                                    `/hr_dashboard/${site.siteId}?submissionId=${site.submissionId}` +
+                                                    `&onlyNeeded=${onlyNeeded}` +
+                                                    `&process=${processFilter}` +
+                                                    `&siteType=${siteType}`
+                                                )
                                             }
                                             className="flex items-center justify-center p-2 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition"
                                         >

@@ -39,6 +39,8 @@ export default function SiteDetailsPage() {
     const [loading, setLoading] = useState(true)
     const [sitePage, setSitePage] = useState(1)
 
+    const [siteType, setSiteType] = useState("all")
+
     const [search, setSearch] = useState("")
     const [status, setStatus] = useState("all")
     const [startDate, setStartDate] = useState("")
@@ -82,7 +84,11 @@ export default function SiteDetailsPage() {
         const matchesEnd =
             !end || (itemDate && itemDate <= end)
 
-        return matchesSearch && matchesStart && matchesEnd
+        const matchesType =
+            siteType === "all" ||
+            (site.siteCategory || "").toUpperCase() === siteType
+
+        return matchesSearch && matchesStart && matchesEnd && matchesType
     })
 
     const siteStart = (sitePage - 1) * ITEMS_PER_PAGE
@@ -148,12 +154,27 @@ export default function SiteDetailsPage() {
                     className="border px-3 py-2 rounded-lg text-sm"
                 />
 
+                <select
+                    value={siteType}
+                    onChange={(e) => {
+                        setSiteType(e.target.value)
+                        setSitePage(1)
+                    }}
+                    className="border px-4 py-2 rounded-lg text-sm"
+                >
+                    <option value="all">All Types</option>
+                    <option value="EXTERNAL">External</option>
+                    <option value="OWN">Own</option>
+                    <option value="MISC">Misc</option>
+                </select>
+
 
 
             </div>
 
             {/* Table */}
-            <TableCard title="Site Details">
+            <TableCard title={`Site Details (${filteredSites.length})`}>
+
 
                 <table className="w-full text-sm">
                     <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
