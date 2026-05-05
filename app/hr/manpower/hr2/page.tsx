@@ -49,7 +49,10 @@ export default function HR2ManpowerPage() {
 
     /* 🔥 FETCH SITE DATA */
     async function fetchSiteData(siteName: string) {
-        const res = await fetch(`/api/hr/manpower?siteName=${siteName}`)
+
+        const res = await fetch(`/api/hr/manpower?siteName=${siteName}`, {
+            cache: "no-store"
+        })
         const data = await res.json()
 
         if (data.success) {

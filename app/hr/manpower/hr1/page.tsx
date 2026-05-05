@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-
+import { useRouter } from "next/navigation"
 /* TYPES */
 type ManpowerItem = {
     designation: string
@@ -38,6 +38,7 @@ export default function HR1ManpowerPage() {
     const [loading, setLoading] = useState(false)
     const [user, setUser] = useState<any>(null)
     const [userLoaded, setUserLoaded] = useState(false)
+    const router = useRouter()
 
     useEffect(() => {
         const storedUser = sessionStorage.getItem("user")
@@ -95,6 +96,20 @@ export default function HR1ManpowerPage() {
             const result = await res.json()
 
             alert(result.message || "Saved")
+
+            // reset form
+            setForm({
+                siteName: "",
+                startDate: "",
+                lastRenewalDate: "",
+                nextRenewalDate: "",
+                siteCategory: "",
+                siteRemark: "",
+                manpowerList: [{ designation: "", authorised: 0 }]
+            })
+
+            // optional refresh (if table is server-side)
+            router.refresh() // ✅ refresh server data
 
         } catch (err) {
             alert("Error ❌")
