@@ -47,12 +47,18 @@ export default function SiteDetailsPage() {
 
     const filteredDesignations = (data?.designations || []).filter((d: any) => {
 
-        const matchesNeeded =
-            !onlyNeeded || Number(d.needed || 0) > 0
+        const needed = Number(d.needed || 0)
+        const process = (d.process || "").toLowerCase()
 
+        // Needed filter
+        const matchesNeeded =
+            !onlyNeeded ||
+            (needed > 0 && process !== "completed")
+
+        // Process dropdown filter
         const matchesProcess =
             processFilter === "all" ||
-            (d.process || "").toLowerCase() === processFilter.toLowerCase()
+            process === processFilter.toLowerCase()
 
         return matchesNeeded && matchesProcess
     })

@@ -165,7 +165,7 @@ export default function SiteDetailsPage() {
                     <option value="all">All Types</option>
                     <option value="EXTERNAL">External</option>
                     <option value="OWN">Own</option>
-                    <option value="MISC">Misc</option>
+                    {/* <option value="MISC">Misc</option> */}
                 </select>
 
 

@@ -90,8 +90,19 @@ export default function ManpowerDetailsPage() {
             const matchesEnd =
                 !end || (itemDate && itemDate <= end)
 
+            // const matchesNeeded =
+            //     !onlyNeeded || Number(site.needed || 0) > 0
+
+            const hasOnlyCompleted =
+                site.processList?.length === 1 &&
+                site.processList?.includes("Completed")
+
             const matchesNeeded =
-                !onlyNeeded || Number(site.needed || 0) > 0
+                !onlyNeeded ||
+                (
+                    Number(site.needed || 0) > 0 &&
+                    !hasOnlyCompleted
+                )
 
             const matchesProcess =
                 processFilter === "all" ||

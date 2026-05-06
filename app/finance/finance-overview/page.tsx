@@ -31,6 +31,7 @@ type FinanceRecord = {
     dispatched?: string
     paymentCheque?: string
     salaryStatus?: "Paid" | "Unpaid"
+    prepareDate?: string | null
 }
 
 /* ================= HELPERS ================= */
@@ -86,8 +87,10 @@ export default function Dashboard() {
     const [filters, setFilters] = useState({
         search: "",
         month: "All",
-        status: "All",   // Paid / Pending
-        delay: "All"     // 0-7 / 8-15 / 15+
+        status: "All",
+        delay: "All",
+        fromDate: "",
+        toDate: "",
     })
 
     const filteredData = useMemo(() => {
@@ -116,7 +119,53 @@ export default function Dashboard() {
             if (filters.delay === "0-7" && !(d <= 7)) return false
             if (filters.delay === "8-15" && !(d > 7 && d <= 15)) return false
             if (filters.delay === "15+" && !(d > 15)) return false
+            // Date Range Filter
+            const recordDate = row.prepareDate
+                ? (() => {
 
+                    const cleanDate = row.prepareDate
+                        .trim()
+                        .replaceAll("/", "-")
+
+                    const [day, month, year] = cleanDate.split("-")
+
+                    // LOCAL SAFE DATE
+                    return new Date(
+                        Number(year),
+                        Number(month) - 1,
+                        Number(day),
+                        12, // midday avoids timezone shift
+                        0,
+                        0
+                    )
+                })()
+                : null
+
+            if (!recordDate && (filters.fromDate || filters.toDate)) {
+                return false
+            }
+
+            if (recordDate) {
+
+                // FROM DATE
+                if (filters.fromDate) {
+                    const fromDate = new Date(filters.fromDate + "T00:00:00")
+
+                    if (recordDate < fromDate) {
+                        return false
+                    }
+                }
+
+                // TO DATE
+                if (filters.toDate) {
+                    const toDate = new Date(filters.toDate + "T23:59:59")
+                    toDate.setHours(23, 59, 59, 999)
+
+                    if (recordDate > toDate) {
+                        return false
+                    }
+                }
+            }
             return true
         })
     }, [data, filters])
@@ -453,6 +502,41 @@ export default function Dashboard() {
                         <option value="15+">15+ Days</option>
                     </select>
 
+                    <div className="flex flex-col">
+                        <label className="text-xs text-gray-500 mb-1">
+                            From Date
+                        </label>
+
+                        <input
+                            type="date"
+                            value={filters.fromDate}
+                            onChange={(e) =>
+                                setFilters(prev => ({
+                                    ...prev,
+                                    fromDate: e.target.value
+                                }))
+                            }
+                            className="border px-3 py-2 rounded-md"
+                        />
+                    </div>
+
+                    <div className="flex flex-col">
+                        <label className="text-xs text-gray-500 mb-1">
+                            To Date
+                        </label>
+
+                        <input
+                            type="date"
+                            value={filters.toDate}
+                            onChange={(e) =>
+                                setFilters(prev => ({
+                                    ...prev,
+                                    toDate: e.target.value
+                                }))
+                            }
+                            className="border px-3 py-2 rounded-md"
+                        />
+                    </div>
                 </div>
 
                 {/* RIGHT SIDE */}
@@ -462,7 +546,9 @@ export default function Dashboard() {
                             search: "",
                             month: "All",
                             status: "All",
-                            delay: "All"
+                            delay: "All",
+                            fromDate: "",
+                            toDate: "",
                         })
                     }
                     className="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200"

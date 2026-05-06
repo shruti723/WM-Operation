@@ -158,11 +158,20 @@ export default function BillingPage() {
         // ✅ DATE FILTER (correct)
         if (date?.from && date?.to) {
             list = list.filter(r => {
-                if (!r.receivedDate) return false
 
-                const d = parseDate(r.receivedDate)
+                if (!r.prepareDate) return false
 
-                return d >= date.from! && d <= date.to!
+                const d = parseDate(r.prepareDate)
+
+                d.setHours(0, 0, 0, 0)
+
+                const from = new Date(date.from!)
+                from.setHours(0, 0, 0, 0)
+
+                const to = new Date(date.to!)
+                to.setHours(23, 59, 59, 999)
+
+                return d >= from && d <= to
             })
         }
 

@@ -56,7 +56,7 @@ const adminModules = [
   {
     id: "financeSheet",
     title: "Finance",
-    desc: "Monthly billing data from accounts team (Google Sheet based dashboard)",
+    desc: "Monthly billing data from accounts team for financial analysis",
     icon: Wallet,
     path: "/finance/finance-overview",
     gradient: "from-emerald-500 to-teal-500",

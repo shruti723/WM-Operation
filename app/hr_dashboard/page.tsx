@@ -218,7 +218,7 @@ export default function HRAdminDashboard() {
                             className="border px-4 py-2 rounded-lg text-sm w-56"
                         />
 
-                        <select
+                        {/* <select
                             value={status}
                             onChange={(e) => setStatus(e.target.value)}
                             className="border px-4 py-2 rounded-lg text-sm"
@@ -226,7 +226,7 @@ export default function HRAdminDashboard() {
                             <option value="all">All</option>
                             <option value="completed">Completed</option>
                             <option value="pending">Pending</option>
-                        </select>
+                        </select> */}
 
                         <input
                             type="date"
@@ -242,7 +242,7 @@ export default function HRAdminDashboard() {
                             className="border px-3 py-2 rounded-lg text-sm"
                         />
 
-                        {/* <select
+                        <select
                             value={siteType}
                             onChange={(e) => setSiteType(e.target.value)}
                             className="border px-4 py-2 rounded-lg text-sm"
@@ -250,8 +250,8 @@ export default function HRAdminDashboard() {
                             <option value="all">All Types</option>
                             <option value="EXTERNAL">External</option>
                             <option value="OWN">Own</option>
-                            <option value="MISC">Misc</option>
-                        </select> */}
+                            {/* <option value="MISC">Misc</option> */}
+                        </select>
                     </div>
 
                     {/* RIGHT SIDE */}
@@ -267,13 +267,73 @@ export default function HRAdminDashboard() {
                 {/* Metrics */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
 
-                    <MetricCard
+                    {/* <MetricCard
                         title="Total Sites"
                         value={summary.totalSites}
                         icon={<Building2 className="h-6 w-6 text-blue-600" />}
                         border="border-blue-200"
                         bg="bg-blue-100/60"
-                    />
+                    /> */}
+
+                    <div className="
+    rounded-2xl border bg-white/80 backdrop-blur
+    px-6 py-5 shadow-sm hover:shadow-xl transition-all
+">
+
+                        {/* TITLE */}
+                        <p className="text-xs text-gray-400 tracking-wide uppercase">
+                            Total Sites
+                        </p>
+
+                        {/* CONTENT */}
+                        <div className="mt-4 flex items-center justify-between">
+
+                            {/* LEFT SIDE */}
+                            <div className="flex items-center gap-12">
+
+                                {/* TOTAL */}
+                                <h4 className="text-[52px] font-bold text-gray-900 leading-none">
+                                    {summary.totalSites}
+                                </h4>
+
+                                {/* TYPE COUNTS */}
+                                <div className="space-y-1">
+
+                                    <div className="grid grid-cols-[80px_20px] items-center">
+                                        <span className="text-[15px] font-semibold text-purple-600">
+                                            External
+                                        </span>
+
+                                        <span className="text-[18px] font-bold text-gray-800">
+                                            {externalSites.length}
+                                        </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-[80px_20px] items-center">
+                                        <span className="text-[15px] font-semibold text-green-600">
+                                            Own
+                                        </span>
+
+                                        <span className="text-[18px] font-bold text-gray-800">
+                                            {ownSites.length}
+                                        </span>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            {/* ICON */}
+                            <div className="
+            h-12 w-12 rounded-xl
+            bg-blue-100/70
+            flex items-center justify-center
+            shrink-0
+        ">
+                                <Building2 className="h-5 w-5 text-blue-600" />
+                            </div>
+
+                        </div>
+                    </div>
 
                     <MetricCard
                         title="Manpower Authorised"
@@ -596,11 +656,11 @@ export default function HRAdminDashboard() {
                                 Sites by Type
                             </h3>
                             <p className="text-xs text-slate-400">
-                                External / Own / Misc distribution
+                                External / Own distribution
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-2 gap-4">
 
                             {/* EXTERNAL */}
                             <div className="border rounded-xl p-3">
@@ -632,7 +692,7 @@ export default function HRAdminDashboard() {
                                 </div>
                             </div>
 
-                            {/* MISC */}
+                            {/* MISC
                             <div className="border rounded-xl p-3">
                                 <p className="text-xs font-semibold text-orange-600 mb-2">
                                     Misc ({miscSites.length})
@@ -645,7 +705,7 @@ export default function HRAdminDashboard() {
                                         </p>
                                     ))}
                                 </div>
-                            </div>
+                            </div> */}
 
                         </div>
                     </div>
