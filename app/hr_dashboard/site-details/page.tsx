@@ -184,6 +184,7 @@ export default function SiteDetailsPage() {
                             <th className="p-3 text-center">Last Renewal</th>
                             <th className="p-3 text-center">Next Renewal</th>
                             <th className="p-3 text-center">Total Authorised</th>
+                            <th className="p-3 text-left">Remark</th>
                             <th className="p-3 text-center">View</th>
                         </tr>
                     </thead>
@@ -213,6 +214,12 @@ export default function SiteDetailsPage() {
                                 {/* Authorised */}
                                 <td className="p-3 text-center font-medium">
                                     {site.required}
+                                </td>
+
+                                <td className="p-3">
+                                    <div className="max-w-[320px] text-sm text-gray-600 leading-6 break-words">
+                                        {site.siteRemark || "-"}
+                                    </div>
                                 </td>
 
                                 {/* Action */}

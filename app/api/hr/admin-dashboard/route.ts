@@ -38,6 +38,7 @@ export async function GET(req: Request) {
                 nextRenewalDate: site.nextRenewalDate,
                 required,
                 siteCategory: site.siteCategory,
+                siteRemark: site.siteRemark,
             }
         })
 
@@ -145,6 +146,7 @@ export async function GET(req: Request) {
                     site: site.siteName,
                     siteCategory: site.siteCategory,
                     createdAt: sub.createdAt,
+                    siteRemark: site.siteRemark,
 
                     startDate: site.startDate,
                     lastRenewalDate: site.lastRenewalDate,

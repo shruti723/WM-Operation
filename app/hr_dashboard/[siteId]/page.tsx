@@ -139,17 +139,18 @@ export default function SiteDetailsPage() {
                         Needed &gt; 0
                     </label>
 
-                    {/* Process */}
-                    <select
-                        value={processFilter}
-                        onChange={(e) => setProcessFilter(e.target.value)}
-                        className="border px-3 py-2 rounded-lg text-sm"
-                    >
-                        <option value="all">All Process</option>
-                        <option value="Completed">Completed</option>
-                        <option value="Under Process">Under Process</option>
-                        <option value="Not Required">Not Required</option>
-                    </select>
+                    {!isHR1 && (
+                        <select
+                            value={processFilter}
+                            onChange={(e) => setProcessFilter(e.target.value)}
+                            className="border px-3 py-2 rounded-lg text-sm"
+                        >
+                            <option value="all">All Process</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Under Process">Under Process</option>
+                            <option value="Not Required">Not Required</option>
+                        </select>
+                    )}
 
 
 
