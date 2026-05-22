@@ -16,37 +16,27 @@ async function main() {
     const users = [
         {
             name: "Admin",
-            email: "admin@fm.com",
+            email: "admin@wm.com",
             password: "1234",
             role: "admin",
         },
-        {
-            name: "Nitesh",
-            email: "nitesh@fm.com",
-            password: "1234",
-            role: "supervisor",
-        },
-        {
-            name: "Naveen",
-            email: "naveen@fm.com",
-            password: "1234",
-            role: "supervisor",
-        },
+
+
         {
             name: "HR 1",
-            email: "hr1@fm.com",
+            email: "hr1@wm.com",
             password: "1234",
             role: "level1",
         },
         {
             name: "HR 2",
-            email: "hr2@fm.com",
+            email: "hr2@wm.com",
             password: "1234",
             role: "level2",
         },
         {
             name: "HR 3",
-            email: "hr3@fm.com",
+            email: "hr3@wm.com",
             password: "1234",
             role: "level3",
         },

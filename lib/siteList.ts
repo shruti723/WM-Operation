@@ -26,5 +26,6 @@ export const sites = [
     "Pithampur Muncipal Corporation",
     "RAJKUMAR",
     "ROHAN SIR HOUSEKEEPER SATHEE SIR SE",
-    "Ruchi Reality"
+    "Ruchi Reality",
+    "IIML Incubation Center / IIM Lucknow Indore Smart Seed Center"
 ]

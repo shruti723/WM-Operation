@@ -8,7 +8,7 @@ export async function GET(req: Request) {
 
         if (!submissionId) return NextResponse.json([])
 
-        const messages = await prisma.manpowerChat.findMany({
+        const messages = await prisma.wmManpowerChat.findMany({
             where: { submissionId },
             orderBy: { createdAt: "asc" },
 

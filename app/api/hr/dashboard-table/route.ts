@@ -17,7 +17,7 @@ export async function GET(req: Request) {
         const { searchParams } = new URL(req.url)
         const role = searchParams.get("role")
 
-        const submissions = await prisma.manpowerSubmission.findMany({
+        const submissions = await prisma.wmManpowerSubmission.findMany({
             orderBy: { submittedAt: "desc" },
             include: {
                 site: true,
@@ -30,7 +30,7 @@ export async function GET(req: Request) {
 
         if (role === "level1") {
 
-            const sites = await prisma.site.findMany({
+            const sites = await prisma.wmSite.findMany({
                 orderBy: { createdAt: "desc" },
                 include: {
                     manpowerTemplate: {

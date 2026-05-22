@@ -10,7 +10,7 @@ export async function GET(
     const type = searchParams.get("type")
 
     try {
-        const site = await prisma.site.findUnique({
+        const site = await prisma.wmSite.findUnique({
             where: { id: params.siteId },
             include: {
                 manpowerTemplate: true, // HR1

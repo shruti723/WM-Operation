@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'FM Operations',
-  description: 'FM Operations Management System',
+  title: 'WM Operations',
+  description: 'WM Operations Management System',
   generator: 'v0.app',
   icons: {
     icon: '/logo.png',

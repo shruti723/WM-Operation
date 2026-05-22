@@ -57,28 +57,30 @@ export default function Header({ toggleSidebar }: { toggleSidebar: () => void })
                 </button>
 
                 <h1 className="font-semibold text-base md:text-lg truncate">
-                    FM Operation
+                    WM Operation
                 </h1>
             </div>
 
             {/* RIGHT */}
             <div className="flex items-center gap-2 md:gap-4 relative shrink-0">
                 {/* Notification */}
-                <div className="relative">
-                    <button
-                        onClick={() => setOpen(!open)}
-                        className="relative p-2 rounded-lg hover:bg-gray-100"
-                    >
-                        <Bell size={20} />
+                {/* Notification */}
+                {user?.role !== "level1" && (
+                    <div className="relative">
+                        <button
+                            onClick={() => setOpen(!open)}
+                            className="relative p-2 rounded-lg hover:bg-gray-100"
+                        >
+                            <Bell size={20} />
 
-                        {/* 🔴 Badge */}
-                        {notifications.filter(n => !n.isRead).length > 0 && (
-                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 rounded-full">
-                                {notifications.filter(n => !n.isRead).length}
-                            </span>
-                        )}
-                    </button>
-                </div>
+                            {notifications.filter(n => !n.isRead).length > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 rounded-full">
+                                    {notifications.filter(n => !n.isRead).length}
+                                </span>
+                            )}
+                        </button>
+                    </div>
+                )}
 
                 {/* User info */}
                 <div className="hidden sm:block text-right leading-tight">

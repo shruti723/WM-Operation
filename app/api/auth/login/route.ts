@@ -6,23 +6,38 @@ export async function POST(req: Request) {
     try {
         const body = await req.json()
 
-        const email = String(body.email || "").trim().toLowerCase()
-        const password = String(body.password || "")
+        const email = String(body.email || "")
+            .trim()
+            .toLowerCase()
 
-        if (!email || !password) {
+        const password = String(body.password || "")
+        const portal = String(body.portal || "")
+            .trim()
+            .toLowerCase()
+
+        if (!email || !password || !portal) {
             return NextResponse.json(
-                { success: false, message: "Email and password are required" },
+                {
+                    success: false,
+                    message: "Email, password and portal are required",
+                },
                 { status: 400 }
             )
         }
 
-        const user = await prisma.user.findUnique({
-            where: { email },
+        const user = await prisma.user.findFirst({
+            where: {
+                email,
+                portal,
+            },
         })
 
         if (!user) {
             return NextResponse.json(
-                { success: false, message: "Invalid email or password" },
+                {
+                    success: false,
+                    message: "Unauthorized portal access",
+                },
                 { status: 401 }
             )
         }
@@ -34,7 +49,10 @@ export async function POST(req: Request) {
 
         if (!isValidPassword) {
             return NextResponse.json(
-                { success: false, message: "Invalid email or password" },
+                {
+                    success: false,
+                    message: "Invalid email or password",
+                },
                 { status: 401 }
             )
         }
@@ -46,12 +64,17 @@ export async function POST(req: Request) {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                portal: user.portal,
             },
         })
     } catch (error) {
         console.error("Login API error:", error)
+
         return NextResponse.json(
-            { success: false, message: "Something went wrong" },
+            {
+                success: false,
+                message: "Something went wrong",
+            },
             { status: 500 }
         )
     }

@@ -10,7 +10,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false })
         }
 
-        await prisma.notification.update({
+        await prisma.wmNotification.update({
             where: { id },
             data: { isRead: true },
         })

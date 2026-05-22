@@ -64,7 +64,7 @@ const mdModules = [
         id: "decisions",
         title: "Decisions",
         icon: ShieldCheck,
-        path: "/md-reporting/decisions", // ❗ FIX THIS
+        path: "/md-reporting/decisions",
         gradient: "from-indigo-600 to-indigo-800",
         desc: "Key approvals & management decisions",
     },

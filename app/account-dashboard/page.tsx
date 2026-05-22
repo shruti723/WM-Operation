@@ -451,7 +451,7 @@ export default function FinanceAdminDashboardPage() {
                                     <Building2 className="h-8 w-8" />
                                 </div>
                                 <div>
-                                    <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900">FM Admin Dashboard</h1>
+                                    <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900">WM Admin Dashboard</h1>
                                     <p className="text-xl text-slate-500">Finance Workflow Tracker</p>
                                 </div>
                             </div>

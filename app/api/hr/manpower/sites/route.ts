@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db"
 
 export async function GET() {
     try {
-        const sites = await prisma.site.findMany({
+        const sites = await prisma.wmSite.findMany({
             orderBy: { siteName: "asc" },
             select: { siteName: true },
         })

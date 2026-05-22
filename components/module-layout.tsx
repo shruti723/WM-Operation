@@ -14,24 +14,24 @@ export interface NavItem {
 }
 
 interface Props {
-  title:    string
+  title: string
   subtitle: string
-  accent:   string          // e.g. "indigo", "emerald", "amber"
-  menu:     NavItem[]
+  accent: string          // e.g. "indigo", "emerald", "amber"
+  menu: NavItem[]
   children: React.ReactNode
 }
 
 const accentMap: Record<string, { bg: string; text: string; ring: string; sidebar: string }> = {
-  indigo:  { bg: "bg-indigo-600",  text: "text-indigo-600",  ring: "ring-indigo-200",  sidebar: "bg-indigo-600"  },
+  indigo: { bg: "bg-indigo-600", text: "text-indigo-600", ring: "ring-indigo-200", sidebar: "bg-indigo-600" },
   emerald: { bg: "bg-emerald-600", text: "text-emerald-600", ring: "ring-emerald-200", sidebar: "bg-emerald-600" },
-  amber:   { bg: "bg-amber-600",   text: "text-amber-600",   ring: "ring-amber-200",   sidebar: "bg-amber-600"   },
-  rose:    { bg: "bg-rose-600",    text: "text-rose-600",    ring: "ring-rose-200",    sidebar: "bg-rose-600"    },
-  sky:     { bg: "bg-sky-600",     text: "text-sky-600",     ring: "ring-sky-200",     sidebar: "bg-sky-600"     },
-  violet:  { bg: "bg-violet-600",  text: "text-violet-600",  ring: "ring-violet-200",  sidebar: "bg-violet-600"  },
+  amber: { bg: "bg-amber-600", text: "text-amber-600", ring: "ring-amber-200", sidebar: "bg-amber-600" },
+  rose: { bg: "bg-rose-600", text: "text-rose-600", ring: "ring-rose-200", sidebar: "bg-rose-600" },
+  sky: { bg: "bg-sky-600", text: "text-sky-600", ring: "ring-sky-200", sidebar: "bg-sky-600" },
+  violet: { bg: "bg-violet-600", text: "text-violet-600", ring: "ring-violet-200", sidebar: "bg-violet-600" },
 }
 
 export default function ModuleLayout({ title, subtitle, accent, menu, children }: Props) {
-  const router   = useRouter()
+  const router = useRouter()
   const pathname = usePathname()
   const [user, setUser] = useState<any>(null)
   const colors = accentMap[accent] ?? accentMap.indigo
@@ -89,11 +89,10 @@ export default function ModuleLayout({ title, subtitle, accent, menu, children }
               <button
                 key={path}
                 onClick={() => router.push(path)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
-                  active
-                    ? `${colors.sidebar} text-white`
-                    : "text-slate-400 hover:text-white hover:bg-slate-800"
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${active
+                  ? `${colors.sidebar} text-white`
+                  : "text-slate-400 hover:text-white hover:bg-slate-800"
+                  }`}
               >
                 <Icon size={15} />
                 <span className="flex-1 text-left">{name}</span>

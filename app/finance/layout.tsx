@@ -29,7 +29,7 @@ export default function FinanceLayout({ children }: { children: React.ReactNode 
             <aside className="w-72 bg-white border-r p-4 fixed top-0 left-0 h-screen">
 
                 <h2 className="text-xl font-bold mb-4 text-gray-800">
-                    FM Operations
+                    WM Operations
                 </h2>
 
                 {/* 🔙 BACK BUTTON */}

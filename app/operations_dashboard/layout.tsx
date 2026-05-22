@@ -19,7 +19,7 @@ export default function OperationsLayout({
             <aside className="w-64 bg-white border-r hidden lg:flex flex-col p-5 space-y-6 fixed left-0 top-0 h-full z-40">
 
                 <h2 className="text-xl font-bold text-indigo-600">
-                    FM Operation
+                    WM Operation
                 </h2>
 
                 {/* 🔙 BACK BUTTON */}
@@ -45,7 +45,7 @@ export default function OperationsLayout({
                         </div>
                     </Link>
 
-                    <Link href="/operations_dashboard/reports">
+                    {/* <Link href="/operations_dashboard/reports">
                         <div
                             className={`flex items-center gap-3 px-4 py-2 rounded-xl cursor-pointer transition
                             ${pathname.includes("/reports")
@@ -56,7 +56,7 @@ export default function OperationsLayout({
                             <AlertTriangle size={18} />
                             Reports
                         </div>
-                    </Link>
+                    </Link> */}
                 </nav>
             </aside>
 

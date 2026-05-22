@@ -20,9 +20,9 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     const menu = [
         { name: "Dashboard", icon: LayoutDashboard, path: "/hr", roles: ["level1", "level2"] },
         {
-            name: "FM Business Developement",   // ✅ NEW
+            name: "WM Business Developement",   // ✅ NEW
             icon: FileText,         // reuse icon
-            path: "/hr/manpower/hr1-fm-bd-reporting", // create this page
+            path: "/hr/manpower/hr1-wm-bd-reporting", // create this page
             roles: ["level1"],      // ONLY HR1
         },
 
@@ -72,7 +72,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <div className="h-full flex flex-col bg-white">
             <div className="px-4 py-4 md:px-5 border-b">
                 <h1 className="text-lg md:text-xl font-bold text-slate-800 truncate">
-                    FM Operation
+                    WM Operation
                 </h1>
                 <p className="text-xs text-slate-400 mt-1 hidden md:block">
                     HR Panel

@@ -35,6 +35,7 @@ export default function LoginPage() {
         body: JSON.stringify({
           email,
           password,
+          portal: "wm",
         }),
       })
 
@@ -74,7 +75,7 @@ export default function LoginPage() {
         <CardHeader className="text-center space-y-2">
           <div className="text-4xl">🏢</div>
           <CardTitle className="text-2xl font-bold tracking-tight">
-            FM Operations
+            WM Operations
           </CardTitle>
           <p className="text-sm text-gray-500">
             Login to manage operations

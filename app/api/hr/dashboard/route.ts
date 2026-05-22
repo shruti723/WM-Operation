@@ -24,7 +24,7 @@ export async function GET(req: Request) {
         // ========================
         if (role === "level1") {
 
-            const sites = await prisma.site.findMany()
+            const sites = await prisma.wmSite.findMany()
 
             totalSites = sites.length
 
@@ -42,7 +42,7 @@ export async function GET(req: Request) {
         // ========================
         else {
 
-            const submissions = await prisma.manpowerSubmission.findMany({
+            const submissions = await prisma.wmManpowerSubmission.findMany({
                 orderBy: { submittedAt: "desc" },
                 include: {
                     site: true,
@@ -50,7 +50,7 @@ export async function GET(req: Request) {
                 },
             })
 
-            totalSites = await prisma.site.count()
+            totalSites = await prisma.wmSite.count()
 
             submitted = submissions.length
 

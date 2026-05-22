@@ -7,7 +7,7 @@ export async function GET(req: Request) {
 
         const role = searchParams.get("role") // 👈 NEW
 
-        const reports = await prisma.bDReport.findMany({
+        const reports = await prisma.wmBDReport.findMany({
             where: role
                 ? {
                     role: {

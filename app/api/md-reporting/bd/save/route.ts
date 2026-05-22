@@ -7,7 +7,7 @@ export async function POST(req: Request) {
 
         console.log("BODY:", body)
 
-        const record = await prisma.bDReport.create({
+        const record = await prisma.wmBDReport.create({
             data: {
                 proposalsUnderProcess: body.proposalsUnderProcess || "",
                 proposalsSent: body.proposalsSent || "",

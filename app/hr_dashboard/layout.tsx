@@ -20,7 +20,7 @@ export default function HRLayout({ children }: { children: React.ReactNode }) {
             {/* ✅ FIXED SIDEBAR */}
             <div className="fixed top-0 left-0 h-screen w-64 bg-white border-r p-4 flex flex-col">
 
-                <h2 className="font-bold text-lg mb-6">FM Operation</h2>
+                <h2 className="font-bold text-lg mb-6">WM Operation</h2>
                 {/* 🔙 BACK BUTTON */}
                 <button
                     onClick={() => router.push("/supervisor")}

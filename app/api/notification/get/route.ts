@@ -10,7 +10,7 @@ export async function GET(req: Request) {
             return NextResponse.json([], { status: 200 })
         }
 
-        const notifications = await prisma.notification.findMany({
+        const notifications = await prisma.wmNotification.findMany({
             where: {
                 userId: userId,   // 🔥 IMPORTANT
             },

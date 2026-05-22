@@ -12,15 +12,31 @@ model User {
   email            String            @unique
   passwordHash     String
   role             UserRole
+    portal           String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   pettyCashRecords PettyCashRecord[]
 
-  sentMessages  ManpowerChat[]
-  notifications Notification[]
+fmSentMessages FmManpowerChat[] @relation("FmUserChats")
+wmSentMessages WmManpowerChat[] @relation("WmUserChats")
+
+fmNotifications FmNotification[] @relation("FmUserNotifications")
+wmNotifications WmNotification[] @relation("WmUserNotifications")
+
+dailySiteReports  DailySiteReport[]
+travelVisitPlans  TravelVisitPlan[]
+costLeakReports   CostLeakReport[]
+costSavingReports CostSavingReport[]
+
+fmRaisedIssues FmRaisedIssue[]
+fmIssueHistories FmRaisedIssueHistory[]
+
+amitojCommandTargets AmitojCommandTarget[]
+amitojSiteControls   AmitojSiteControl[]
+amitojTravelPlans    AmitojTravelVisitPlan[]
 }
 
-model Site {
+model FmSite {
   id                  String   @id @default(cuid())
   siteName            String   @unique
 
@@ -31,37 +47,83 @@ model Site {
   siteCategory        String?   // OWN | EXTERNAL | MISC
   siteRemark          String?
 
-  manpowerSubmissions ManpowerSubmission[]
-  manpowerTemplate    SiteManpower[]
-  bdRenewals          BDRenewalLog[]
+  manpowerSubmissions FmManpowerSubmission[]
+  manpowerTemplate    FmSiteManpower[]
+bdRenewals FmBDRenewalLog[]
 
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+   @@map("Site")
+}
+model WmSite {
+  id                  String   @id @default(cuid())
+  siteName            String   @unique
+
+  startDate           DateTime?
+  lastRenewalDate     DateTime?
+  nextRenewalDate     DateTime?
+
+  siteCategory        String?
+  siteRemark          String?
+
+  manpowerSubmissions WmManpowerSubmission[]
+  manpowerTemplate    WmSiteManpower[]
+bdRenewals WmBDRenewalLog[]
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 }
 
-model SiteManpower {
+model FmSiteManpower {
   id          String   @id @default(cuid())
   siteId      String
   designation String
   authorised  Int
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  site        Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  site        FmSite     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+    @@map("SiteManpower")
+}
+model WmSiteManpower {
+  id          String   @id @default(cuid())
+  siteId      String
+  designation String
+  authorised  Int
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  site WmSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  
 }
 
-model ManpowerSubmission {
+model FmManpowerSubmission {
   id              String                   @id @default(cuid())
   siteId          String
   submittedByRole UserRole?
   submittedAt     DateTime                 @default(now())
   createdAt       DateTime                 @default(now())
   updatedAt       DateTime                 @updatedAt
-  site            Site                     @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  items           ManpowerSubmissionItem[]
-  chats           ManpowerChat[]
+  site            FmSite                     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  items           FmManpowerSubmissionItem[]
+  chats           FmManpowerChat[]
+    @@map("ManpowerSubmission")
+}
+model WmManpowerSubmission {
+  id              String   @id @default(cuid())
+  siteId          String
+  submittedByRole UserRole?
+
+  submittedAt     DateTime @default(now())
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  site  WmSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  items WmManpowerSubmissionItem[]
+   chats           WmManpowerChat[]
 }
 
-model ManpowerSubmissionItem {
+model FmManpowerSubmissionItem {
   id                 String             @id @default(cuid())
   submissionId       String
   designation        String
@@ -75,7 +137,29 @@ model ManpowerSubmissionItem {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   recruitmentProcess String?
-  submission         ManpowerSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  submission         FmManpowerSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+    @@map("ManpowerSubmissionItem")
+}
+model WmManpowerSubmissionItem {
+  id                 String   @id @default(cuid())
+  submissionId       String
+
+  designation        String
+  authorised         Int
+  deployed           Int?
+  shortage           Int?
+  needed             Int? @default(0)
+
+  responsible        String?
+  cutoffDate         DateTime?
+  remarks            String?
+
+  recruitmentProcess String?
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  submission WmManpowerSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
 }
 
 model PettyCashRecord {
@@ -196,10 +280,8 @@ model FinanceSheetRecord {
   receivedDate           String?
   paymentReceivedDays    Int?
 
-  // ✅ KEEP OLD
   salaryDisbursementDate String?
 
-  // ✅ ADD NEW
   salaryStatus           String?
 
   source                 String?
@@ -211,13 +293,27 @@ model FinanceSheetRecord {
 }
 
 enum UserRole {
-  admin
+fmadmin
   supervisor
+  fmlevel1
+  fmlevel2
+  fmlevel3
+  account1
+  account2
+  wmadmin
+   wmlevel1
+  wmlevel2
+  wmlevel3
+  admin
   level1
   level2
   level3
-  account1
-  account2
+Ravi
+Suyesh
+Mahendra
+Lakhan
+Deepak
+Amitoj
 }
 
 enum PaymentStatus {
@@ -239,18 +335,22 @@ enum ChecklistSource {
   STORE
 }
 
-model BDRenewalLog {
+model FmBDRenewalLog {
   id        String   @id @default(cuid())
   siteId    String
-  status    String // Pending / In Progress / Confirmed
+
+  status    String
   remarks   String?
   updatedBy String?
+
   updatedAt DateTime @default(now())
 
-  site Site @relation(fields: [siteId], references: [id])
+  site FmSite @relation(fields: [siteId], references: [id])
+
+  @@map("BDRenewalLog")
 }
 
-model BDReport {
+model FmBDReport {
   id   String   @id @default(cuid())
   date DateTime @default(now())
 
@@ -259,11 +359,43 @@ model BDReport {
   tendersUnderProcess   String?
   tendersSubmitted      String?
   misc                  String?
- role                  String 
+
+  role String
+
+  createdAt DateTime @default(now())
+
+  @@map("BDReport")
+}
+
+model WmBDRenewalLog {
+  id        String   @id @default(cuid())
+  siteId    String
+
+  status    String
+  remarks   String?
+  updatedBy String?
+
+  updatedAt DateTime @default(now())
+
+  site WmSite @relation(fields: [siteId], references: [id])
+}
+
+model WmBDReport {
+  id   String   @id @default(cuid())
+  date DateTime @default(now())
+
+  proposalsUnderProcess String?
+  proposalsSent         String?
+  tendersUnderProcess   String?
+  tendersSubmitted      String?
+  misc                  String?
+
+  role String
+
   createdAt DateTime @default(now())
 }
 
-model ManpowerChat {
+model FmManpowerChat {
   id           String @id @default(cuid())
   submissionId String
 
@@ -275,11 +407,28 @@ model ManpowerChat {
 
   createdAt DateTime @default(now())
 
-  submission ManpowerSubmission @relation(fields: [submissionId], references: [id])
-  sender     User               @relation(fields: [senderId], references: [id])
+  submission FmManpowerSubmission @relation(fields: [submissionId], references: [id])
+sender User @relation("FmUserChats", fields: [senderId], references: [id])
+    @@map("ManpowerChat")
 }
 
-model Notification {
+model WmManpowerChat {
+  id           String @id @default(cuid())
+  submissionId String
+
+  message    String
+  senderId   String
+  senderRole UserRole
+
+  isRead Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  submission WmManpowerSubmission @relation(fields: [submissionId], references: [id])
+sender User @relation("WmUserChats", fields: [senderId], references: [id])
+}
+
+model FmNotification {
   id        String   @id @default(cuid())
   userId    String
   message   String
@@ -287,7 +436,19 @@ model Notification {
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+user User @relation("FmUserNotifications", fields: [userId], references: [id])
+    @@map("Notification")
+}
+
+model WmNotification {
+  id        String   @id @default(cuid())
+  userId    String
+  message   String
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+user User @relation("WmUserNotifications", fields: [userId], references: [id])
 }
 
 model OperationReport {
@@ -296,4 +457,281 @@ model OperationReport {
   note        String
   submissionId String?   // optional link to checklist
   createdAt   DateTime @default(now())
+}
+
+model DailySiteReport {
+  id                      String   @id @default(cuid())
+
+  date                    DateTime
+  siteName                String
+  projectHead             String?
+
+  manpowerAuthorized      String?
+  deployed                String?
+  gap                     String?
+
+  billSubmittedDate       DateTime?
+  billAmountAuthorised    Float?
+  billAmountClaimed       Float?
+  paymentStatus           String?
+  paymentCreditDate       DateTime?
+
+  salariesPaidForMonth    String?
+  salaryRelatedIssue      String?
+
+  operationalRisks        String?
+  risksIfAny              String?
+  operationalStatus       String?
+
+  hrIssue                 String?
+  issueDetails            String?
+
+  clientStatus            String?
+  siteStatus              String?
+
+  createdById             String
+  createdBy               User     @relation(fields: [createdById], references: [id])
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}
+
+model TravelVisitPlan {
+  id                String   @id @default(cuid())
+
+  personTravelling String
+  siteToVisit      String
+  purpose          String?
+  problemToAddress String?
+  expectedOutcome  String?
+  travelDate       DateTime?
+  estimatedCost    Float?
+
+  approvedByAmitoj Boolean?
+  issueResolved    Boolean?
+  whatWasResolved  String?
+  stillPending     String?
+  followUpRequired Boolean?
+
+  createdById      String
+  createdBy        User     @relation(fields: [createdById], references: [id])
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model CostLeakReport {
+  id               String   @id @default(cuid())
+
+  site             String
+  leakageType      String?
+  description      String?
+  monthlyImpact    Float?
+  rootCause        String?
+  correctiveAction String?
+  owner            String?
+  deadline         DateTime?
+  status           String?
+
+  createdById      String
+  createdBy        User     @relation(fields: [createdById], references: [id])
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model CostSavingReport {
+  id                    String   @id @default(cuid())
+
+  site                  String
+  reductionSavingType   String?
+  description           String?
+  monthlyImpact         Float?
+  owner                 String?
+  deadline              DateTime?
+  status                String?
+
+  createdById           String
+  createdBy             User     @relation(fields: [createdById], references: [id])
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+enum ReportStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  BLOCKED
+}
+
+enum YesNo {
+  YES
+  NO
+}
+
+enum TrafficStatus {
+  GREEN
+  YELLOW
+  RED
+}
+model FmRaisedIssue {
+  id String @id @default(cuid())
+
+  issueNumber String @unique
+
+  // ✅ REMOVE RELATION
+  siteName String
+
+  issueTitle String?
+
+  observedIssue String
+
+  presentState String?
+
+  priority String? @default("MEDIUM")
+
+  conveyedToSupervisor Boolean @default(false)
+  supervisorAction String?
+  supervisorCutoffDate DateTime?
+
+  conveyedToHeadOffice Boolean @default(false)
+  headOfficeAction String?
+  headOfficeCutoffDate DateTime?
+
+  issueResolved Boolean @default(false)
+
+  resolutionRemark String?
+  resolutionDate DateTime?
+
+  currentStatus FmIssueStatus @default(PENDING)
+
+  isDeleted Boolean @default(false)
+
+  createdById String
+  createdBy User @relation(fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  images FmRaisedIssueImage[]
+  histories FmRaisedIssueHistory[]
+
+  @@map("FmRaisedIssue")
+
+  @@index([currentStatus])
+  @@index([createdAt])
+  @@index([createdById])
+}
+model FmRaisedIssueImage {
+  id String @id @default(cuid())
+
+  issueId String
+  issue FmRaisedIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  imageUrl String
+
+  createdAt DateTime @default(now())
+
+  @@map("FmRaisedIssueImage")
+}
+model FmRaisedIssueHistory {
+  id String @id @default(cuid())
+
+  issueId String
+  issue FmRaisedIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  actionType String
+  actionRemark String?
+
+  actionById String
+  actionBy User @relation(fields: [actionById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("FmRaisedIssueHistory")
+}
+enum FmIssueStatus {
+  PENDING
+  SUPERVISOR_NOTIFIED
+  HEAD_OFFICE_NOTIFIED
+  RESOLVED
+  ESCALATED
+}
+
+model AmitojCommandTarget {
+  id              String   @id @default(cuid())
+
+  targetArea      String
+  targetValue     String?
+  actual          String?
+  gap             String?
+  status          String?
+
+  mdContextReason String?
+  nextAction      String?
+  deadline        DateTime?
+  supportNeeded   String?
+
+  createdById     String
+  createdBy       User     @relation(fields: [createdById], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model AmitojSiteControl {
+  id                     String   @id @default(cuid())
+
+  site                   String
+  coordinator            String?
+
+  authorisedAmount       Float?
+  underBillingAmount     Float?
+  commitmentDate         DateTime?
+
+  billingStatus          String?
+  siteStatus             String?
+  clientControl          String?
+  politicalRisk          String?
+  coordinatorPerformance String?
+
+  riskMdContext          String?
+  lastAction             String?
+  nextAction             String?
+
+  owner                  String?
+  deadline               DateTime?
+
+  createdById            String
+  createdBy              User     @relation(fields: [createdById], references: [id])
+
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model AmitojTravelVisitPlan {
+  id                String   @id @default(cuid())
+
+  personTravelling String
+  siteToVisit      String
+
+  purpose          String?
+  problemToAddress String?
+  expectedOutcome  String?
+
+  travelDate       DateTime?
+  estimatedCost    Float?
+
+  visitOutcome     String?
+  issueResolved    Boolean?
+  whatWasResolved  String?
+  stillPending     String?
+  followUpRequired Boolean?
+
+  createdById      String
+  createdBy        User     @relation(fields: [createdById], references: [id])
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }

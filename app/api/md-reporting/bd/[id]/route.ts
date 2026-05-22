@@ -16,7 +16,7 @@ export async function GET(
             )
         }
 
-        const record = await prisma.bDReport.findUnique({
+        const record = await prisma.wmBDReport.findUnique({
             where: { id },
         })
 
@@ -57,7 +57,7 @@ export async function PUT(
             )
         }
 
-        const updated = await prisma.bDReport.update({
+        const updated = await prisma.wmBDReport.update({
             where: { id },
             data: {
                 proposalsUnderProcess: body.proposalsUnderProcess || "",

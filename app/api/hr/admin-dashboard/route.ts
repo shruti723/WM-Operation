@@ -1,17 +1,114 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 
+
+function toNumber(value: any) {
+    return Number(value || 0)
+}
+
+function getPercent(value: number, total: number) {
+    if (!total) return 0
+    return Number(((value / total) * 100).toFixed(1))
+}
+
+function daysUntil(date: any) {
+    if (!date) return null
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const target = new Date(date)
+    target.setHours(0, 0, 0, 0)
+
+    return Math.ceil(
+        (target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+    )
+}
+
+function getRenewalStatus(nextRenewalDate: any) {
+    const days = daysUntil(nextRenewalDate)
+
+    if (days === null) return "Unknown"
+    if (days < 0) return "Expired"
+    if (days <= 30) return "Due in 30 Days"
+    if (days <= 90) return "Due in 90 Days"
+    return "Safe"
+}
+
+function getRiskLevelByNeeded(needed: number) {
+    if (needed >= 8) return "Critical"
+    if (needed >= 3) return "High"
+    if (needed >= 1) return "Medium"
+    return "Low"
+}
+
+function getRiskScore(item: any) {
+    const needed = Math.max(toNumber(item.needed), 0)
+
+    const renewalDays = daysUntil(item.nextRenewalDate)
+
+    let renewalScore = 0
+    if (needed > 0 && renewalDays !== null) {
+        if (renewalDays < 0) renewalScore = 20
+        else if (renewalDays <= 30) renewalScore = 15
+        else if (renewalDays <= 90) renewalScore = 10
+    }
+
+    let processScore = 0
+
+    if (needed > 0 && !item.hr3Done) {
+        processScore += 20
+    }
+
+    if (
+        needed > 0 &&
+        ["-", "not required", "select", ""].includes(
+            String(item.processLabel || "").toLowerCase()
+        )
+    ) {
+        processScore += 15
+    }
+
+    const score =
+        needed * 10 +
+        renewalScore +
+        processScore
+
+    return Math.round(score)
+}
+function isRecruitmentCompleted(item: any) {
+    const processList = Array.isArray(item.processList)
+        ? item.processList
+        : []
+
+    return (
+        String(item.processLabel || "")
+            .toLowerCase()
+            .includes("completed") ||
+        processList.some((process: string) =>
+            String(process || "")
+                .toLowerCase()
+                .includes("completed")
+        )
+    )
+}
+
 export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url)
 
         const search = searchParams.get("search")?.toLowerCase().trim() || ""
-        const status = searchParams.get("status") || "all"
+        const status = searchParams.get("status")?.toLowerCase() || "all"
         const startDate = searchParams.get("startDate")
         const endDate = searchParams.get("endDate")
-        const siteType = searchParams.get("siteType") || "all"
+        const siteType = searchParams.get("siteType")?.toUpperCase() || "ALL"
 
-        const sites = await prisma.site.findMany({
+        const neededFilter = searchParams.get("needed") || "all"
+        const riskFilter = searchParams.get("risk") || "all"
+        const renewalFilter = searchParams.get("renewal") || "all"
+        const processFilter = searchParams.get("process") || "all"
+
+        const sites = await prisma.wmSite.findMany({
             include: {
                 manpowerTemplate: true,
                 manpowerSubmissions: {
@@ -59,8 +156,8 @@ export async function GET(req: Request) {
 
             function getProcessSummary(items: any[]) {
                 const processes = items
-                    .map(i => i.recruitmentProcess)
-                    .filter(p => p && p !== "Select")
+                    .map((i) => i.recruitmentProcess)
+                    .filter((p) => p && p !== "Select")
 
                 const unique = [...new Set(processes)]
 
@@ -68,14 +165,26 @@ export async function GET(req: Request) {
                     return { label: "-", count: 0, all: [] }
                 }
 
-                if (unique.length === 1) {
-                    return { label: unique[0], count: 1, all: unique }
+                const priority = ["Under Process", "Completed", "Not Required"]
+
+                const sorted = unique.sort((a: any, b: any) => {
+                    const aIndex = priority.indexOf(a)
+                    const bIndex = priority.indexOf(b)
+
+                    return (
+                        (aIndex === -1 ? 999 : aIndex) -
+                        (bIndex === -1 ? 999 : bIndex)
+                    )
+                })
+
+                if (sorted.length === 1) {
+                    return { label: sorted[0], count: 1, all: sorted }
                 }
 
                 return {
-                    label: `${unique[0]} + ${unique.length - 1} more`,
-                    count: unique.length,
-                    all: unique, // ✅ IMPORTANT
+                    label: `${sorted[0]} + ${sorted.length - 1} more`,
+                    count: sorted.length,
+                    all: sorted,
                 }
             }
 
@@ -186,8 +295,8 @@ export async function GET(req: Request) {
             const matchesEnd = !end || (itemDate && itemDate <= end)
 
             const matchesSiteType =
-                siteType === "all" ||
-                (item.siteCategory || "").toUpperCase() === siteType
+                siteType === "ALL" ||
+                String(item.siteCategory || "").toUpperCase() === siteType
 
             return (
                 matchesSearch &&
@@ -197,6 +306,8 @@ export async function GET(req: Request) {
                 matchesSiteType
             )
         })
+
+
 
         /* ---------------- LATEST RECORD PER SITE FOR METRICS ---------------- */
 
@@ -216,53 +327,246 @@ export async function GET(req: Request) {
 
         const latestRecords = Array.from(latestBySite.values())
 
+        /* ---------------- SITES WITHOUT MANPOWER ACTION ---------------- */
+
+        const latestSiteIds = new Set(
+            latestRecords.map((item: any) => item.siteId)
+        )
+
+        const noActionSites = siteDetails
+            .filter((site: any) => {
+                const matchesSearch =
+                    !search || site.site?.toLowerCase().includes(search)
+
+                const matchesSiteType =
+                    siteType === "ALL" ||
+                    String(site.siteCategory || "").toUpperCase() === siteType
+
+                return (
+                    matchesSearch &&
+                    matchesSiteType &&
+                    !latestSiteIds.has(site.siteId)
+                )
+            })
+            .map((site: any) => ({
+                siteId: site.siteId,
+                site: site.site,
+                authorised: site.required,
+                siteCategory: site.siteCategory,
+                remark: site.siteRemark || "-",
+                nextRenewalDate: site.nextRenewalDate,
+            }))
+
         /* ---------------- SUMMARY FROM LATEST RECORDS ONLY ---------------- */
+
+
+
+        const riskRecords = latestRecords.map((item: any) => {
+            const riskScore = getRiskScore(item)
+
+            return {
+                ...item,
+                deploymentPercent: getPercent(item.deployed, item.required),
+                shortagePercent: getPercent(
+                    Math.max(toNumber(item.shortage), 0),
+                    item.required
+                ),
+                renewalStatus: getRenewalStatus(item.nextRenewalDate),
+                riskScore,
+                riskLevel: getRiskLevelByNeeded(toNumber(item.needed)),
+            }
+        })
+
+        const dashboardRecords = riskRecords.filter((item: any) => {
+            const neededValue = toNumber(item.needed)
+
+            const matchesNeeded =
+                neededFilter === "all" ||
+                (neededFilter === "gt0" && neededValue > 0) ||
+                (neededFilter === "zero" && neededValue === 0) ||
+                (neededFilter === "1-2" && neededValue >= 1 && neededValue <= 2) ||
+                (neededFilter === "3-7" && neededValue >= 3 && neededValue <= 7) ||
+                (neededFilter === "8plus" && neededValue >= 8)
+
+            const matchesRisk =
+                riskFilter === "all" || item.riskLevel === riskFilter
+
+            const matchesRenewal =
+                renewalFilter === "all" || item.renewalStatus === renewalFilter
+
+            const processList = Array.isArray(item.processList)
+                ? item.processList
+                : []
+
+            const processText = [
+                item.processLabel,
+                ...processList,
+            ]
+                .join(" ")
+                .toLowerCase()
+
+            const matchesProcess =
+                processFilter === "all" ||
+                processText.includes(String(processFilter).toLowerCase())
+
+            return (
+                matchesNeeded &&
+                matchesRisk &&
+                matchesRenewal &&
+                matchesProcess
+            )
+        })
+
+
+        const externalSites = dashboardRecords.filter(
+            (item: any) => String(item.siteCategory || "").toUpperCase() === "EXTERNAL"
+        ).length
+
+        const ownSites = dashboardRecords.filter(
+            (item: any) => String(item.siteCategory || "").toUpperCase() === "OWN"
+        ).length
+
+        const authorised = dashboardRecords.reduce(
+            (sum: number, item: any) => sum + toNumber(item.required),
+            0
+        )
+
+        const deployed = dashboardRecords.reduce(
+            (sum: number, item: any) => sum + toNumber(item.deployed),
+            0
+        )
+
+        const shortage = dashboardRecords.reduce(
+            (sum: number, item: any) => sum + toNumber(item.shortage),
+            0
+        )
+
+        const overDeployed = dashboardRecords.reduce(
+            (sum: number, item: any) =>
+                sum + Math.abs(Math.min(toNumber(item.shortage), 0)),
+            0
+        )
+
+        const needed = dashboardRecords.reduce((sum: number, item: any) => {
+            if (isRecruitmentCompleted(item)) return sum
+
+            return sum + toNumber(item.needed)
+        }, 0)
 
         const summary = {
             totalSites: sites.length,
+            filteredSites: dashboardRecords.length,
 
-            authorised: latestRecords.reduce(
-                (sum: number, item: any) => sum + (item.required || 0),
-                0
-            ),
+            externalSites,
+            ownSites,
 
-            deployed: latestRecords.reduce(
-                (sum: number, item: any) => sum + (item.deployed || 0),
-                0
-            ),
+            authorised,
+            deployed,
+            shortage,
+            overDeployed,
+            needed,
 
-            shortage: latestRecords.reduce(
-                (sum: number, item: any) => sum + (item.shortage || 0),
-                0
-            ),
+            deploymentPercent: getPercent(deployed, authorised),
+            shortagePercent: getPercent(shortage, authorised),
 
-            needed: latestRecords.reduce(
-                (sum: number, item: any) => sum + (item.needed || 0),
-                0
-            ),
+            completedHR3: dashboardRecords.filter((item: any) => item.hr3Done).length,
+            pendingHR3: dashboardRecords.filter((item: any) => !item.hr3Done).length,
 
-            pendingHR3: latestRecords.filter((item: any) => !item.hr3Done).length,
+            underProcessSites: dashboardRecords.filter((item: any) => {
+                const processList = Array.isArray(item.processList)
+                    ? item.processList
+                    : []
+
+                return processList.some((process: string) =>
+                    String(process || "").toLowerCase().includes("under process")
+                )
+            }).length,
+
+            criticalSites: dashboardRecords.filter((item: any) => {
+                const processList = Array.isArray(item.processList)
+                    ? item.processList
+                    : []
+
+                const isCompleted =
+                    String(item.processLabel || "")
+                        .toLowerCase()
+                        .includes("completed") ||
+                    processList.some((process: string) =>
+                        String(process || "")
+                            .toLowerCase()
+                            .includes("completed")
+                    )
+
+                return (
+                    toNumber(item.needed) > 0 &&
+                    !isCompleted &&
+                    item.riskLevel === "Critical"
+                )
+            }).length,
+
+            highRiskSites: dashboardRecords.filter((item: any) => {
+                const processList = Array.isArray(item.processList)
+                    ? item.processList
+                    : []
+
+                const isCompleted =
+                    String(item.processLabel || "")
+                        .toLowerCase()
+                        .includes("completed") ||
+                    processList.some((process: string) =>
+                        String(process || "")
+                            .toLowerCase()
+                            .includes("completed")
+                    )
+
+                return (
+                    toNumber(item.needed) > 0 &&
+                    !isCompleted &&
+                    item.riskLevel === "High"
+                )
+            }).length,
+
+            renewalExpired: dashboardRecords.filter(
+                (item: any) => item.renewalStatus === "Expired"
+            ).length,
+
+            renewalDue30: dashboardRecords.filter(
+                (item: any) => item.renewalStatus === "Due in 30 Days"
+            ).length,
+
+            renewalDue90: dashboardRecords.filter(
+                (item: any) => item.renewalStatus === "Due in 90 Days"
+            ).length,
         }
 
         /* ---------------- CHARTS FROM LATEST RECORDS ---------------- */
 
-        const chartData = latestRecords.map((item: any) => ({
+        const chartData = dashboardRecords.map((item: any) => ({
             siteId: item.siteId,
             name: item.site,
+            siteCategory: item.siteCategory,
+
             authorised: item.required,
             deployed: item.deployed,
-            shortage: item.shortage,
+            shortage: Math.max(toNumber(item.shortage), 0),
+            overDeployed: Math.abs(Math.min(toNumber(item.shortage), 0)),
             needed: item.needed,
+
+            deploymentPercent: item.deploymentPercent,
+            shortagePercent: item.shortagePercent,
+
+            riskScore: item.riskScore,
+            riskLevel: item.riskLevel,
         }))
 
         const statusData = [
             {
                 name: "Completed",
-                value: latestRecords.filter((item: any) => item.hr3Done).length,
+                value: dashboardRecords.filter((item: any) => item.hr3Done).length,
             },
             {
                 name: "Pending",
-                value: latestRecords.filter((item: any) => !item.hr3Done).length,
+                value: dashboardRecords.filter((item: any) => !item.hr3Done).length,
             },
         ]
 
@@ -317,7 +621,7 @@ export async function GET(req: Request) {
 
         /* ---------------- EXTRA DASHBOARD DATA ---------------- */
 
-        const allNeeded = [...latestRecords]
+        const allNeeded = [...dashboardRecords]
             .sort((a, b) => (b.needed || 0) - (a.needed || 0))
 
 
@@ -327,26 +631,235 @@ export async function GET(req: Request) {
                     new Date(b.createdAt).getTime() -
                     new Date(a.createdAt).getTime()
             )
-            .slice(0, 5)
+
+
+        const topShortageSites = [...dashboardRecords]
+            .filter((item: any) => toNumber(item.shortage) > 0)
+            .sort((a: any, b: any) => toNumber(b.shortage) - toNumber(a.shortage))
+
+            .map((item: any) => ({
+                siteId: item.siteId,
+                site: item.site,
+                shortage: item.shortage,
+                authorised: item.required,
+                deployed: item.deployed,
+                riskLevel: item.riskLevel,
+            }))
+
+        const topNeededSites = [...dashboardRecords]
+            .filter((item: any) => toNumber(item.needed) > 0)
+            .sort((a: any, b: any) => toNumber(b.needed) - toNumber(a.needed))
+            .map((item: any) => ({
+                siteId: item.siteId,
+                submissionId: item.submissionId, // ✅ IMPORTANT
+                site: item.site,
+                needed: item.needed,
+                processLabel: item.processLabel,
+                riskLevel: item.riskLevel,
+            }))
+
+        const overDeployedSites = [...dashboardRecords]
+            .filter((item: any) => toNumber(item.shortage) < 0)
+            .sort((a: any, b: any) => toNumber(a.shortage) - toNumber(b.shortage))
+
+            .map((item: any) => ({
+                siteId: item.siteId,
+                site: item.site,
+                overDeployed: Math.abs(item.shortage),
+                authorised: item.required,
+                deployed: item.deployed,
+            }))
+
+
+
+        const criticalSites = [...dashboardRecords]
+            .filter((item: any) => {
+                const processList = Array.isArray(item.processList)
+                    ? item.processList
+                    : []
+
+                const isCompleted =
+                    String(item.processLabel || "")
+                        .toLowerCase()
+                        .includes("completed") ||
+                    processList.some((process: string) =>
+                        String(process || "")
+                            .toLowerCase()
+                            .includes("completed")
+                    )
+
+                return (
+                    toNumber(item.needed) > 0 &&
+                    !isCompleted &&
+                    ["Critical", "High", "Medium"].includes(item.riskLevel)
+                )
+            })
+
+            .map((item: any) => ({
+                siteId: item.siteId,
+                submissionId: item.submissionId, // ✅ IMPORTANT
+                site: item.site,
+                riskScore: item.riskScore,
+                riskLevel: item.riskLevel,
+                needed: item.needed,
+                renewalStatus: item.renewalStatus,
+                processLabel: item.processLabel,
+            }))
+
+        const siteTypeData = [
+            {
+                name: "External",
+                value: externalSites,
+            },
+            {
+                name: "Own",
+                value: ownSites,
+            },
+        ]
+
+        const processMap: Record<string, number> = {}
+
+        dashboardRecords.forEach((item: any) => {
+            const processes = Array.isArray(item.processList)
+                ? item.processList
+                : []
+
+            if (processes.length === 0) {
+                processMap["Not Required"] = (processMap["Not Required"] || 0) + 1
+            } else {
+                processes.forEach((process: string) => {
+                    processMap[process] = (processMap[process] || 0) + 1
+                })
+            }
+        })
+
+        const processData = Object.entries(processMap).map(([name, value]) => ({
+            name,
+            value,
+        }))
+
+        const renewalRiskData = dashboardRecords
+            .map((item: any) => ({
+                siteId: item.siteId,
+                site: item.site,
+                nextRenewalDate: item.nextRenewalDate,
+                remark: item.siteRemark || "-",
+                renewalStatus: item.renewalStatus,
+                daysLeft: daysUntil(item.nextRenewalDate), // keep only for sorting
+            }))
+            .filter((item: any) =>
+                ["Expired", "Due in 30 Days", "Due in 90 Days"].includes(
+                    item.renewalStatus
+                )
+            )
+            .sort((a: any, b: any) => {
+                const aDays = a.daysLeft ?? 99999
+                const bDays = b.daysLeft ?? 99999
+                return aDays - bDays
+            })
+
+        const designationMap: Record<
+            string,
+            {
+                designation: string
+                authorised: number
+                deployed: number
+                shortage: number
+                needed: number
+            }
+        > = {}
+
+        dashboardRecords.forEach((item: any) => {
+            const site = sites.find((s: any) => s.id === item.siteId)
+            if (!site) return
+
+            const latestSubmission = site.manpowerSubmissions
+                ?.filter((sub: any) => sub.id === item.submissionId)?.[0]
+
+            const map: Record<string, any> = {}
+
+                ; (site.manpowerTemplate || []).forEach((template: any) => {
+                    const key = template.designation || "Unknown"
+
+                    if (!map[key]) {
+                        map[key] = {
+                            authorised: 0,
+                            deployed: 0,
+                            needed: 0,
+                        }
+                    }
+
+                    map[key].authorised += toNumber(template.authorised)
+                })
+
+                ; (latestSubmission?.items || []).forEach((subItem: any) => {
+                    const key = subItem.designation || "Unknown"
+
+                    if (!map[key]) {
+                        map[key] = {
+                            authorised: 0,
+                            deployed: 0,
+                            needed: 0,
+                        }
+                    }
+
+                    map[key].deployed += toNumber(subItem.deployed)
+                    map[key].needed += toNumber(subItem.needed)
+                })
+
+            Object.entries(map).forEach(([designation, value]: any) => {
+                if (!designationMap[designation]) {
+                    designationMap[designation] = {
+                        designation,
+                        authorised: 0,
+                        deployed: 0,
+                        shortage: 0,
+                        needed: 0,
+                    }
+                }
+
+                designationMap[designation].authorised += value.authorised
+                designationMap[designation].deployed += value.deployed
+                designationMap[designation].needed += value.needed
+                designationMap[designation].shortage += Math.max(
+                    value.authorised - value.deployed,
+                    0
+                )
+            })
+        })
+
+        const designationShortageData = Object.values(designationMap)
+            .filter((item: any) => toNumber(item.needed) > 0)
+            .sort((a: any, b: any) => toNumber(b.needed) - toNumber(a.needed))
 
         return NextResponse.json({
             success: true,
 
             summary,
 
-            // Site table
             siteDetails,
 
-            // Manpower table: all records/forms visible
             manpowerDetails: filteredDetails,
 
-            // Dashboard: latest per site only
-            latestRecords,
+            latestRecords: dashboardRecords,
+            dashboardRecords,
+
             chartData,
             statusData,
             trendData,
+
             allNeeded,
             recentActivity,
+
+            topShortageSites,
+            topNeededSites,
+            overDeployedSites,
+            criticalSites,
+            siteTypeData,
+            processData,
+            renewalRiskData,
+            designationShortageData,
+            noActionSites,
         })
     } catch (error: any) {
         console.error("🔥 ADMIN DASHBOARD ERROR:", error)

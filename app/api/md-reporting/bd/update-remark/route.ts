@@ -16,7 +16,7 @@ export async function POST(req: Request) {
         }
 
         // ✅ Update ONLY site remark
-        await prisma.site.update({
+        await prisma.wmSite.update({
             where: { id },
             data: {
                 siteRemark: remark ? String(remark).trim() : null,

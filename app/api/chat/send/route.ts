@@ -14,7 +14,7 @@ export async function POST(req: Request) {
             )
         }
 
-        const submission = await prisma.manpowerSubmission.findUnique({
+        const submission = await prisma.wmManpowerSubmission.findUnique({
             where: { id: submissionId },
             include: { site: true },
         })
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
             senderRole,
         })
 
-        const chat = await prisma.manpowerChat.create({
+        const chat = await prisma.wmManpowerChat.create({
             data: {
                 submissionId,
                 message,
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
 
         // 🔔 CREATE NOTIFICATIONS
 
-        const submissionData = await prisma.manpowerSubmission.findUnique({
+        const submissionData = await prisma.wmManpowerSubmission.findUnique({
             where: { id: submissionId },
             include: { site: true },
         })
@@ -68,7 +68,7 @@ export async function POST(req: Request) {
 
         await Promise.all(
             users.map((u) =>
-                prisma.notification.create({
+                prisma.wmNotification.create({
                     data: {
                         userId: u.id,
                         message: `New message on ${submission?.site?.siteName || "site"}`,

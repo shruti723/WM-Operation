@@ -41,7 +41,7 @@ export async function POST(req: Request) {
         // =========================
         if (role === "level1" && !submissionId) {
 
-            const site = await prisma.site.findUnique({
+            const site = await prisma.wmSite.findUnique({
                 where: { siteName },
                 include: { manpowerTemplate: true },
             })
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
             }
 
             // ✅ Update site fields
-            await prisma.site.update({
+            await prisma.wmSite.update({
                 where: { id: site.id },
                 data: {
                     ...(startDate ? { startDate: parseDate(startDate) } : {}),
@@ -73,11 +73,11 @@ export async function POST(req: Request) {
             })
 
             // ✅ Replace manpower template (clean approach)
-            await prisma.siteManpower.deleteMany({
+            await prisma.wmSiteManpower.deleteMany({
                 where: { siteId: site.id },
             })
 
-            await prisma.siteManpower.createMany({
+            await prisma.wmSiteManpower.createMany({
                 data: manpowerList.map((item: any) => ({
                     siteId: site.id,
                     designation: item.designation,
@@ -94,7 +94,7 @@ export async function POST(req: Request) {
         let submission = null
 
         if (submissionId) {
-            submission = await prisma.manpowerSubmission.findUnique({
+            submission = await prisma.wmManpowerSubmission.findUnique({
                 where: { id: submissionId },
                 include: { items: true, site: true },
             })
@@ -113,7 +113,7 @@ export async function POST(req: Request) {
      ✅ 1. UPDATE SITE DATES (ONLY HR1)
   ========================= */
         if (role === "level1" && submissionId) {
-            await prisma.site.update({
+            await prisma.wmSite.update({
                 where: { id: safeSubmission.siteId },
                 data: {
                     ...(startDate ? { startDate: parseDate(startDate) } : {}),
@@ -128,7 +128,7 @@ export async function POST(req: Request) {
                         : {}),
                 },
             })
-            const updatedSite = await prisma.site.findUnique({
+            const updatedSite = await prisma.wmSite.findUnique({
                 where: { id: safeSubmission.siteId },
             })
 
@@ -139,10 +139,10 @@ export async function POST(req: Request) {
         ========================== */
         const incomingDesignations = manpowerList.map((i: any) => i.designation)
 
-        if (role === "level1" || role === "level2") {
+        if (role === "level1" || role === "slevel2") {
             for (const existing of safeSubmission.items) {
                 if (!incomingDesignations.includes(existing.designation)) {
-                    await prisma.manpowerSubmissionItem.delete({
+                    await prisma.wmManpowerSubmissionItem.delete({
                         where: { id: existing.id },
                     })
                 }
@@ -161,7 +161,7 @@ export async function POST(req: Request) {
                 // ✅ UPDATE
                 // 🔵 HR1 → FULL CONTROL (authorised + designation)
                 if (role === "level1") {
-                    await prisma.manpowerSubmissionItem.update({
+                    await prisma.wmManpowerSubmissionItem.update({
                         where: { id: existing.id },
                         data: {
                             designation: item.designation,
@@ -173,7 +173,7 @@ export async function POST(req: Request) {
 
                     // 🔵 HR2 → manpower update
                     if (role === "level2") {
-                        await prisma.manpowerSubmissionItem.update({
+                        await prisma.wmManpowerSubmissionItem.update({
                             where: { id: existing.id },
                             data: {
                                 designation: item.designation,
@@ -187,7 +187,7 @@ export async function POST(req: Request) {
 
                     // 🟣 HR3 → only recruitment update
                     if (role === "level3") {
-                        await prisma.manpowerSubmissionItem.update({
+                        await prisma.wmManpowerSubmissionItem.update({
                             where: { id: existing.id },
                             data: {
                                 recruitmentProcess: item.recruitmentProcess || null,
@@ -202,7 +202,7 @@ export async function POST(req: Request) {
 
                 // 🔵 HR1 → CREATE NEW ROW
                 if (role === "level1") {
-                    await prisma.manpowerSubmissionItem.create({
+                    await prisma.wmManpowerSubmissionItem.create({
                         data: {
                             submissionId,
                             designation: item.designation,

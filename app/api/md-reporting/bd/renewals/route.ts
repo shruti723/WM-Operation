@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db"
 export async function GET(req: NextRequest) {
     try {
 
-        const sites = await prisma.site.findMany()
+        const sites = await prisma.wmSite.findMany()
 
         const today = new Date()
         today.setHours(0, 0, 0, 0)

@@ -24,7 +24,7 @@ export async function GET(req: Request) {
             )
         }
 
-        const site = await prisma.site.findUnique({
+        const site = await prisma.wmSite.findUnique({
             where: { siteName },
             include: {
                 manpowerTemplate: {
@@ -204,7 +204,7 @@ export async function POST(req: Request) {
                 )
             }
 
-            const existingSite = await prisma.site.findUnique({
+            const existingSite = await prisma.wmSite.findUnique({
                 where: { siteName },
             })
 
@@ -215,7 +215,7 @@ export async function POST(req: Request) {
                 )
             }
 
-            await prisma.site.create({
+            await prisma.wmSite.create({
                 data: {
                     siteName,
                     startDate: parseDate(body.startDate),
@@ -242,7 +242,7 @@ export async function POST(req: Request) {
 
         // LEVEL 2: create NEW daily submission document every time
         if (role === "level2") {
-            const site = await prisma.site.findUnique({
+            const site = await prisma.wmSite.findUnique({
                 where: { siteName },
                 include: {
                     manpowerTemplate: {
@@ -271,7 +271,7 @@ export async function POST(req: Request) {
                 site.manpowerTemplate.map((item) => [item.designation, item])
             )
 
-            const submission = await prisma.manpowerSubmission.create({
+            const submission = await prisma.wmManpowerSubmission.create({
                 data: {
                     siteId: site.id,
                     submittedByRole: "level2",
@@ -314,7 +314,7 @@ export async function POST(req: Request) {
                 )
             }
 
-            const submission = await prisma.manpowerSubmission.findUnique({
+            const submission = await prisma.wmManpowerSubmission.findUnique({
                 where: { id: submissionId },
                 include: { items: true, site: true },
             })
@@ -332,7 +332,7 @@ export async function POST(req: Request) {
                 )
 
                 if (existing) {
-                    await prisma.manpowerSubmissionItem.update({
+                    await prisma.wmManpowerSubmissionItem.update({
                         where: { id: existing.id },
                         data: {
                             recruitmentProcess: item.recruitmentProcess || null,
