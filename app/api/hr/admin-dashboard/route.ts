@@ -307,8 +307,6 @@ export async function GET(req: Request) {
             )
         })
 
-
-
         /* ---------------- LATEST RECORD PER SITE FOR METRICS ---------------- */
 
         const latestBySite = new Map<string, any>()
@@ -453,6 +451,64 @@ export async function GET(req: Request) {
             return sum + toNumber(item.needed)
         }, 0)
 
+        const underProcessDesignations = dashboardRecords.reduce(
+            (sum: number, record: any) => {
+                const site = sites.find((s: any) => s.id === record.siteId)
+                if (!site) return sum
+
+                const latestSubmission = site.manpowerSubmissions
+                    ?.filter((sub: any) => sub.id === record.submissionId)?.[0]
+
+                const items = Array.isArray(latestSubmission?.items)
+                    ? latestSubmission.items
+                    : []
+
+                return (
+                    sum +
+                    items.filter((item: any) =>
+                        String(item.recruitmentProcess || "")
+                            .toLowerCase()
+                            .includes("under process")
+                    ).length
+                )
+            },
+            0
+        )
+
+        const cutoffCrossedSitesSet = new Set<string>()
+
+        const cutoffCrossedCount = dashboardRecords.reduce((sum: number, record: any) => {
+            const site = sites.find((s: any) => s.id === record.siteId)
+            if (!site) return sum
+
+            const latestSubmission = site.manpowerSubmissions
+                ?.filter((sub: any) => sub.id === record.submissionId)?.[0]
+
+            const items = Array.isArray(latestSubmission?.items)
+                ? latestSubmission.items
+                : []
+
+            const crossedItems = items.filter((item: any) => {
+                if (!item.cutoffDate) return false
+
+                const cutoff = new Date(item.cutoffDate)
+                cutoff.setHours(0, 0, 0, 0)
+
+                const today = new Date()
+                today.setHours(0, 0, 0, 0)
+
+                return cutoff < today
+            })
+
+            if (crossedItems.length > 0) {
+                cutoffCrossedSitesSet.add(record.site)
+            }
+
+            return sum + crossedItems.length
+        }, 0)
+
+        const cutoffCrossedSites = Array.from(cutoffCrossedSitesSet)
+
         const summary = {
             totalSites: sites.length,
             filteredSites: dashboardRecords.length,
@@ -465,6 +521,11 @@ export async function GET(req: Request) {
             shortage,
             overDeployed,
             needed,
+
+            underProcessDesignations,
+
+            cutoffCrossedCount,
+            cutoffCrossedSites,
 
             deploymentPercent: getPercent(deployed, authorised),
             shortagePercent: getPercent(shortage, authorised),
@@ -649,14 +710,33 @@ export async function GET(req: Request) {
         const topNeededSites = [...dashboardRecords]
             .filter((item: any) => toNumber(item.needed) > 0)
             .sort((a: any, b: any) => toNumber(b.needed) - toNumber(a.needed))
-            .map((item: any) => ({
-                siteId: item.siteId,
-                submissionId: item.submissionId, // ✅ IMPORTANT
-                site: item.site,
-                needed: item.needed,
-                processLabel: item.processLabel,
-                riskLevel: item.riskLevel,
-            }))
+            .map((item: any) => {
+                const site = sites.find((s: any) => s.id === item.siteId)
+
+                const latestSubmission = site?.manpowerSubmissions
+                    ?.filter((sub: any) => sub.id === item.submissionId)?.[0]
+
+                const processCountMap: Record<string, number> = {}
+
+                    ; (latestSubmission?.items || []).forEach((subItem: any) => {
+                        const process = subItem.recruitmentProcess || "Not Updated"
+                        processCountMap[process] = (processCountMap[process] || 0) + 1
+                    })
+
+                const processSummary = Object.entries(processCountMap)
+                    .map(([key, value]) => `${key}: ${value}`)
+                    .join(" • ")
+
+                return {
+                    siteId: item.siteId,
+                    submissionId: item.submissionId,
+                    site: item.site,
+                    needed: item.needed,
+                    processLabel: item.processLabel,
+                    processSummary,
+                    riskLevel: item.riskLevel,
+                }
+            })
 
         const overDeployedSites = [...dashboardRecords]
             .filter((item: any) => toNumber(item.shortage) < 0)
@@ -669,8 +749,6 @@ export async function GET(req: Request) {
                 authorised: item.required,
                 deployed: item.deployed,
             }))
-
-
 
         const criticalSites = [...dashboardRecords]
             .filter((item: any) => {
@@ -762,6 +840,8 @@ export async function GET(req: Request) {
             string,
             {
                 designation: string
+                siteId: string
+                site: string
                 authorised: number
                 deployed: number
                 shortage: number
@@ -808,9 +888,13 @@ export async function GET(req: Request) {
                 })
 
             Object.entries(map).forEach(([designation, value]: any) => {
-                if (!designationMap[designation]) {
-                    designationMap[designation] = {
+                const uniqueKey = `${item.siteId}_${designation}`
+
+                if (!designationMap[uniqueKey]) {
+                    designationMap[uniqueKey] = {
                         designation,
+                        siteId: item.siteId,
+                        site: item.site,
                         authorised: 0,
                         deployed: 0,
                         shortage: 0,
@@ -818,10 +902,10 @@ export async function GET(req: Request) {
                     }
                 }
 
-                designationMap[designation].authorised += value.authorised
-                designationMap[designation].deployed += value.deployed
-                designationMap[designation].needed += value.needed
-                designationMap[designation].shortage += Math.max(
+                designationMap[uniqueKey].authorised += value.authorised
+                designationMap[uniqueKey].deployed += value.deployed
+                designationMap[uniqueKey].needed += value.needed
+                designationMap[uniqueKey].shortage += Math.max(
                     value.authorised - value.deployed,
                     0
                 )
@@ -831,6 +915,7 @@ export async function GET(req: Request) {
         const designationShortageData = Object.values(designationMap)
             .filter((item: any) => toNumber(item.needed) > 0)
             .sort((a: any, b: any) => toNumber(b.needed) - toNumber(a.needed))
+
 
         return NextResponse.json({
             success: true,

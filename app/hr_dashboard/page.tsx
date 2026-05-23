@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { ShieldCheck } from "lucide-react"
+import { CalendarX, ShieldCheck } from "lucide-react"
 import Link from "next/link"
 import {
     AlertTriangle,
@@ -66,11 +66,14 @@ type Summary = {
     completedHR3: number
     pendingHR3: number
     underProcessSites: number
+    underProcessDesignations: number
     criticalSites: number
     highRiskSites: number
     renewalExpired: number
     renewalDue30: number
     renewalDue90: number
+    cutoffCrossedCount: number
+    cutoffCrossedSites: string[]
 }
 
 type ChartItem = {
@@ -314,6 +317,8 @@ export default function HRDashboardPage() {
 
     const DESIGNATION_PAGE_SIZE = 4
 
+    const [selectedNeededSite, setSelectedNeededSite] = useState<any>(null)
+
     const [tablePage, setTablePage] = useState(1)
     const TABLE_PAGE_SIZE = 10
 
@@ -386,13 +391,38 @@ export default function HRDashboardPage() {
         setDesignationPage(0)
     }, [filters])
 
+    useEffect(() => {
+        setSelectedNeededSite(null)
+    }, [filters])
+
     const summary = data?.summary
 
-    const visibleChartData = useMemo(() => {
+    const sortedChartData = useMemo(() => {
         const list = data?.chartData || []
+
+        return [...list].sort((a: any, b: any) => {
+            const neededDiff = (b.needed || 0) - (a.needed || 0)
+            if (neededDiff !== 0) return neededDiff
+
+            return (b.shortage || 0) - (a.shortage || 0)
+        })
+    }, [data?.chartData])
+
+    const visibleChartData = useMemo(() => {
         const start = siteChartPage * PAGE_SIZE
-        return list.slice(start, start + PAGE_SIZE)
-    }, [data?.chartData, siteChartPage])
+        return sortedChartData.slice(start, start + PAGE_SIZE)
+    }, [sortedChartData, siteChartPage])
+
+    const maxSiteChartPage = Math.max(
+        Math.ceil(sortedChartData.length / PAGE_SIZE) - 1,
+        0
+    )
+
+    // const visibleChartData = useMemo(() => {
+    //     const list = data?.chartData || []
+    //     const start = siteChartPage * PAGE_SIZE
+    //     return list.slice(start, start + PAGE_SIZE)
+    // }, [data?.chartData, siteChartPage])
 
     const MultiLineXAxisTick = ({ x, y, payload }: any) => {
         const value = String(payload.value || "")
@@ -443,19 +473,30 @@ export default function HRDashboardPage() {
         )
     }
 
-    const maxSiteChartPage = Math.max(
-        Math.ceil((data?.chartData?.length || 0) / PAGE_SIZE) - 1,
-        0
-    )
+    // const maxSiteChartPage = Math.max(
+    //     Math.ceil((data?.chartData?.length || 0) / PAGE_SIZE) - 1,
+    //     0
+    // )
+
+
+    const filteredDesignationData = useMemo(() => {
+        const list = data?.designationShortageData || []
+
+        if (!selectedNeededSite?.siteId) return list
+
+        return list.filter(
+            (item: any) =>
+                String(item.siteId) === String(selectedNeededSite.siteId)
+        )
+    }, [data?.designationShortageData, selectedNeededSite])
 
     const visibleDesignationData = useMemo(() => {
-        const list = data?.designationShortageData || []
         const start = designationPage * DESIGNATION_PAGE_SIZE
-        return list.slice(start, start + DESIGNATION_PAGE_SIZE)
-    }, [data?.designationShortageData, designationPage])
+        return filteredDesignationData.slice(start, start + DESIGNATION_PAGE_SIZE)
+    }, [filteredDesignationData, designationPage])
 
     const maxDesignationPage = Math.max(
-        Math.ceil((data?.designationShortageData?.length || 0) / DESIGNATION_PAGE_SIZE) - 1,
+        Math.ceil(filteredDesignationData.length / DESIGNATION_PAGE_SIZE) - 1,
         0
     )
 
@@ -771,8 +812,8 @@ export default function HRDashboardPage() {
                     />
 
                     <StatCard
-                        title="Under Process Sites"
-                        value={formatNumber(summary?.underProcessSites || 0)}
+                        title="Recruitment Under Process"
+                        value={formatNumber(summary?.underProcessDesignations || 0)}
                         subtitle="Recruitment currently in progress"
                         icon={Clock}
                         tone="blue"
@@ -804,7 +845,7 @@ export default function HRDashboardPage() {
                 </div>
 
                 {/* MANAGEMENT ALERT STRIP */}
-                <div className="mb-7 grid grid-cols-1 gap-5 xl:grid-cols-3">
+                <div className="mb-7 grid grid-cols-1 gap-5 xl:grid-cols-4">
                     <div className="rounded-3xl border border-red-100 bg-gradient-to-br from-red-50 to-white p-5">
                         <div className="flex items-center gap-3">
                             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-100 text-red-600">
@@ -866,13 +907,39 @@ export default function HRDashboardPage() {
                             cutoff or remarks are still not updated.
                         </p>
                     </div>
+                    <div className="rounded-3xl border border-red-100 bg-gradient-to-br from-red-50 to-white p-5">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-100 text-red-600">
+                                <CalendarX size={22} />
+                            </div>
+
+                            <div>
+                                <p className="text-sm font-bold text-red-700">
+                                    Cutoff Date Crossed
+                                </p>
+
+                                <h3 className="text-2xl font-black text-slate-950">
+                                    {formatNumber(summary?.cutoffCrossedCount || 0)} Designations
+                                </h3>
+                            </div>
+                        </div>
+
+                        <p className="mt-4 text-sm text-slate-600">
+                            {summary?.cutoffCrossedSites?.length
+                                ? `Sites: ${summary.cutoffCrossedSites.slice(0, 3).join(", ")}${summary.cutoffCrossedSites.length > 3
+                                    ? ` +${summary.cutoffCrossedSites.length - 3} more`
+                                    : ""
+                                }`
+                                : "No crossed cutoff dates."}
+                        </p>
+                    </div>
                 </div>
 
                 {/* ROW 1 CHARTS */}
                 <div className="mb-7 grid grid-cols-1 gap-5 xl:grid-cols-1">
                     <div className="xl:col-span-2">
                         <ChartCard
-                            title="Authorised vs Deployed"
+                            title="Authorised vs Deployed vs Needed"
                             subtitle="Site-wise manpower comparison"
                             icon={BarChart3}
                             right={
@@ -973,6 +1040,7 @@ export default function HRDashboardPage() {
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart
                                         data={data.topNeededSites}
+
                                         margin={{
                                             left: 0,
                                             right: 10,
@@ -1003,6 +1071,14 @@ export default function HRDashboardPage() {
                                             name="Needed"
                                             fill="#f97316"
                                             radius={[8, 8, 0, 0]}
+                                            cursor="pointer"
+                                            onClick={(bar: any) => {
+                                                const site = bar?.payload
+                                                if (!site?.siteId) return
+
+                                                setSelectedNeededSite(site)
+                                                setDesignationPage(0)
+                                            }}
                                         />
                                     </BarChart>
                                 </ResponsiveContainer>
@@ -1014,10 +1090,26 @@ export default function HRDashboardPage() {
 
                     <ChartCard
                         title="Designation-wise Needed"
-                        subtitle="Roles with highest recruitment requirement"
+                        subtitle={
+                            selectedNeededSite
+                                ? `Showing designation need for ${selectedNeededSite.site}`
+                                : "Roles with highest recruitment requirement"
+                        }
                         icon={Layers3}
                         right={
                             <div className="flex items-center gap-2">
+                                {selectedNeededSite && (
+                                    <button
+                                        onClick={() => {
+                                            setSelectedNeededSite(null)
+                                            setDesignationPage(0)
+                                        }}
+                                        className="rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-bold text-orange-600 hover:bg-orange-100"
+                                    >
+                                        Clear Site
+                                    </button>
+                                )}
+
                                 <button
                                     disabled={designationPage === 0}
                                     onClick={() =>
@@ -1081,7 +1173,7 @@ export default function HRDashboardPage() {
                                             name="Authorised"
                                             fill="#2563eb"
                                             radius={[8, 8, 0, 0]}
-                                            barSize={32}
+                                            barSize={20}
                                         />
 
                                         <Bar
@@ -1089,7 +1181,7 @@ export default function HRDashboardPage() {
                                             name="Deployed"
                                             fill="#10b981"
                                             radius={[8, 8, 0, 0]}
-                                            barSize={32}
+                                            barSize={20}
                                         />
 
                                         <Bar
@@ -1097,8 +1189,27 @@ export default function HRDashboardPage() {
                                             name="Needed"
                                             fill="#f97316"
                                             radius={[8, 8, 0, 0]}
-                                            barSize={32}
-                                        />
+                                            barSize={20}
+                                        >
+                                            {(data?.topNeededSites || []).map((entry: any, index: number) => (
+                                                <Cell
+                                                    key={`needed-site-${entry.siteId || index}`}
+                                                    cursor="pointer"
+                                                    fill={
+                                                        selectedNeededSite?.siteId === entry.siteId
+                                                            ? "#ea580c"
+                                                            : "#f97316"
+                                                    }
+                                                    onClick={() => {
+                                                        setSelectedNeededSite({
+                                                            siteId: entry.siteId,
+                                                            site: entry.site,
+                                                        })
+                                                        setDesignationPage(0)
+                                                    }}
+                                                />
+                                            ))}
+                                        </Bar>
                                     </BarChart>
                                 </ResponsiveContainer>
                             ) : (
@@ -1292,7 +1403,7 @@ export default function HRDashboardPage() {
                                                     {index + 1}. {item.site}
                                                 </p>
                                                 <p className="mt-1 text-xs text-slate-500">
-                                                    {item.processLabel}
+                                                    {item.processSummary || "-"}
                                                 </p>
                                             </div>
 

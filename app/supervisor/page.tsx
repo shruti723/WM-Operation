@@ -37,7 +37,7 @@ const adminModules = [
   },
   {
     id: "hr",
-    title: "Manpower",
+    title: "Human Resources",
     desc: "Manpower tracking, site staffing, shortage reports & recruitment",
     icon: Users,
     path: "/hr_dashboard",
