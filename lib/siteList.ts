@@ -27,5 +27,5 @@ export const sites = [
     "RAJKUMAR",
     "ROHAN SIR HOUSEKEEPER SATHEE SIR SE",
     "Ruchi Reality",
-    "IIML Incubation Center / IIM Lucknow Indore Smart Seed Center"
+
 ]
