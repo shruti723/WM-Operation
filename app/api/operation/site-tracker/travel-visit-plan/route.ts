@@ -26,6 +26,8 @@ export async function POST(req: NextRequest) {
             followUpRequired,
             createdById,
             createdByEmail,
+            mom,
+            finalOutcome,
         } = body
 
         if (!personTravelling?.trim()) {
@@ -85,6 +87,8 @@ export async function POST(req: NextRequest) {
                 stillPending: stillPending?.trim() || null,
                 followUpRequired: parseBoolean(followUpRequired),
                 createdById: userId,
+                mom: mom?.trim() || null,
+                finalOutcome: finalOutcome?.trim() || null,
             },
             include: {
                 createdBy: {
@@ -174,6 +178,8 @@ export async function GET(req: NextRequest) {
                 { expectedOutcome: { contains: search, mode: "insensitive" } },
                 { whatWasResolved: { contains: search, mode: "insensitive" } },
                 { stillPending: { contains: search, mode: "insensitive" } },
+                { mom: { contains: search, mode: "insensitive" } },
+                { finalOutcome: { contains: search, mode: "insensitive" } },
             ]
         }
 

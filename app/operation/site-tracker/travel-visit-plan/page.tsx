@@ -29,6 +29,8 @@ type TravelRecord = {
     stillPending: string | null
     followUpRequired: boolean | null
     createdAt: string
+    mom: string | null
+    finalOutcome: string | null
 }
 
 const initialForm = {
@@ -44,6 +46,8 @@ const initialForm = {
     whatWasResolved: "",
     stillPending: "",
     followUpRequired: "",
+    mom: "",
+    finalOutcome: "",
 }
 
 export default function TravelVisitPlanPage() {
@@ -425,6 +429,19 @@ export default function TravelVisitPlanPage() {
 
                             <div>
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                    What Was Resolved
+                                </label>
+                                <input
+                                    name="whatWasResolved"
+                                    value={form.whatWasResolved}
+                                    onChange={handleChange}
+
+                                    className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">
                                     Follow-up Required?
                                 </label>
                                 <select
@@ -439,29 +456,46 @@ export default function TravelVisitPlanPage() {
                                 </select>
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-semibold text-slate-600 mb-1">
-                                    What Was Resolved
-                                </label>
-                                <input
-                                    name="whatWasResolved"
-                                    value={form.whatWasResolved}
-                                    onChange={handleChange}
 
-                                    className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+
+                            <div className="md:col-span-2">
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                    Pending Issues
+                                </label>
+                                <textarea
+                                    name="stillPending"
+                                    value={form.stillPending}
+                                    onChange={handleChange}
+                                    rows={3}
+                                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-none"
                                 />
                             </div>
 
                             <div className="md:col-span-2">
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">
-                                    Still Pending
+                                    MOM
                                 </label>
-                                <input
-                                    name="stillPending"
-                                    value={form.stillPending}
+                                <textarea
+                                    name="mom"
+                                    value={form.mom}
                                     onChange={handleChange}
+                                    rows={3}
+                                    placeholder="Enter meeting notes / MOM"
+                                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-none"
+                                />
+                            </div>
 
-                                    className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                            <div className="md:col-span-2">
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                    Final Outcome
+                                </label>
+                                <textarea
+                                    name="finalOutcome"
+                                    value={form.finalOutcome}
+                                    onChange={handleChange}
+                                    rows={3}
+                                    placeholder="Enter final outcome"
+                                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-none"
                                 />
                             </div>
                         </div>
@@ -479,95 +513,98 @@ export default function TravelVisitPlanPage() {
                     </form>
                 </section>
 
-                <section className="bg-white border border-slate-200 rounded-2xl shadow-sm mb-5">
-                    <div className="p-5">
-                        <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
-                            <div className="md:col-span-2 relative">
-                                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    placeholder="Search site, head, issue..."
-                                    className="w-full h-10 rounded-lg border border-slate-200 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-                                />
-                            </div>
-
-
-
-                            <select
-                                value={issueResolvedFilter}
-                                onChange={(e) => setIssueResolvedFilter(e.target.value)}
-                                className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white"
-                            >
-                                <option value="">Issue Resolved</option>
-                                <option value="Yes">Yes</option>
-                                <option value="No">No</option>
-                            </select>
-
-                            <select
-                                value={followUpFilter}
-                                onChange={(e) => setFollowUpFilter(e.target.value)}
-                                className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white"
-                            >
-                                <option value="">Follow-up</option>
-                                <option value="Yes">Yes</option>
-                                <option value="No">No</option>
-                            </select>
-
-                            <input
-                                value={fromDate}
-                                onChange={(e) => setFromDate(e.target.value)}
-                                type="date"
-                                className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm"
-                            />
-
-                            <input
-                                value={toDate}
-                                onChange={(e) => setToDate(e.target.value)}
-                                type="date"
-                                className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm"
-                            />
-                        </div>
-
-                        <div className="mt-4 flex justify-end gap-2">
-                            <button
-                                type="button"
-                                onClick={resetFilters}
-                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-                            >
-                                <RefreshCw size={14} />
-                                Reset
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={applyFilters}
-                                className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800"
-                            >
-                                Apply Filters
-                            </button>
-                        </div>
-                    </div>
-                </section>
 
                 <section className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                    <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-                        <div>
-                            <h2 className="text-sm font-bold text-slate-900">
-                                Submitted Travel & Visit Plans
-                            </h2>
-                            <p className="text-xs text-slate-400 mt-0.5">
-                                Showing {records.length} of {total} records
-                            </p>
+                    <div className="px-5 py-4 border-b border-slate-200 flex flex-col gap-4">
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <h2 className="text-sm font-bold text-slate-900">
+                                    Submitted Travel & Visit Plans
+                                </h2>
+                                <p className="text-xs text-slate-400 mt-0.5">
+                                    Showing {records.length} of {total} records
+                                </p>
+                            </div>
+
+                            {loading && (
+                                <div className="flex items-center gap-2 text-xs text-slate-400">
+                                    <Loader2 size={14} className="animate-spin" />
+                                    Loading
+                                </div>
+                            )}
                         </div>
 
-                        {loading && (
-                            <div className="flex items-center gap-2 text-xs text-slate-400">
-                                <Loader2 size={14} className="animate-spin" />
-                                Loading
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                                <div className="md:col-span-4 relative">
+                                    <Search
+                                        size={15}
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                                    />
+                                    <input
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        placeholder="Search person, site, purpose, MOM..."
+                                        className="w-full h-10 rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                                    />
+                                </div>
+
+                                <select
+                                    value={issueResolvedFilter}
+                                    onChange={(e) => setIssueResolvedFilter(e.target.value)}
+                                    className="md:col-span-2 w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                                >
+                                    <option value="">Issue Resolved</option>
+                                    <option value="Yes">Yes</option>
+                                    <option value="No">No</option>
+                                </select>
+
+                                <select
+                                    value={followUpFilter}
+                                    onChange={(e) => setFollowUpFilter(e.target.value)}
+                                    className="md:col-span-2 w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                                >
+                                    <option value="">Follow-up</option>
+                                    <option value="Yes">Yes</option>
+                                    <option value="No">No</option>
+                                </select>
+
+                                <input
+                                    value={fromDate}
+                                    onChange={(e) => setFromDate(e.target.value)}
+                                    type="date"
+                                    className="md:col-span-2 w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                                />
+
+                                <input
+                                    value={toDate}
+                                    onChange={(e) => setToDate(e.target.value)}
+                                    type="date"
+                                    className="md:col-span-2 w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                                />
+
+                                <div className="md:col-span-12 flex justify-end gap-2 pt-1">
+                                    <button
+                                        type="button"
+                                        onClick={resetFilters}
+                                        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                                    >
+                                        <RefreshCw size={14} />
+                                        Reset
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={applyFilters}
+                                        className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800"
+                                    >
+                                        Apply Filters
+                                    </button>
+                                </div>
                             </div>
-                        )}
+                        </div>
                     </div>
+
 
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
@@ -586,6 +623,8 @@ export default function TravelVisitPlanPage() {
                                     <th className="px-4 py-3 text-left text-xs">What Was Resolved</th>
                                     <th className="px-4 py-3 text-left text-xs">Still Pending</th>
                                     <th className="px-4 py-3 text-left text-xs">Follow-up</th>
+                                    <th className="px-4 py-3 text-left text-xs">MOM</th>
+                                    <th className="px-4 py-3 text-left text-xs">Final Outcome</th>
                                 </tr>
                             </thead>
 
@@ -616,6 +655,8 @@ export default function TravelVisitPlanPage() {
                                             <td className="px-4 py-3 text-slate-500 min-w-[220px]">{record.whatWasResolved || "-"}</td>
                                             <td className="px-4 py-3 text-slate-500 min-w-[220px]">{record.stillPending || "-"}</td>
                                             <td className="px-4 py-3 whitespace-nowrap">{yesNo(record.followUpRequired)}</td>
+                                            <td className="px-4 py-3 text-slate-500 min-w-[260px]">{record.mom || "-"}</td>
+                                            <td className="px-4 py-3 text-slate-500 min-w-[260px]">{record.finalOutcome || "-"}</td>
                                         </tr>
                                     ))
                                 )}

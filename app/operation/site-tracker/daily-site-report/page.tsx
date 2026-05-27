@@ -21,7 +21,7 @@ type DailySiteRecord = {
     projectHead: string | null
     manpowerAuthorized: string | null
     deployed: string | null
-    gap: string | null
+    needed: string | null
     billSubmittedDate: string | null
     billAmountAuthorised: number | null
     billAmountClaimed: number | null
@@ -39,6 +39,12 @@ type DailySiteRecord = {
     createdAt: string
 }
 
+type WmSiteOption = {
+    id: string
+    siteName: string
+    manpowerAuthorized: number
+}
+
 const initialForm = {
     date: new Date().toISOString().slice(0, 10),
     siteName: "",
@@ -46,7 +52,7 @@ const initialForm = {
 
     manpowerAuthorized: "",
     deployed: "",
-    gap: "",
+    needed: "",
 
     billSubmittedDate: "",
     billAmountAuthorised: "",
@@ -57,15 +63,15 @@ const initialForm = {
     salariesPaidForMonth: "",
     salaryRelatedIssue: "",
 
-    operationalRisks: "No",
+    operationalRisks: "",
     risksIfAny: "",
-    operationalStatus: "Normal",
+    operationalStatus: "",
 
-    hrIssue: "No",
+    hrIssue: "",
     issueDetails: "",
 
-    clientStatus: "Open",
-    siteStatus: "Open",
+    clientStatus: "",
+    siteStatus: "",
 }
 
 export default function DailySiteReportPage() {
@@ -92,6 +98,8 @@ export default function DailySiteReportPage() {
     const [totalPages, setTotalPages] = useState(1)
     const [total, setTotal] = useState(0)
 
+    const [wmSites, setWmSites] = useState<WmSiteOption[]>([])
+
     const limit = 15
 
     const currentDateTime = useMemo(() => {
@@ -114,6 +122,26 @@ export default function DailySiteReportPage() {
 
         setUser(JSON.parse(storedUser))
     }, [router])
+
+    const fetchWmSites = async () => {
+        try {
+            const res = await fetch("/api/operation/site-tracker/wm-sites", {
+                cache: "no-store",
+            })
+
+            const data = await res.json()
+
+            if (!data.success) {
+                alert(data.message || "Failed to fetch sites")
+                return
+            }
+
+            setWmSites(data.sites || [])
+        } catch (error) {
+            console.error(error)
+            alert("Failed to fetch WM sites")
+        }
+    }
 
     const fetchRecords = async () => {
         if (!user) return
@@ -167,6 +195,7 @@ export default function DailySiteReportPage() {
     useEffect(() => {
         if (!user) return
         fetchRecords()
+        fetchWmSites()
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user, page])
 
@@ -181,25 +210,18 @@ export default function DailySiteReportPage() {
                 [name]: value,
             }
 
-            if (name === "manpowerAuthorized" || name === "deployed") {
-                updated.gap = calculateGap(
-                    name === "manpowerAuthorized" ? value : updated.manpowerAuthorized,
-                    name === "deployed" ? value : updated.deployed
-                )
+            if (name === "siteName") {
+                const selectedSite = wmSites.find((site) => site.siteName === value)
+
+                updated.manpowerAuthorized = selectedSite
+                    ? String(selectedSite.manpowerAuthorized)
+                    : ""
             }
 
             return updated
         })
     }
-    const calculateGap = (authorised: string, deployed: string) => {
-        const authNum = Number(authorised)
-        const depNum = Number(deployed)
 
-        if (authorised === "" || deployed === "") return ""
-        if (Number.isNaN(authNum) || Number.isNaN(depNum)) return ""
-
-        return String(authNum - depNum)
-    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -306,7 +328,7 @@ export default function DailySiteReportPage() {
     const pillClass = (value?: string | null) => {
         if (!value) return "bg-slate-50 text-slate-600 border-slate-100"
 
-        if (["Open", "Normal", "No", "Paid", "Completed"].includes(value)) {
+        if (["Open", "Normal", "No", "Paid", "Completed", "Green"].includes(value)) {
             return "bg-emerald-50 text-emerald-700 border-emerald-100"
         }
 
@@ -314,7 +336,7 @@ export default function DailySiteReportPage() {
             return "bg-amber-50 text-amber-700 border-amber-100"
         }
 
-        if (["Closed", "Disrupted", "Yes", "Unpaid", "Blocked"].includes(value)) {
+        if (["Closed", "Disrupted", "Yes", "Unpaid", "Blocked", "Red"].includes(value)) {
             return "bg-rose-50 text-rose-700 border-rose-100"
         }
 
@@ -386,13 +408,20 @@ export default function DailySiteReportPage() {
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">
                                     Site Name <span className="text-red-500">*</span>
                                 </label>
-                                <input
+                                <select
                                     name="siteName"
                                     value={form.siteName}
                                     onChange={handleChange}
-
                                     className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                                />
+                                >
+                                    <option value="">Select Site</option>
+
+                                    {wmSites.map((site) => (
+                                        <option key={site.id} value={site.siteName}>
+                                            {site.siteName}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div>
@@ -415,9 +444,10 @@ export default function DailySiteReportPage() {
                                 <input
                                     name="manpowerAuthorized"
                                     value={form.manpowerAuthorized}
-                                    onChange={handleChange}
+                                    readOnly
                                     type="number"
-                                    className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                                    placeholder="Auto filled"
+                                    className="w-full h-10 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600 outline-none"
                                 />
                             </div>
 
@@ -436,14 +466,15 @@ export default function DailySiteReportPage() {
 
                             <div>
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">
-                                    Gap Auto
+                                    Needed
                                 </label>
                                 <input
-                                    name="gap"
-                                    value={form.gap}
-                                    readOnly
-                                    placeholder="Auto calculated"
-                                    className="w-full h-10 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600 outline-none"
+                                    name="needed"
+                                    value={form.needed}
+                                    onChange={handleChange}
+                                    type="number"
+                                    placeholder="Enter needed manpower"
+                                    className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                                 />
                             </div>
 
@@ -492,18 +523,14 @@ export default function DailySiteReportPage() {
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">
                                     Payment Status
                                 </label>
-                                <select
+                                <input
                                     name="paymentStatus"
                                     value={form.paymentStatus}
                                     onChange={handleChange}
                                     className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                                >
-                                    <option value="">Select</option>
-                                    <option value="Pending">Pending</option>
-                                    <option value="Partial">Partial</option>
-                                    <option value="Paid">Paid</option>
-                                    <option value="Blocked">Blocked</option>
-                                </select>
+                                />
+
+
                             </div>
 
                             <div>
@@ -523,17 +550,13 @@ export default function DailySiteReportPage() {
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">
                                     Salaries paid for the month?
                                 </label>
-                                <select
+                                <input
                                     name="salariesPaidForMonth"
                                     value={form.salariesPaidForMonth}
                                     onChange={handleChange}
                                     className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                                >
-                                    <option value="">Select</option>
-                                    <option value="Yes">Yes</option>
-                                    <option value="No">No</option>
-                                    <option value="Partial">Partial</option>
-                                </select>
+                                />
+
                             </div>
 
                             <div>
@@ -559,6 +582,7 @@ export default function DailySiteReportPage() {
                                     onChange={handleChange}
                                     className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                                 >
+                                    <option value="Select">Select</option>
                                     <option value="No">No</option>
                                     <option value="Yes">Yes</option>
                                 </select>
@@ -574,6 +598,7 @@ export default function DailySiteReportPage() {
                                     onChange={handleChange}
                                     className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                                 >
+                                    <option value="Select">Select</option>
                                     <option value="Normal">Normal</option>
                                     <option value="Partial">Partial</option>
                                     <option value="Disrupted">Disrupted</option>
@@ -582,20 +607,20 @@ export default function DailySiteReportPage() {
 
                             <div className="md:col-span-2">
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">
-                                    Risks if any
+                                    Risks (if any)
                                 </label>
+
                                 <input
                                     name="risksIfAny"
                                     value={form.risksIfAny}
                                     onChange={handleChange}
-
                                     className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                                 />
                             </div>
 
                             <div>
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">
-                                    HR Issue?
+                                    HR Issue? (Forms, Recruitment, Ops)
                                 </label>
                                 <select
                                     name="hrIssue"
@@ -603,6 +628,7 @@ export default function DailySiteReportPage() {
                                     onChange={handleChange}
                                     className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                                 >
+                                    <option value="select">Select</option>
                                     <option value="No">No</option>
                                     <option value="Yes">Yes</option>
                                 </select>
@@ -610,7 +636,7 @@ export default function DailySiteReportPage() {
 
                             <div className="md:col-span-2">
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">
-                                    Issue Details if any
+                                    Issue Details (if any)
                                 </label>
                                 <input
                                     name="issueDetails"
@@ -623,18 +649,26 @@ export default function DailySiteReportPage() {
 
                             <div>
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">
-                                    Client Status
+                                    Client satisfaction Status
                                 </label>
                                 <select
                                     name="clientStatus"
                                     value={form.clientStatus}
                                     onChange={handleChange}
-                                    className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                                    className={`w-full h-10 rounded-lg border px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20
+    ${form.clientStatus === "Green"
+                                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                            : form.clientStatus === "Red"
+                                                ? "bg-rose-50 text-rose-700 border-rose-200"
+                                                : "bg-white border-slate-200 text-slate-700"
+                                        }`}
                                 >
-                                    <option value="Open">Open</option>
-                                    <option value="Closed">Closed</option>
+                                    <option value="select">Select</option>
+                                    <option value="Green">Green</option>
+                                    <option value="Red">Red</option>
                                 </select>
                             </div>
+
 
                             <div>
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">
@@ -644,10 +678,17 @@ export default function DailySiteReportPage() {
                                     name="siteStatus"
                                     value={form.siteStatus}
                                     onChange={handleChange}
-                                    className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                                    className={`w-full h-10 rounded-lg border px-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20
+    ${form.siteStatus === "Green"
+                                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                            : form.siteStatus === "Red"
+                                                ? "bg-rose-50 text-rose-700 border-rose-200"
+                                                : "bg-white border-slate-200 text-slate-700"
+                                        }`}
                                 >
-                                    <option value="Open">Open</option>
-                                    <option value="Closed">Closed</option>
+                                    <option value="">Select</option>
+                                    <option value="Green">Green</option>
+                                    <option value="Red">Red</option>
                                 </select>
                             </div>
                         </div>
@@ -669,156 +710,158 @@ export default function DailySiteReportPage() {
                     </form>
                 </section>
 
-                {/* FILTERS */}
-                <section className="bg-white border border-slate-200 rounded-2xl shadow-sm mb-5">
-                    <div className="p-5">
-                        <div className="grid grid-cols-1 md:grid-cols-10 gap-3">
-                            <div className="md:col-span-2 relative">
-                                <Search
-                                    size={15}
-                                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                                />
-                                <input
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    placeholder="Search site, head, issue..."
-                                    className="w-full h-10 rounded-lg border border-slate-200 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                                />
-                            </div>
 
-
-
-                            <select
-                                value={operationalStatusFilter}
-                                onChange={(e) => setOperationalStatusFilter(e.target.value)}
-                                className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white"
-                            >
-                                <option value="">Ops Status</option>
-                                <option value="Normal">Normal</option>
-                                <option value="Partial">Partial</option>
-                                <option value="Disrupted">Disrupted</option>
-                            </select>
-
-                            <select
-                                value={operationalRiskFilter}
-                                onChange={(e) => setOperationalRiskFilter(e.target.value)}
-                                className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white"
-                            >
-                                <option value="">Ops Risk</option>
-                                <option value="No">No</option>
-                                <option value="Yes">Yes</option>
-                            </select>
-
-                            <select
-                                value={hrIssueFilter}
-                                onChange={(e) => setHrIssueFilter(e.target.value)}
-                                className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white"
-                            >
-                                <option value="">HR Issue</option>
-                                <option value="No">No</option>
-                                <option value="Yes">Yes</option>
-                            </select>
-
-                            <select
-                                value={clientStatusFilter}
-                                onChange={(e) => setClientStatusFilter(e.target.value)}
-                                className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white"
-                            >
-                                <option value="">Client Status</option>
-                                <option value="Open">Open</option>
-                                <option value="Closed">Closed</option>
-                            </select>
-
-                            <select
-                                value={siteStatusFilter}
-                                onChange={(e) => setSiteStatusFilter(e.target.value)}
-                                className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white"
-                            >
-                                <option value="">Site Status</option>
-                                <option value="Open">Open</option>
-                                <option value="Closed">Closed</option>
-                            </select>
-
-                            <input
-                                value={fromDate}
-                                onChange={(e) => setFromDate(e.target.value)}
-                                type="date"
-                                className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm"
-                            />
-
-                            <input
-                                value={toDate}
-                                onChange={(e) => setToDate(e.target.value)}
-                                type="date"
-                                className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm"
-                            />
-                        </div>
-
-                        <div className="mt-4 flex justify-end gap-2">
-                            <button
-                                type="button"
-                                onClick={resetFilters}
-                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-                            >
-                                <RefreshCw size={14} />
-                                Reset
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={applyFilters}
-                                className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800"
-                            >
-                                Apply Filters
-                            </button>
-                        </div>
-                    </div>
-                </section>
 
                 {/* TABLE */}
                 <section className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                    <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-                        <div>
-                            <h2 className="text-sm font-bold text-slate-900">
-                                Submitted Daily Site Reports
-                            </h2>
-                            <p className="text-xs text-slate-400 mt-0.5">
-                                Showing {records.length} of {total} records
-                            </p>
+                    {/* Header */}
+                    <div className="px-5 py-4 border-b border-slate-200 flex flex-col gap-4">
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <h2 className="text-sm font-bold text-slate-900">
+                                    Submitted Daily Site Reports
+                                </h2>
+                                <p className="text-xs text-slate-400 mt-0.5">
+                                    Showing {records.length} of {total} records
+                                </p>
+                            </div>
+
+                            {loading && (
+                                <div className="flex items-center gap-2 text-xs text-slate-400">
+                                    <Loader2 size={14} className="animate-spin" />
+                                    Loading
+                                </div>
+                            )}
                         </div>
 
-                        {loading && (
-                            <div className="flex items-center gap-2 text-xs text-slate-400">
-                                <Loader2 size={14} className="animate-spin" />
-                                Loading
+                        {/* Filters */}
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                                <div className="md:col-span-3 relative">
+                                    <Search
+                                        size={15}
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                                    />
+                                    <input
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        placeholder="Search site, head, issue..."
+                                        className="w-full h-10 rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                                    />
+                                </div>
+
+                                <select
+                                    value={operationalStatusFilter}
+                                    onChange={(e) => setOperationalStatusFilter(e.target.value)}
+                                    className="md:col-span-2 w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none"
+                                >
+                                    <option value="">Ops Status</option>
+                                    <option value="Normal">Normal</option>
+                                    <option value="Partial">Partial</option>
+                                    <option value="Disrupted">Disrupted</option>
+                                </select>
+
+                                <select
+                                    value={operationalRiskFilter}
+                                    onChange={(e) => setOperationalRiskFilter(e.target.value)}
+                                    className="md:col-span-2 w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none"
+                                >
+                                    <option value="">Ops Risk</option>
+                                    <option value="No">No</option>
+                                    <option value="Yes">Yes</option>
+                                </select>
+
+                                <select
+                                    value={hrIssueFilter}
+                                    onChange={(e) => setHrIssueFilter(e.target.value)}
+                                    className="md:col-span-2 w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none"
+                                >
+                                    <option value="">HR Issue</option>
+                                    <option value="No">No</option>
+                                    <option value="Yes">Yes</option>
+                                </select>
+
+                                <select
+                                    value={clientStatusFilter}
+                                    onChange={(e) => setClientStatusFilter(e.target.value)}
+                                    className="md:col-span-1 w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none"
+                                >
+                                    <option value="">Client</option>
+                                    <option value="Green">Green</option>
+                                    <option value="Red">Red</option>
+                                </select>
+
+                                <select
+                                    value={siteStatusFilter}
+                                    onChange={(e) => setSiteStatusFilter(e.target.value)}
+                                    className="md:col-span-2 w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none"
+                                >
+                                    <option value="">Site Status</option>
+                                    <option value="Open">Open</option>
+                                    <option value="Closed">Closed</option>
+                                </select>
+
+                                <input
+                                    value={fromDate}
+                                    onChange={(e) => setFromDate(e.target.value)}
+                                    type="date"
+                                    className="md:col-span-2 w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none"
+                                />
+
+                                <input
+                                    value={toDate}
+                                    onChange={(e) => setToDate(e.target.value)}
+                                    type="date"
+                                    className="md:col-span-2 w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none"
+                                />
+
+                                <div className="md:col-span-8 flex justify-end gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={resetFilters}
+                                        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                                    >
+                                        <RefreshCw size={14} />
+                                        Reset
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={applyFilters}
+                                        className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800"
+                                    >
+                                        Apply Filters
+                                    </button>
+                                </div>
                             </div>
-                        )}
+                        </div>
                     </div>
 
+                    {/* Table */}
                     <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead className="bg-slate-900 text-white">
+                        <table className="min-w-[2200px] w-full text-sm">
+                            <thead className="bg-slate-900 text-white sticky top-0 z-10">
                                 <tr>
-                                    <th className="px-4 py-3 text-left text-xs whitespace-nowrap">Date</th>
-                                    <th className="px-4 py-3 text-left text-xs whitespace-nowrap">Site Name</th>
-                                    <th className="px-4 py-3 text-left text-xs whitespace-nowrap">Project Head</th>
-                                    <th className="px-4 py-3 text-left text-xs whitespace-nowrap">Manpower Authorized</th>
-                                    <th className="px-4 py-3 text-left text-xs whitespace-nowrap">Deployed</th>
-                                    <th className="px-4 py-3 text-left text-xs whitespace-nowrap">Gap</th>
-                                    <th className="px-4 py-3 text-left text-xs whitespace-nowrap">Bill Submitted Date</th>
-                                    <th className="px-4 py-3 text-right text-xs whitespace-nowrap">Bill Authorised</th>
-                                    <th className="px-4 py-3 text-right text-xs whitespace-nowrap">Bill Claimed</th>
-                                    <th className="px-4 py-3 text-left text-xs whitespace-nowrap">Payment Status</th>
-                                    <th className="px-4 py-3 text-left text-xs whitespace-nowrap">Payment Credit Date</th>
-                                    <th className="px-4 py-3 text-left text-xs whitespace-nowrap">Salary Paid?</th>
-                                    <th className="px-4 py-3 text-left text-xs whitespace-nowrap">Salary Issue</th>
-                                    <th className="px-4 py-3 text-left text-xs whitespace-nowrap">Operational Risks?</th>
-                                    <th className="px-4 py-3 text-left text-xs whitespace-nowrap">Risks</th>
-                                    <th className="px-4 py-3 text-left text-xs whitespace-nowrap">Operational Status</th>
-                                    <th className="px-4 py-3 text-left text-xs whitespace-nowrap">HR Issue?</th>
-                                    <th className="px-4 py-3 text-left text-xs whitespace-nowrap">Issue Details</th>
-                                    <th className="px-4 py-3 text-left text-xs whitespace-nowrap">Client Status</th>
-                                    <th className="px-4 py-3 text-left text-xs whitespace-nowrap">Site Status</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">Date</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">Site Name</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">Project Head</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">Authorized</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">Deployed</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">Needed</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">Bill Submitted</th>
+                                    <th className="px-4 py-3 text-right text-xs font-semibold whitespace-nowrap">Bill Authorised</th>
+                                    <th className="px-4 py-3 text-right text-xs font-semibold whitespace-nowrap">Bill Claimed</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">Payment</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">Credit Date</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">Salary Paid</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">Salary Issue</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">Ops Risk</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">Risks</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">Ops Status</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">HR Issue</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">Issue Details</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">Client Status</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">Site Status</th>
                                 </tr>
                             </thead>
 
@@ -854,7 +897,7 @@ export default function DailySiteReportPage() {
                                                 {record.deployed || "-"}
                                             </td>
                                             <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
-                                                {record.gap || "-"}
+                                                {record.needed || "-"}
                                             </td>
                                             <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
                                                 {formatDate(record.billSubmittedDate)}

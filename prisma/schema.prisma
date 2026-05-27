@@ -468,7 +468,7 @@ model DailySiteReport {
 
   manpowerAuthorized      String?
   deployed                String?
-  gap                     String?
+  needed                   String?
 
   billSubmittedDate       DateTime?
   billAmountAuthorised    Float?
@@ -512,6 +512,8 @@ model TravelVisitPlan {
   whatWasResolved  String?
   stillPending     String?
   followUpRequired Boolean?
+  mom              String?
+  finalOutcome     String?
 
   createdById      String
   createdBy        User     @relation(fields: [createdById], references: [id])
@@ -665,7 +667,7 @@ model AmitojCommandTarget {
   targetArea      String
   targetValue     String?
   actual          String?
-  gap             String?
+  needed            String?
   status          String?
 
   mdContextReason String?
@@ -728,6 +730,8 @@ model AmitojTravelVisitPlan {
   whatWasResolved  String?
   stillPending     String?
   followUpRequired Boolean?
+  mom              String?
+  finalOutcome     String?
 
   createdById      String
   createdBy        User     @relation(fields: [createdById], references: [id])

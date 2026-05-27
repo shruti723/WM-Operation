@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
             projectHead,
             manpowerAuthorized,
             deployed,
-            gap,
+            needed,
             billSubmittedDate,
             billAmountAuthorised,
             billAmountClaimed,
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
 
                 manpowerAuthorized: manpowerAuthorized?.trim() || null,
                 deployed: deployed?.trim() || null,
-                gap: gap?.trim() || null,
+                needed: needed?.trim() || null,
 
                 billSubmittedDate: billSubmittedDate ? new Date(billSubmittedDate) : null,
                 billAmountAuthorised:
@@ -208,7 +208,7 @@ export async function GET(req: NextRequest) {
                 { projectHead: { contains: search, mode: "insensitive" } },
                 { manpowerAuthorized: { contains: search, mode: "insensitive" } },
                 { deployed: { contains: search, mode: "insensitive" } },
-                { gap: { contains: search, mode: "insensitive" } },
+                { needed: { contains: search, mode: "insensitive" } },
                 { paymentStatus: { contains: search, mode: "insensitive" } },
                 { salariesPaidForMonth: { contains: search, mode: "insensitive" } },
                 { salaryRelatedIssue: { contains: search, mode: "insensitive" } },
