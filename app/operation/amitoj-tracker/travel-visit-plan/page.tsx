@@ -64,6 +64,8 @@ export default function AmitojTravelVisitPlanPage() {
     const [totalPages, setTotalPages] = useState(1)
     const [total, setTotal] = useState(0)
 
+    const personTravelling = ["Deepak", "Ravi", "Suyesh", "Mahendra", "Lakhan", "Other"]
+
     const limit = 15
 
     const currentDateTime = useMemo(() => {
@@ -278,13 +280,20 @@ export default function AmitojTravelVisitPlanPage() {
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">
                                     Person Travelling <span className="text-red-500">*</span>
                                 </label>
-                                <input
+                                <select
                                     name="personTravelling"
                                     value={form.personTravelling}
                                     onChange={handleChange}
+                                    className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                                >
+                                    <option value="">Select</option>
 
-                                    className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-                                />
+                                    {personTravelling.map((name) => (
+                                        <option key={name} value={name}>
+                                            {name}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div>
@@ -450,7 +459,23 @@ export default function AmitojTravelVisitPlanPage() {
                     </form>
                 </section>
 
-                <section className="bg-white border border-slate-200 rounded-2xl shadow-sm mb-5">
+                <section className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+                        <div>
+                            <h2 className="text-sm font-bold text-slate-900">Submitted Travel Visit Plans</h2>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                                Showing {records.length} of {total} records
+                            </p>
+                        </div>
+
+                        {loading && (
+                            <div className="flex items-center gap-2 text-xs text-slate-400">
+                                <Loader2 size={14} className="animate-spin" />
+                                Loading
+                            </div>
+                        )}
+                    </div>
+
                     <div className="p-5">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                             <div className="relative">
@@ -502,24 +527,6 @@ export default function AmitojTravelVisitPlanPage() {
                                 Apply Filters
                             </button>
                         </div>
-                    </div>
-                </section>
-
-                <section className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                    <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-                        <div>
-                            <h2 className="text-sm font-bold text-slate-900">Submitted Travel Visit Plans</h2>
-                            <p className="text-xs text-slate-400 mt-0.5">
-                                Showing {records.length} of {total} records
-                            </p>
-                        </div>
-
-                        {loading && (
-                            <div className="flex items-center gap-2 text-xs text-slate-400">
-                                <Loader2 size={14} className="animate-spin" />
-                                Loading
-                            </div>
-                        )}
                     </div>
 
                     <div className="overflow-x-auto">

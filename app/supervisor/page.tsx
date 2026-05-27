@@ -109,7 +109,7 @@ const trackerModules = [
 const amitojModules = [
   {
     id: "operations",
-    title: "Operations",
+    title: "Operations Dashboard",
     desc: "Site visits, checklists, performance scores & field reports",
     icon: BarChart3,
     path: "/operations_dashboard",
@@ -142,6 +142,16 @@ const amitojModules = [
     icon: Briefcase,
     path: "/operation/amitoj-tracker/travel-visit-plan",
     gradient: "from-orange-600 to-amber-600",
+    available: true,
+  },
+  {
+    id: "hr",
+    title: "Human Resources Dashboard",
+    desc: "Manpower tracking, site staffing, shortage reports & recruitment",
+    icon: Users,
+    path: "/hr_dashboard",
+    gradient: "from-sky-500 to-cyan-500",
+    badge: null,
     available: true,
   },
 ]

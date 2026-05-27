@@ -33,7 +33,7 @@ const initialForm = {
     targetValue: "",
     actual: "",
     gap: "",
-    status: "Achieved",
+    status: "",
     mdContextReason: "",
     nextAction: "",
     deadline: "",
@@ -133,7 +133,26 @@ export default function AmitojCommandTargetsPage() {
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
     ) => {
         const { name, value } = e.target
-        setForm((prev) => ({ ...prev, [name]: value }))
+
+        setForm((prev) => {
+            const updated = {
+                ...prev,
+                [name]: value,
+            }
+
+            if (name === "targetValue" || name === "actual") {
+                const target = Number(name === "targetValue" ? value : updated.targetValue)
+                const actual = Number(name === "actual" ? value : updated.actual)
+
+                if (!Number.isNaN(target) && !Number.isNaN(actual)) {
+                    updated.gap = String(target - actual)
+                } else {
+                    updated.gap = ""
+                }
+            }
+
+            return updated
+        })
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -280,20 +299,20 @@ export default function AmitojCommandTargetsPage() {
                                     name="targetValue"
                                     value={form.targetValue}
                                     onChange={handleChange}
-
+                                    type="number"
                                     className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
                                 />
                             </div>
 
                             <div>
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">
-                                    Actual
+                                    Actual achieved
                                 </label>
                                 <input
                                     name="actual"
                                     value={form.actual}
                                     onChange={handleChange}
-
+                                    type="number"
                                     className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
                                 />
                             </div>
@@ -305,26 +324,10 @@ export default function AmitojCommandTargetsPage() {
                                 <input
                                     name="gap"
                                     value={form.gap}
-                                    onChange={handleChange}
-
-                                    className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                                    readOnly
+                                    placeholder="Auto calculated"
+                                    className="w-full h-10 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600 outline-none"
                                 />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-slate-600 mb-1">
-                                    Status
-                                </label>
-                                <select
-                                    name="status"
-                                    value={form.status}
-                                    onChange={handleChange}
-                                    className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
-                                >
-                                    <option value="Achieved">Achieved</option>
-                                    <option value="Not Achieved">Not Achieved</option>
-
-                                </select>
                             </div>
 
                             <div>
@@ -339,6 +342,25 @@ export default function AmitojCommandTargetsPage() {
                                     className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
                                 />
                             </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                    Status
+                                </label>
+                                <select
+                                    name="status"
+                                    value={form.status}
+                                    onChange={handleChange}
+                                    className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                                >
+                                    <option value="Select">Select</option>
+                                    <option value="Achieved">Achieved</option>
+                                    <option value="Not Achieved">Not Achieved</option>
+
+                                </select>
+                            </div>
+
+
 
                             <div className="md:col-span-2">
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">
@@ -395,7 +417,23 @@ export default function AmitojCommandTargetsPage() {
                     </form>
                 </section>
 
-                <section className="bg-white border border-slate-200 rounded-2xl shadow-sm mb-5">
+                <section className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+                        <div>
+                            <h2 className="text-sm font-bold text-slate-900">Submitted Command Targets</h2>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                                Showing {records.length} of {total} records
+                            </p>
+                        </div>
+
+                        {loading && (
+                            <div className="flex items-center gap-2 text-xs text-slate-400">
+                                <Loader2 size={14} className="animate-spin" />
+                                Loading
+                            </div>
+                        )}
+                    </div>
+
                     <div className="p-5">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                             <div className="relative">
@@ -452,24 +490,6 @@ export default function AmitojCommandTargetsPage() {
                                 Apply Filters
                             </button>
                         </div>
-                    </div>
-                </section>
-
-                <section className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                    <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-                        <div>
-                            <h2 className="text-sm font-bold text-slate-900">Submitted Command Targets</h2>
-                            <p className="text-xs text-slate-400 mt-0.5">
-                                Showing {records.length} of {total} records
-                            </p>
-                        </div>
-
-                        {loading && (
-                            <div className="flex items-center gap-2 text-xs text-slate-400">
-                                <Loader2 size={14} className="animate-spin" />
-                                Loading
-                            </div>
-                        )}
                     </div>
 
                     <div className="overflow-x-auto">

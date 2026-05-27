@@ -14,6 +14,11 @@ import {
     Send,
 } from "lucide-react"
 
+type WmSiteOption = {
+    id: string
+    siteName: string
+}
+
 type RecordType = {
     id: string
     site: string
@@ -39,11 +44,11 @@ const initialForm = {
     authorisedAmount: "",
     underBillingAmount: "",
     commitmentDate: "",
-    billingStatus: "Submitted",
-    siteStatus: "Normal",
-    clientControl: "Manageable",
-    politicalRisk: "None",
-    coordinatorPerformance: "Green",
+    billingStatus: "",
+    siteStatus: "",
+    clientControl: "",
+    politicalRisk: "",
+    coordinatorPerformance: "",
     riskMdContext: "",
     lastAction: "",
     nextAction: "",
@@ -74,6 +79,8 @@ export default function AmitojSiteControlPage() {
     const [totalPages, setTotalPages] = useState(1)
     const [total, setTotal] = useState(0)
 
+    const [wmSites, setWmSites] = useState<WmSiteOption[]>([])
+    const coordinators = ["Deepak", "Ravi", "Suyesh", "Mahendra", "Lakhan"]
     const limit = 15
 
     const currentDateTime = useMemo(() => {
@@ -96,6 +103,27 @@ export default function AmitojSiteControlPage() {
 
         setUser(JSON.parse(storedUser))
     }, [router])
+
+
+    const fetchWmSites = async () => {
+        try {
+            const res = await fetch("/api/operation/site-tracker/wm-sites", {
+                cache: "no-store",
+            })
+
+            const data = await res.json()
+
+            if (!data.success) {
+                alert(data.message || "Failed to fetch sites")
+                return
+            }
+
+            setWmSites(data.sites || [])
+        } catch (error) {
+            console.error(error)
+            alert("Failed to fetch WM sites")
+        }
+    }
 
     const fetchRecords = async () => {
         if (!user) return
@@ -148,6 +176,7 @@ export default function AmitojSiteControlPage() {
     useEffect(() => {
         if (!user) return
         fetchRecords()
+        fetchWmSites()
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user, page])
 
@@ -304,26 +333,40 @@ export default function AmitojSiteControlPage() {
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">
                                     Site <span className="text-red-500">*</span>
                                 </label>
-                                <input
+                                <select
                                     name="site"
                                     value={form.site}
                                     onChange={handleChange}
+                                    className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                                >
+                                    <option value="">Select Site</option>
 
-                                    className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                                />
+                                    {wmSites.map((site) => (
+                                        <option key={site.id} value={site.siteName}>
+                                            {site.siteName}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div>
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">
                                     Coordinator
                                 </label>
-                                <input
+                                <select
                                     name="coordinator"
                                     value={form.coordinator}
                                     onChange={handleChange}
+                                    className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                                >
+                                    <option value="">Select Coordinator</option>
 
-                                    className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                                />
+                                    {coordinators.map((name) => (
+                                        <option key={name} value={name}>
+                                            {name}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div>
@@ -377,6 +420,7 @@ export default function AmitojSiteControlPage() {
                                     onChange={handleChange}
                                     className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                                 >
+                                    <option value="Select">Select</option>
                                     <option value="Not Raised">Not Raised</option>
                                     <option value="Raised">Raised</option>
                                     <option value="Submitted">Submitted</option>
@@ -396,6 +440,7 @@ export default function AmitojSiteControlPage() {
                                     onChange={handleChange}
                                     className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                                 >
+                                    <option value="Select">Select</option>
                                     <option value="Partial">Partial</option>
                                     <option value="Disrupted">Disrupted</option>
                                     <option value="Normal">Normal</option>
@@ -412,6 +457,7 @@ export default function AmitojSiteControlPage() {
                                     onChange={handleChange}
                                     className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                                 >
+                                    <option value="Select">Select</option>
                                     <option value="Strong">Strong</option>
                                     <option value="Manageable">Manageable</option>
                                     <option value="Weak">Weak</option>
@@ -429,6 +475,7 @@ export default function AmitojSiteControlPage() {
                                     onChange={handleChange}
                                     className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                                 >
+                                    <option value="Select">Select</option>
                                     <option value="None">None</option>
                                     <option value="Low">Low</option>
                                     <option value="Medium">Medium</option>
@@ -446,6 +493,7 @@ export default function AmitojSiteControlPage() {
                                     onChange={handleChange}
                                     className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm bg-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                                 >
+                                    <option value="Select">Select</option>
                                     <option value="Green">Green</option>
                                     <option value="Yellow">Yellow</option>
                                     <option value="Red">Red</option>
@@ -533,7 +581,23 @@ export default function AmitojSiteControlPage() {
                     </form>
                 </section>
 
-                <section className="bg-white border border-slate-200 rounded-2xl shadow-sm mb-5">
+                <section className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+                        <div>
+                            <h2 className="text-sm font-bold text-slate-900">Submitted Site Control Records</h2>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                                Showing {records.length} of {total} records
+                            </p>
+                        </div>
+
+                        {loading && (
+                            <div className="flex items-center gap-2 text-xs text-slate-400">
+                                <Loader2 size={14} className="animate-spin" />
+                                Loading
+                            </div>
+                        )}
+                    </div>
+
                     <div className="p-5">
                         <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
                             <div className="relative">
@@ -632,24 +696,6 @@ export default function AmitojSiteControlPage() {
                                 Apply Filters
                             </button>
                         </div>
-                    </div>
-                </section>
-
-                <section className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                    <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-                        <div>
-                            <h2 className="text-sm font-bold text-slate-900">Submitted Site Control Records</h2>
-                            <p className="text-xs text-slate-400 mt-0.5">
-                                Showing {records.length} of {total} records
-                            </p>
-                        </div>
-
-                        {loading && (
-                            <div className="flex items-center gap-2 text-xs text-slate-400">
-                                <Loader2 size={14} className="animate-spin" />
-                                Loading
-                            </div>
-                        )}
                     </div>
 
                     <div className="overflow-x-auto">
