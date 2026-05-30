@@ -179,7 +179,7 @@ export default function BillingPage() {
     }, [data, search, paymentFilter, preparedFilter, dispatchFilter, monthFilter, date])
 
     // ✅ PAGINATION
-    const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
 
     const paginatedData = useMemo(() => {
         const start = (page - 1) * PAGE_SIZE
@@ -189,23 +189,23 @@ export default function BillingPage() {
     if (loading) return <div className="p-10">Loading...</div>
 
     return (
-        <div className="p-6">
+        <div className="w-full max-w-full p-4 sm:p-6">
             <h2 className="text-xl font-bold mb-4">Detailed Billing Records</h2>
 
             {/* ✅ FILTER BAR */}
-            <div className="flex flex-wrap gap-3 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-3 mb-4">
                 <input
                     placeholder="Search site..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    className="border px-3 py-2 rounded-md"
+                    className="border px-3 py-2 rounded-md w-full lg:w-auto"
                 />
 
                 {/* Month */}
                 <select
                     value={monthFilter}
                     onChange={e => setMonthFilter(e.target.value)}
-                    className="border px-3 py-2 rounded-md"
+                    className="border px-3 py-2 rounded-md w-full lg:w-auto"
                 >
                     <option value="All">Month: All</option>
                     {[...new Set(data.map(d => d.month))]
@@ -224,7 +224,7 @@ export default function BillingPage() {
                 <select
                     value={preparedFilter}
                     onChange={e => setPreparedFilter(e.target.value)}
-                    className="border px-3 py-2 rounded-md"
+                    className="border px-3 py-2 rounded-md w-full lg:w-auto"
                 >
                     <option value="All">Prepared: All</option>
                     <option value="Yes">Yes</option>
@@ -235,7 +235,7 @@ export default function BillingPage() {
                 <select
                     value={dispatchFilter}
                     onChange={e => setDispatchFilter(e.target.value)}
-                    className="border px-3 py-2 rounded-md"
+                    className="border px-3 py-2 rounded-md w-full lg:w-auto"
                 >
                     <option value="All">Dispatched: All</option>
                     <option value="Yes">Yes</option>
@@ -246,7 +246,7 @@ export default function BillingPage() {
                 <select
                     value={paymentFilter}
                     onChange={e => setPaymentFilter(e.target.value)}
-                    className="border px-3 py-2 rounded-md"
+                    className="border px-3 py-2 rounded-md w-full lg:w-autos"
                 >
                     <option value="All">Payment: All</option>
                     <option value="Yes">Yes</option>
@@ -271,7 +271,7 @@ export default function BillingPage() {
 
             {/* ✅ TABLE */}
             <div className="overflow-x-auto border rounded-xl">
-                <table className="min-w-full text-sm table-auto">
+                <table className="min-w-[1100px] w-full text-sm table-auto">
                     <thead className="bg-gray-100 text-gray-600">
                         <tr>
                             <th className="p-3 text-left whitespace-nowrap">Month</th>
@@ -369,7 +369,7 @@ export default function BillingPage() {
             </div>
 
             {/* ✅ PAGINATION */}
-            <div className="flex justify-between items-center mt-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center mt-4">
                 <p className="text-sm">
                     Showing {paginatedData.length} of {filtered.length}
                 </p>

@@ -74,6 +74,8 @@ type Summary = {
     renewalDue90: number
     cutoffCrossedCount: number
     cutoffCrossedSites: string[]
+    shortlistedSites?: number
+    shortlistedDesignations?: number
 }
 
 type ChartItem = {
@@ -322,6 +324,8 @@ export default function HRDashboardPage() {
     const [tablePage, setTablePage] = useState(1)
     const TABLE_PAGE_SIZE = 10
 
+    const [selectedActionSite, setSelectedActionSite] = useState<any>(null)
+
     async function loadDashboard() {
         try {
             setLoading(true)
@@ -393,6 +397,16 @@ export default function HRDashboardPage() {
 
     useEffect(() => {
         setSelectedNeededSite(null)
+    }, [filters])
+
+    useEffect(() => {
+        if (!selectedActionSite && data?.topNeededSites?.length) {
+            setSelectedActionSite(data.topNeededSites[0])
+        }
+    }, [data?.topNeededSites, selectedActionSite])
+
+    useEffect(() => {
+        setSelectedActionSite(null)
     }, [filters])
 
     const summary = data?.summary
@@ -478,7 +492,31 @@ export default function HRDashboardPage() {
     //     0
     // )
 
+    const selectedActionProcessData = useMemo(() => {
+        const items = selectedActionSite?.recruitmentItems || []
 
+        const map: Record<string, number> = {}
+
+        items.forEach((item: any) => {
+            const process = item.process || "Not Started"
+            map[process] = (map[process] || 0) + Number(item.needed || 0)
+        })
+
+        return Object.entries(map).map(([name, value]) => ({
+            name,
+            value,
+        }))
+    }, [selectedActionSite])
+
+    const processColors: Record<string, string> = {
+        Source: "#2563eb",
+        Screened: "#7c3aed",
+        Shortlisted: "#f59e0b",
+        Hired: "#0ea5e9",
+        Joined: "#10b981",
+        "Not Needed": "#64748b",
+        "Not Started": "#ef4444",
+    }
     const filteredDesignationData = useMemo(() => {
         const list = data?.designationShortageData || []
 
@@ -750,9 +788,13 @@ export default function HRDashboardPage() {
                             className="h-12 rounded-2xl border border-slate-200 px-4 text-sm outline-none focus:border-blue-400"
                         >
                             <option value="all">All Process</option>
-                            <option value="Not Required">Not Required</option>
-                            <option value="Under Process">Under Process</option>
-                            <option value="Completed">Completed</option>
+                            <option value="Source">Source</option>
+                            <option value="Screened">Screened</option>
+                            <option value="Shortlisted">Shortlisted</option>
+                            <option value="Hired">Hired</option>
+                            <option value="Joined">Joined</option>
+                            <option value="Not Needed">Not Needed</option>
+                            <option value="Not Started">Not Started</option>
                         </select>
 
                         {/* CLEAR */}
@@ -812,9 +854,13 @@ export default function HRDashboardPage() {
                     />
 
                     <StatCard
-                        title="Recruitment Under Process"
-                        value={formatNumber(summary?.underProcessDesignations || 0)}
-                        subtitle="Recruitment currently in progress"
+                        title="Recruitment in Process"
+                        value={formatNumber(
+                            summary?.shortlistedDesignations ??
+                            summary?.underProcessDesignations ??
+                            0
+                        )}
+                        subtitle="Shortlisted recruitment currently in process"
                         icon={Clock}
                         tone="blue"
                     />
@@ -862,9 +908,9 @@ export default function HRDashboardPage() {
                             </div>
                         </div>
                         <p className="mt-4 text-sm text-slate-600">
-                            Sites marked critical due to manpower shortage,
-                            recruitment need, renewal urgency or pending recruitment process
-                            action.
+                            <p className="mt-4 text-sm text-slate-600">
+                                Sites marked as Critical in priority status and requiring recruitment action.
+                            </p>
                         </p>
                     </div>
 
@@ -1223,28 +1269,13 @@ export default function HRDashboardPage() {
 
 
                 {/* CRITICAL TABLES */}
-                <div className="mb-7 grid grid-cols-1 gap-5 xl:grid-cols-2">
+                <div className="mb-7 grid grid-cols-1 gap-5 xl:grid-cols-3">
                     <ChartCard
                         title="Recruitment Risk Sites"
-                        subtitle="Sites classified by manpower needed"
+                        subtitle="Sites classified by Recruitment priority status"
                         icon={ShieldAlert}
                     >
-                        <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-                            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3">
-                                <p className="text-sm font-black text-red-700">Critical</p>
-                                <p className="mt-1 text-xs text-red-600">Needed 8+</p>
-                            </div>
 
-                            <div className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3">
-                                <p className="text-sm font-black text-orange-700">High</p>
-                                <p className="mt-1 text-xs text-orange-600">Needed 3 to 7</p>
-                            </div>
-
-                            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-                                <p className="text-sm font-black text-amber-700">Medium</p>
-                                <p className="mt-1 text-xs text-amber-600">Needed 1 to 2</p>
-                            </div>
-                        </div>
 
                         <div className="max-h-[430px] overflow-y-auto rounded-2xl border border-slate-200">
                             <table className="w-full text-sm">
@@ -1380,48 +1411,6 @@ export default function HRDashboardPage() {
                             </table>
                         </div>
                     </ChartCard>
-                </div>
-
-                {/* ACTION LISTS */}
-                <div className="mb-7 grid grid-cols-1 gap-5 xl:grid-cols-2">
-                    <ChartCard
-                        title="Recruitment Action List"
-                        subtitle="Sites where recruitment is needed"
-                        icon={Users}
-                    >
-                        <div className="space-y-3">
-                            {data?.topNeededSites?.length ? (
-                                data.topNeededSites
-                                    .slice(0, 8)
-                                    .map((item: any, index: number) => (
-                                        <div
-                                            key={item.siteId}
-                                            className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 p-4"
-                                        >
-                                            <div>
-                                                <p className="font-bold text-slate-900">
-                                                    {index + 1}. {item.site}
-                                                </p>
-                                                <p className="mt-1 text-xs text-slate-500">
-                                                    {item.processSummary || "-"}
-                                                </p>
-                                            </div>
-
-                                            <div className="text-right">
-                                                <p className="text-xl font-black text-orange-600">
-                                                    {item.needed}
-                                                </p>
-                                                <p className="text-xs text-slate-400">
-                                                    Needed
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ))
-                            ) : (
-                                <EmptyState text="No recruitment needed" />
-                            )}
-                        </div>
-                    </ChartCard>
 
                     <ChartCard
                         title="Over-Deployed Sites"
@@ -1462,53 +1451,297 @@ export default function HRDashboardPage() {
                             )}
                         </div>
                     </ChartCard>
+                </div>
 
-                    {/* <ChartCard
-                        title={`Sites Without Manpower Action (${data?.noActionSites?.length || 0})`}
-                        subtitle="Sites where manpower submission is not available"
-                        icon={ShieldCheck}
+                {/* ACTION LISTS */}
+                <div className="mb-7 grid grid-cols-1 gap-5 xl:grid-cols-1">
+                    <ChartCard
+                        title="Recruitment Action List"
+                        subtitle="Click a site to view designation-wise recruitment details"
+                        icon={Users}
                     >
-                        <div className="max-h-[520px] overflow-y-auto pr-2">
-                            <div className="space-y-3">
-                                {data?.noActionSites?.length ? (
-                                    data.noActionSites.map((item: any, index: number) => (
-                                        <div
-                                            key={item.siteId}
-                                            className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4"
-                                        >
-                                            <div className="flex items-start justify-between gap-4">
-                                                <div className="min-w-0">
-                                                    <p className="font-black text-slate-950">
-                                                        {index + 1}. {item.site}
-                                                    </p>
+                        <div className="space-y-5">
 
-                                                    <p className="mt-1 text-sm text-slate-500">
-                                                        Authorised {formatNumber(item.authorised || 0)}
-                                                    </p>
+                            {/* SITE SELECTOR */}
+                            <div>
+                                <div className="mb-3 flex items-center justify-between">
+                                    <div>
+                                        <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                                            Active Recruitment Sites
+                                        </p>
+                                        <p className="text-sm text-slate-500">
+                                            Select a site to inspect manpower requirement
+                                        </p>
+                                    </div>
 
-                                                    <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-400">
-                                                        Remark: {item.remark || "-"}
-                                                    </p>
-                                                </div>
+                                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-500">
+                                        {data?.topNeededSites?.length || 0} Sites
+                                    </span>
+                                </div>
 
-                                                <div className="shrink-0 text-right">
-                                                    <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">
-                                                        Pending
-                                                    </span>
+                                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                                    {data?.topNeededSites?.length ? (
+                                        data.topNeededSites.slice(0, 6).map((item: any, index: number) => {
+                                            const isActive =
+                                                selectedActionSite?.siteId === item.siteId &&
+                                                selectedActionSite?.submissionId === item.submissionId
 
-                                                    <p className="mt-2 text-xs text-slate-400">
-                                                        No Manpower data
-                                                    </p>
-                                                </div>
+                                            return (
+                                                <button
+                                                    key={`${item.siteId}-${item.submissionId}`}
+                                                    type="button"
+                                                    onClick={() => setSelectedActionSite(item)}
+                                                    className={`rounded-2xl border p-4 text-left transition ${isActive
+                                                        ? "border-orange-300 bg-orange-50 shadow-sm ring-2 ring-orange-100"
+                                                        : "border-slate-100 bg-slate-50 hover:border-slate-200 hover:bg-white"
+                                                        }`}
+                                                >
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div className="min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                <span
+                                                                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${isActive
+                                                                        ? "bg-orange-600 text-white"
+                                                                        : "bg-white text-slate-600"
+                                                                        }`}
+                                                                >
+                                                                    {index + 1}
+                                                                </span>
+
+                                                                <p className="line-clamp-2 text-sm font-black leading-5 text-slate-950">
+                                                                    {item.site}
+                                                                </p>
+                                                            </div>
+
+                                                            <p className="mt-2 line-clamp-1 text-xs text-slate-500">
+                                                                {item.processSummary || "No process updated"}
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="shrink-0 text-right">
+                                                            <p className="text-2xl font-black text-orange-600">
+                                                                {item.needed}
+                                                            </p>
+                                                            <p className="text-xs font-semibold text-slate-400">
+                                                                Needed
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            )
+                                        })
+                                    ) : (
+                                        <EmptyState text="No recruitment needed" />
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* SELECTED SITE PANEL */}
+                            {selectedActionSite ? (
+                                <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-5">
+
+                                    {/* HEADER */}
+                                    <div className="mb-5 flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-start lg:justify-between">
+                                        <div>
+                                            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                                                Selected Site
+                                            </p>
+
+                                            <h3 className="mt-1 text-xl font-black text-slate-950">
+                                                {selectedActionSite.site}
+                                            </h3>
+
+                                            <p className="mt-2 text-sm text-slate-500">
+                                                Designation-wise active recruitment requirement and HR ownership.
+                                            </p>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                                            <div className="rounded-2xl border border-orange-100 bg-orange-50 px-5 py-3 text-center">
+                                                <p className="text-2xl font-black text-orange-600">
+                                                    {selectedActionSite.needed}
+                                                </p>
+                                                <p className="text-[11px] font-bold uppercase text-orange-500">
+                                                    Active Needed
+                                                </p>
+                                            </div>
+
+                                            <div className="rounded-2xl border border-blue-100 bg-blue-50 px-5 py-3 text-center">
+                                                <p className="text-2xl font-black text-blue-600">
+                                                    {selectedActionProcessData.length}
+                                                </p>
+                                                <p className="text-[11px] font-bold uppercase text-blue-500">
+                                                    Processes
+                                                </p>
+                                            </div>
+
+                                            <div className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-center">
+                                                <p className="text-2xl font-black text-slate-800">
+                                                    {selectedActionSite.recruitmentItems?.length || 0}
+                                                </p>
+                                                <p className="text-[11px] font-bold uppercase text-slate-400">
+                                                    Roles
+                                                </p>
                                             </div>
                                         </div>
-                                    ))
-                                ) : (
-                                    <EmptyState text="All sites have manpower action" />
-                                )}
-                            </div>
+                                    </div>
+
+                                    {/* BODY */}
+                                    <div className="grid grid-cols-1 gap-5 xl:grid-cols-[340px_1fr]">
+
+                                        {/* PROCESS BREAKDOWN */}
+                                        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                                            <div className="mb-3">
+                                                <p className="text-sm font-black text-slate-900">
+                                                    Process Breakdown
+                                                </p>
+                                                <p className="text-xs text-slate-500">
+                                                    Needed manpower grouped by process
+                                                </p>
+                                            </div>
+
+                                            <div className="h-[210px]">
+                                                {selectedActionProcessData.length ? (
+                                                    <ResponsiveContainer width="100%" height="100%">
+                                                        <PieChart>
+                                                            <Pie
+                                                                data={selectedActionProcessData}
+                                                                dataKey="value"
+                                                                nameKey="name"
+                                                                innerRadius={58}
+                                                                outerRadius={82}
+                                                                paddingAngle={3}
+                                                            >
+                                                                {selectedActionProcessData.map((entry: any, index: number) => (
+                                                                    <Cell
+                                                                        key={`process-${index}`}
+                                                                        fill={processColors[entry.name] || "#94a3b8"}
+                                                                    />
+                                                                ))}
+                                                            </Pie>
+                                                            <Tooltip content={<CustomTooltip />} />
+                                                        </PieChart>
+                                                    </ResponsiveContainer>
+                                                ) : (
+                                                    <EmptyState text="No process data" />
+                                                )}
+                                            </div>
+
+                                            <div className="mt-3 space-y-2">
+                                                {selectedActionProcessData.map((item: any) => (
+                                                    <div
+                                                        key={item.name}
+                                                        className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2"
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            <span
+                                                                className="h-3 w-3 rounded-full"
+                                                                style={{
+                                                                    backgroundColor:
+                                                                        processColors[item.name] || "#94a3b8",
+                                                                }}
+                                                            />
+
+                                                            <span className="text-xs font-bold text-slate-700">
+                                                                {item.name}
+                                                            </span>
+                                                        </div>
+
+                                                        <span className="text-sm font-black text-slate-950">
+                                                            {item.value}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* DESIGNATION CARDS */}
+                                        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                                            <div className="mb-3 flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-sm font-black text-slate-900">
+                                                        Designation Details
+                                                    </p>
+                                                    <p className="text-xs text-slate-500">
+                                                        Role-wise needed manpower and ownership
+                                                    </p>
+                                                </div>
+
+                                                <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-500">
+                                                    {selectedActionSite.recruitmentItems?.length || 0} Roles
+                                                </span>
+                                            </div>
+
+                                            <div className="grid max-h-[340px] grid-cols-1 gap-3 overflow-y-auto pr-1 lg:grid-cols-2">
+                                                {selectedActionSite.recruitmentItems?.length ? (
+                                                    selectedActionSite.recruitmentItems.map((row: any, index: number) => (
+                                                        <div
+                                                            key={index}
+                                                            className="rounded-2xl border border-slate-100 bg-slate-50 p-4"
+                                                        >
+                                                            <div className="flex items-start justify-between gap-3">
+                                                                <div className="min-w-0">
+                                                                    <p className="line-clamp-2 font-black leading-5 text-slate-950">
+                                                                        {row.designation}
+                                                                    </p>
+
+                                                                    <div className="mt-3 flex flex-wrap gap-2">
+                                                                        <span className="inline-flex rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
+                                                                            {row.process || "-"}
+                                                                        </span>
+
+                                                                        <span
+                                                                            className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${row.priority && row.priority !== "-"
+                                                                                ? getRiskBadge(row.priority)
+                                                                                : "border-slate-200 bg-white text-slate-500"
+                                                                                }`}
+                                                                        >
+                                                                            {row.priority || "-"}
+                                                                        </span>
+
+                                                                        <span className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-600">
+                                                                            {row.responsible || "-"}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="shrink-0 rounded-xl border border-orange-100 bg-white px-4 py-2 text-center">
+                                                                    <p className="text-xl font-black text-orange-600">
+                                                                        {row.needed}
+                                                                    </p>
+                                                                    <p className="text-[11px] font-bold uppercase text-slate-400">
+                                                                        Needed
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+                                                                {row.cutoffDate && (
+                                                                    <span className="rounded-full bg-white px-3 py-1 font-semibold">
+                                                                        Cutoff: {formatDate(row.cutoffDate)}
+                                                                    </span>
+                                                                )}
+
+                                                                {row.remarks && row.remarks !== "-" && (
+                                                                    <span className="line-clamp-1 rounded-full bg-white px-3 py-1 font-semibold">
+                                                                        {row.remarks}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                    <EmptyState text="No active needed designations" />
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <EmptyState text="Select a site to view details" />
+                            )}
                         </div>
-                    </ChartCard> */}
+                    </ChartCard>
                 </div>
 
                 {/* ADVANCED MASTER TABLE */}
@@ -1533,6 +1766,7 @@ export default function HRDashboardPage() {
                                     <th className="px-4 py-3 text-right">Deployed</th>
                                     <th className="px-4 py-3 text-right">Shortage</th>
                                     <th className="px-4 py-3 text-right">Needed</th>
+                                    <th className="px-4 py-3 text-center">Risk</th>
                                     <th className="px-4 py-3 text-right">Deploy %</th>
                                     <th className="px-4 py-3 text-center">Process</th>
                                     <th className="px-4 py-3 text-center">Renewal</th>
@@ -1580,6 +1814,22 @@ export default function HRDashboardPage() {
 
                                             <td className="px-4 py-4 text-right font-bold text-orange-600">
                                                 {formatNumber(item.needed)}
+                                            </td>
+
+                                            <td className="px-4 py-4 text-center">
+                                                {item.riskLevel && item.riskLevel !== "-" ? (
+                                                    <span
+                                                        className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${getRiskBadge(
+                                                            item.riskLevel
+                                                        )}`}
+                                                    >
+                                                        {item.riskLevel}
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
+                                                        -
+                                                    </span>
+                                                )}
                                             </td>
 
                                             <td className="px-4 py-4 text-right font-bold">

@@ -313,7 +313,7 @@ export default function HR2Table() {
                     </div>
 
                     {/* CARDS (FIXED TO YOUR REQUIREMENT) */}
-                    <div className="grid grid-cols-3 gap-6 mb-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
 
                         {/* Total Authorized */}
                         <div className="flex items-center gap-4 bg-white p-5 rounded-xl shadow-sm border">
@@ -359,9 +359,8 @@ export default function HR2Table() {
                     </div>
 
                     {/* TABLE */}
-                    <div className="overflow-hidden rounded-xl border">
-
-                        <table className="w-full text-sm">
+                    <div className="overflow-x-auto rounded-xl border">
+                        <table className="w-full min-w-[750px] text-sm">
 
                             <thead className="bg-gray-50 text-gray-600">
                                 <tr>
@@ -468,158 +467,174 @@ export default function HR2Table() {
 
 
             {/* MODAL */}
-            {
-                selected && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-white rounded-2xl shadow-2xl w-[1000px] max-h-[90vh] overflow-y-auto p-6">
-                            {/* HEADER */}
-                            <div className="flex justify-between items-center mb-4 border-b pb-3">
-                                <h2 className="text-xl font-semibold">
-                                    Manpower Details - {selected.siteName}
-                                </h2>
-                                <button
-                                    onClick={() => setSelected(null)}
-                                    className="text-gray-500 hover:text-black"
-                                >
-                                    ✖
-                                </button>
-                            </div>
-                            {/* TABLE HEADER */}
-                            <div className="grid grid-cols-12 text-sm font-semibold mb-2 text-gray-600">
-                                <div className="col-span-3">Designation</div>
-                                <div className="col-span-2 text-center">Auth</div>
-                                <div className="col-span-2 text-center">Deployed</div>
+            {/* MODAL */}
+            {selected && (
+                <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 p-3 sm:p-6 overflow-y-auto">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[1200px] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
 
-                                <div className="col-span-3 text-center">Needed</div>
-                            </div>
-                            {/* ROWS */}
-                            {selected.manpowerList.map((mp, index) => (
-                                <div
-                                    key={index}
-                                    className="grid grid-cols-12 gap-2 mb-2 items-center"
-                                >
-                                    {/* HR1 VIEW */}
-                                    <div className="col-span-3">{mp.designation}</div>
+                        {/* HEADER */}
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 border-b pb-3">
+                            <h2 className="text-lg sm:text-xl font-semibold">
+                                Manpower Details - {selected.siteName}
+                            </h2>
 
-                                    <div className="col-span-2 text-center">
-                                        {mp.authorised}
-                                    </div>
-                                    {/* HR2 EDIT */}
-                                    <input
-                                        type="number"
-                                        value={mp.deployed ?? ""}
-                                        disabled={!editMode}
-                                        onChange={(e) => {
-                                            const updated = [...selected.manpowerList]
-                                            const val = Math.max(0, Number(e.target.value))
+                            <button
+                                onClick={() => setSelected(null)}
+                                className="text-gray-500 hover:text-black self-end sm:self-auto"
+                            >
+                                ✖
+                            </button>
+                        </div>
 
-                                            updated[index].deployed = val
-                                            updated[index].shortage =
-                                                updated[index].authorised - val
+                        {/* SIDE BY SIDE SECTION */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-                                            setSelected({
-                                                ...selected,
-                                                manpowerList: updated,
-                                            })
-                                        }}
-                                        className="col-span-2 border rounded px-2 py-1"
-                                    />
+                            {/* LEFT SIDE - HR1 + HR2 DATA */}
+                            <div className="border rounded-xl p-4">
+                                <h3 className="font-semibold mb-3 text-gray-700">
+                                    Deployment Details
+                                </h3>
 
+                                <div className="overflow-x-auto">
+                                    <div className="min-w-[560px]">
 
+                                        {/* TABLE HEADER */}
+                                        <div className="grid grid-cols-12 text-sm font-semibold mb-2 text-gray-600">
+                                            <div className="col-span-3">Designation</div>
+                                            <div className="col-span-2 text-center">Auth</div>
+                                            <div className="col-span-2 text-center">Deployed</div>
+                                            <div className="col-span-3 text-center">Needed</div>
+                                        </div>
 
-                                    <input
-                                        type="number"
-                                        value={mp.needed ?? ""}
-                                        disabled={!editMode}
-                                        onChange={(e) => {
-                                            const updated = [...selected.manpowerList]
-                                            updated[index].needed = Math.max(0, Number(e.target.value))
-
-                                            setSelected({
-                                                ...selected,
-                                                manpowerList: updated,
-                                            })
-                                        }}
-                                        className="col-span-3 border rounded px-2 py-1"
-                                    />
-                                </div>
-                            ))}
-                            {/* HR3 DATA PER DESIGNATION */}
-                            <div className="mt-6 border rounded-xl overflow-hidden">
-
-                                <table className="w-full text-sm">
-                                    <thead className="bg-gray-100 text-gray-600">
-                                        <tr>
-                                            <th className="px-4 py-2">Designation</th>
-                                            <th className="px-4 py-2">Process</th>
-                                            <th className="px-4 py-2">Responsible</th>
-                                            <th className="px-4 py-2">Cutoff</th>
-                                            <th className="px-4 py-2">Remarks</th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody>
+                                        {/* ROWS */}
                                         {selected.manpowerList.map((mp, index) => (
-                                            <tr key={index} className="border-t">
+                                            <div
+                                                key={index}
+                                                className="grid grid-cols-12 gap-2 mb-2 items-center"
+                                            >
+                                                {/* HR1 VIEW */}
+                                                <div className="col-span-3 text-sm">
+                                                    {mp.designation}
+                                                </div>
 
-                                                <td className="px-4 py-2">{mp.designation}</td>
+                                                <div className="col-span-2 text-center text-sm">
+                                                    {mp.authorised}
+                                                </div>
 
-                                                <td className="px-4 py-2">
-                                                    <input
-                                                        value={mp.recruitmentProcess || ""}
-                                                        readOnly
-                                                        className="w-full border rounded px-2 py-1 bg-gray-100"
-                                                    />
-                                                </td>
+                                                {/* HR2 EDIT - ONLY DEPLOYED */}
+                                                <input
+                                                    type="number"
+                                                    value={mp.deployed ?? ""}
+                                                    disabled={!editMode}
+                                                    onChange={(e) => {
+                                                        const updated = [...selected.manpowerList]
+                                                        const val = Math.max(0, Number(e.target.value))
 
-                                                <td className="px-4 py-2">
-                                                    <input
-                                                        value={mp.responsible || ""}
-                                                        readOnly
-                                                        className="w-full border rounded px-2 py-1 bg-gray-100"
-                                                    />
-                                                </td>
+                                                        updated[index].deployed = val
+                                                        updated[index].shortage =
+                                                            updated[index].authorised - val
 
-                                                <td className="px-4 py-2">
-                                                    <input
-                                                        value={mp.cutoffDate || ""}
-                                                        readOnly
-                                                        className="w-full border rounded px-2 py-1 bg-gray-100"
-                                                    />
-                                                </td>
+                                                        setSelected({
+                                                            ...selected,
+                                                            manpowerList: updated,
+                                                        })
+                                                    }}
+                                                    className="col-span-2 border rounded px-2 py-1 disabled:bg-gray-100"
+                                                />
 
-                                                <td className="px-4 py-2">
-                                                    <input
-                                                        value={mp.remarks || ""}
-                                                        readOnly
-                                                        className="w-full border rounded px-2 py-1 bg-gray-100"
-                                                    />
-                                                </td>
-
-                                            </tr>
+                                                {/* HR2 VIEW ONLY - NEEDED NOW BELONGS TO HR3 */}
+                                                <input
+                                                    type="number"
+                                                    value={mp.needed ?? ""}
+                                                    readOnly
+                                                    disabled
+                                                    className="col-span-3 border rounded px-2 py-1 bg-gray-100 text-gray-600 cursor-not-allowed"
+                                                />
+                                            </div>
                                         ))}
-                                    </tbody>
-                                </table>
+                                    </div>
+                                </div>
                             </div>
 
-                            {/* BUTTONS */}
-                            <div className="flex justify-end gap-3 mt-6 border-t pt-4">
+                            {/* RIGHT SIDE - HR3 DATA */}
+                            <div className="border rounded-xl p-4">
+                                <h3 className="font-semibold mb-3 text-gray-700">
+                                    HR3 Recruitment Details
+                                </h3>
 
-                                <Button onClick={() => setSelected(null)}>
-                                    Close
-                                </Button>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full min-w-[700px] text-sm">
+                                        <thead className="bg-gray-100 text-gray-600">
+                                            <tr>
+                                                <th className="px-4 py-2 text-left">Designation</th>
+                                                <th className="px-4 py-2 text-left">Process</th>
+                                                <th className="px-4 py-2 text-left">Responsible</th>
+                                                <th className="px-4 py-2 text-left">Cutoff</th>
+                                                <th className="px-4 py-2 text-left">Remarks</th>
+                                            </tr>
+                                        </thead>
 
-                                {editMode && (
-                                    <Button onClick={handleSubmit}>
-                                        Save Changes
-                                    </Button>
-                                )}
+                                        <tbody>
+                                            {selected.manpowerList.map((mp, index) => (
+                                                <tr key={index} className="border-t">
+                                                    <td className="px-4 py-2">
+                                                        {mp.designation}
+                                                    </td>
 
+                                                    <td className="px-4 py-2">
+                                                        <input
+                                                            value={mp.recruitmentProcess || ""}
+                                                            readOnly
+                                                            className="w-full border rounded px-2 py-1 bg-gray-100"
+                                                        />
+                                                    </td>
+
+                                                    <td className="px-4 py-2">
+                                                        <input
+                                                            value={mp.responsible || ""}
+                                                            readOnly
+                                                            className="w-full border rounded px-2 py-1 bg-gray-100"
+                                                        />
+                                                    </td>
+
+                                                    <td className="px-4 py-2">
+                                                        <input
+                                                            value={mp.cutoffDate || ""}
+                                                            readOnly
+                                                            className="w-full border rounded px-2 py-1 bg-gray-100"
+                                                        />
+                                                    </td>
+
+                                                    <td className="px-4 py-2">
+                                                        <input
+                                                            value={mp.remarks || ""}
+                                                            readOnly
+                                                            className="w-full border rounded px-2 py-1 bg-gray-100"
+                                                        />
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
+
+                        {/* BUTTONS */}
+                        <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6 border-t pt-4">
+                            <Button onClick={() => setSelected(null)}>
+                                Close
+                            </Button>
+
+                            {editMode && (
+                                <Button onClick={handleSubmit}>
+                                    Save Changes
+                                </Button>
+                            )}
+                        </div>
                     </div>
-                )
-            }
+                </div>
+            )}
             {/* ✅ Chat Drawer (correct place) */}
             {chatOpen && chatSubmissionId && currentUser && (
                 <ChatDrawer

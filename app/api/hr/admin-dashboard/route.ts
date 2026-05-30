@@ -35,11 +35,14 @@ function getRenewalStatus(nextRenewalDate: any) {
     return "Safe"
 }
 
-function getRiskLevelByNeeded(needed: number) {
-    if (needed >= 8) return "Critical"
-    if (needed >= 3) return "High"
-    if (needed >= 1) return "Medium"
-    return "Low"
+function getRiskLevelByPriority(priority: string | null | undefined) {
+    const value = String(priority || "").toLowerCase()
+
+    if (value === "critical") return "Critical"
+    if (value === "high") return "High"
+    if (value === "medium") return "Medium"
+
+    return "-"
 }
 
 function getRiskScore(item: any) {
@@ -62,7 +65,7 @@ function getRiskScore(item: any) {
 
     if (
         needed > 0 &&
-        ["-", "not required", "select", ""].includes(
+        ["-", "not started", "select", ""].includes(
             String(item.processLabel || "").toLowerCase()
         )
     ) {
@@ -76,22 +79,29 @@ function getRiskScore(item: any) {
 
     return Math.round(score)
 }
+
 function isRecruitmentCompleted(item: any) {
     const processList = Array.isArray(item.processList)
         ? item.processList
         : []
 
     return (
-        String(item.processLabel || "")
-            .toLowerCase()
-            .includes("completed") ||
+        String(item.processLabel || "").toLowerCase().includes("joined") ||
         processList.some((process: string) =>
-            String(process || "")
-                .toLowerCase()
-                .includes("completed")
+            ["joined", "not needed"].includes(
+                String(process || "").toLowerCase()
+            )
         )
     )
 }
+
+function isClosedProcess(process?: string) {
+    const value = String(process || "").toLowerCase().trim()
+
+    return value === "joined" || value === "not needed"
+}
+
+
 
 export async function GET(req: Request) {
     try {
@@ -157,7 +167,7 @@ export async function GET(req: Request) {
             function getProcessSummary(items: any[]) {
                 const processes = items
                     .map((i) => i.recruitmentProcess)
-                    .filter((p) => p && p !== "Select")
+                    .filter((p) => p && p !== "Select" && p !== "-")
 
                 const unique = [...new Set(processes)]
 
@@ -165,7 +175,15 @@ export async function GET(req: Request) {
                     return { label: "-", count: 0, all: [] }
                 }
 
-                const priority = ["Under Process", "Completed", "Not Required"]
+                const priority = [
+                    "Source",
+                    "Screened",
+                    "Shortlisted",
+                    "Hired",
+                    "Joined",
+                    "Not Needed",
+                    "Not Started",
+                ]
 
                 const sorted = unique.sort((a: any, b: any) => {
                     const aIndex = priority.indexOf(a)
@@ -228,8 +246,14 @@ export async function GET(req: Request) {
                             }
                         }
 
-                        designationMap[key].deployed += item.deployed || 0
-                        designationMap[key].needed += item.needed || 0
+                        const neededValue = toNumber(item.needed)
+
+                        designationMap[key].deployed += toNumber(item.deployed)
+
+                        // ✅ Do not count needed if process is Joined or Not Needed
+                        if (!isClosedProcess(item.recruitmentProcess)) {
+                            designationMap[key].needed += neededValue
+                        }
                     })
 
                 Object.values(designationMap).forEach((item: any) => {
@@ -241,10 +265,25 @@ export async function GET(req: Request) {
 
                 const items = Array.isArray(sub.items) ? sub.items : []
                 const processSummary = getProcessSummary(items)
+                function getPrioritySummary(items: any[]) {
+                    const priorities = items
+                        .filter((i) => !isClosedProcess(i.recruitmentProcess))
+                        .map((i) => i.priority)
+                        .filter((p) => p && p !== "Select" && p !== "-")
+
+                    if (priorities.includes("Critical")) return "Critical"
+                    if (priorities.includes("High")) return "High"
+                    if (priorities.includes("Medium")) return "Medium"
+
+                    return "-"
+                }
+
+                const priorityLevel = getPrioritySummary(items)
                 const hr3Done = items.some(
                     (item: any) =>
                         !!item.recruitmentProcess ||
                         !!item.responsible ||
+                        !!item.priority ||
                         !!item.cutoffDate ||
                         !!item.remarks
                 )
@@ -266,6 +305,7 @@ export async function GET(req: Request) {
                     shortage,
                     needed: siteNeeded,
                     hr3Done,
+                    priorityLevel,
 
 
                     // ✅ NEW PROCESS DATA
@@ -371,7 +411,7 @@ export async function GET(req: Request) {
                 ),
                 renewalStatus: getRenewalStatus(item.nextRenewalDate),
                 riskScore,
-                riskLevel: getRiskLevelByNeeded(toNumber(item.needed)),
+                riskLevel: getRiskLevelByPriority(item.priorityLevel),
             }
         })
 
@@ -387,7 +427,9 @@ export async function GET(req: Request) {
                 (neededFilter === "8plus" && neededValue >= 8)
 
             const matchesRisk =
-                riskFilter === "all" || item.riskLevel === riskFilter
+                riskFilter === "all" ||
+                String(item.riskLevel || "").toLowerCase() ===
+                String(riskFilter || "").toLowerCase()
 
             const matchesRenewal =
                 renewalFilter === "all" || item.renewalStatus === renewalFilter
@@ -451,7 +493,7 @@ export async function GET(req: Request) {
             return sum + toNumber(item.needed)
         }, 0)
 
-        const underProcessDesignations = dashboardRecords.reduce(
+        const shortlistedDesignations = dashboardRecords.reduce(
             (sum: number, record: any) => {
                 const site = sites.find((s: any) => s.id === record.siteId)
                 if (!site) return sum
@@ -465,10 +507,10 @@ export async function GET(req: Request) {
 
                 return (
                     sum +
-                    items.filter((item: any) =>
-                        String(item.recruitmentProcess || "")
-                            .toLowerCase()
-                            .includes("under process")
+                    items.filter(
+                        (item: any) =>
+                            String(item.recruitmentProcess || "").toLowerCase() ===
+                            "shortlisted"
                     ).length
                 )
             },
@@ -522,7 +564,8 @@ export async function GET(req: Request) {
             overDeployed,
             needed,
 
-            underProcessDesignations,
+            underProcessDesignations: shortlistedDesignations,
+            shortlistedDesignations,
 
             cutoffCrossedCount,
             cutoffCrossedSites,
@@ -538,8 +581,20 @@ export async function GET(req: Request) {
                     ? item.processList
                     : []
 
-                return processList.some((process: string) =>
-                    String(process || "").toLowerCase().includes("under process")
+                return processList.some(
+                    (process: string) =>
+                        String(process || "").toLowerCase() === "shortlisted"
+                )
+            }).length,
+
+            shortlistedSites: dashboardRecords.filter((item: any) => {
+                const processList = Array.isArray(item.processList)
+                    ? item.processList
+                    : []
+
+                return processList.some(
+                    (process: string) =>
+                        String(process || "").toLowerCase() === "shortlisted"
                 )
             }).length,
 
@@ -549,13 +604,11 @@ export async function GET(req: Request) {
                     : []
 
                 const isCompleted =
-                    String(item.processLabel || "")
-                        .toLowerCase()
-                        .includes("completed") ||
+                    String(item.processLabel || "").toLowerCase().includes("joined") ||
                     processList.some((process: string) =>
-                        String(process || "")
-                            .toLowerCase()
-                            .includes("completed")
+                        ["joined", "not needed"].includes(
+                            String(process || "").toLowerCase()
+                        )
                     )
 
                 return (
@@ -571,13 +624,11 @@ export async function GET(req: Request) {
                     : []
 
                 const isCompleted =
-                    String(item.processLabel || "")
-                        .toLowerCase()
-                        .includes("completed") ||
+                    String(item.processLabel || "").toLowerCase().includes("joined") ||
                     processList.some((process: string) =>
-                        String(process || "")
-                            .toLowerCase()
-                            .includes("completed")
+                        ["joined", "not needed"].includes(
+                            String(process || "").toLowerCase()
+                        )
                     )
 
                 return (
@@ -716,10 +767,31 @@ export async function GET(req: Request) {
                 const latestSubmission = site?.manpowerSubmissions
                     ?.filter((sub: any) => sub.id === item.submissionId)?.[0]
 
+                const recruitmentItems = (latestSubmission?.items || [])
+                    .filter((subItem: any) => {
+                        const needed = toNumber(subItem.needed)
+                        const process = String(subItem.recruitmentProcess || "").toLowerCase()
+
+                        return (
+                            needed > 0 &&
+                            process !== "joined" &&
+                            process !== "not needed"
+                        )
+                    })
+                    .map((subItem: any) => ({
+                        designation: subItem.designation || "Unknown",
+                        needed: toNumber(subItem.needed),
+                        process: subItem.recruitmentProcess || "Not Started",
+                        responsible: subItem.responsible || "-",
+                        priority: subItem.priority || "-",
+                        cutoffDate: subItem.cutoffDate,
+                        remarks: subItem.remarks || "-",
+                    }))
+
                 const processCountMap: Record<string, number> = {}
 
                     ; (latestSubmission?.items || []).forEach((subItem: any) => {
-                        const process = subItem.recruitmentProcess || "Not Updated"
+                        const process = subItem.recruitmentProcess || "Not Started"
                         processCountMap[process] = (processCountMap[process] || 0) + 1
                     })
 
@@ -735,6 +807,7 @@ export async function GET(req: Request) {
                     processLabel: item.processLabel,
                     processSummary,
                     riskLevel: item.riskLevel,
+                    recruitmentItems,
                 }
             })
 
@@ -757,13 +830,11 @@ export async function GET(req: Request) {
                     : []
 
                 const isCompleted =
-                    String(item.processLabel || "")
-                        .toLowerCase()
-                        .includes("completed") ||
+                    String(item.processLabel || "").toLowerCase().includes("joined") ||
                     processList.some((process: string) =>
-                        String(process || "")
-                            .toLowerCase()
-                            .includes("completed")
+                        ["joined", "not needed"].includes(
+                            String(process || "").toLowerCase()
+                        )
                     )
 
                 return (
@@ -803,7 +874,7 @@ export async function GET(req: Request) {
                 : []
 
             if (processes.length === 0) {
-                processMap["Not Required"] = (processMap["Not Required"] || 0) + 1
+                processMap["Not Started"] = (processMap["Not Started"] || 0) + 1
             } else {
                 processes.forEach((process: string) => {
                     processMap[process] = (processMap[process] || 0) + 1

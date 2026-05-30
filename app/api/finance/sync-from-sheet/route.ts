@@ -24,6 +24,10 @@ type IncomingPayload = {
     months?: string[]
 }
 
+/* ---------------- CONSTANTS ---------------- */
+
+const PORTAL = "WM"
+
 /* ---------------- HELPERS ---------------- */
 
 function normalizeMonth(value: unknown): string {
@@ -32,7 +36,9 @@ function normalizeMonth(value: unknown): string {
 
 function normalizeYesNo(value: unknown): string {
     if (value === null || value === undefined || value === "") return "No"
+
     const str = String(value).trim().toLowerCase()
+
     return ["yes", "y", "true"].includes(str) ? "Yes" : "No"
 }
 
@@ -41,19 +47,30 @@ function cleanDate(value: unknown): string | null {
 
     const str = String(value).trim()
 
-    // dd-mm-yyyy
     if (/^\d{2}-\d{2}-\d{4}$/.test(str)) return str
 
-    // fallback parse
     const d = new Date(str)
+
     if (!isNaN(d.getTime())) {
         const day = String(d.getDate()).padStart(2, "0")
         const month = String(d.getMonth() + 1).padStart(2, "0")
         const year = d.getFullYear()
+
         return `${day}-${month}-${year}`
     }
 
     return null
+}
+
+function cleanSalaryStatus(value: unknown): string | null {
+    if (!value) return null
+
+    const str = String(value).trim().toLowerCase()
+
+    if (str === "paid") return "Paid"
+    if (str === "unpaid") return "Unpaid"
+
+    return "Unpaid"
 }
 
 /* ---------------- MAIN API ---------------- */
@@ -62,55 +79,62 @@ export async function POST(req: NextRequest) {
     try {
         const body = (await req.json()) as IncomingPayload
 
-        // 🔐 SECURITY
         if (body.secret !== process.env.FINANCE_SYNC_SECRET) {
             return NextResponse.json(
-                { success: false, message: "Unauthorized" },
+                {
+                    success: false,
+                    message: "Unauthorized",
+                },
                 { status: 401 }
             )
         }
 
         const rows = Array.isArray(body.rows) ? body.rows : []
 
-        // ✅ Normalize months from payload
         const months = Array.isArray(body.months)
             ? body.months.map((m) => normalizeMonth(m)).filter(Boolean)
             : []
 
         if (!rows.length) {
             return NextResponse.json(
-                { success: false, message: "No rows received" },
+                {
+                    success: false,
+                    message: "No rows received",
+                },
                 { status: 400 }
             )
         }
 
         const now = new Date()
 
-        /* ---------------- STEP 1: MARK OLD DATA INACTIVE ---------------- */
+        /* ---------------- STEP 1: MARK OLD WM DATA INACTIVE ---------------- */
 
-        await prisma.financeSheetRecord.updateMany({
-            where: {
-                month: { in: months },
-                source: "google-sheet-appscript",
-            },
-            data: {
-                isActive: false,
-                lastSyncedAt: now,
-            },
-        })
+        if (months.length > 0) {
+            await prisma.financeSheetRecord.updateMany({
+                where: {
+                    portal: PORTAL,
+                    month: {
+                        in: months,
+                    },
+                    source: "google-sheet-appscript",
+                },
+                data: {
+                    isActive: false,
+                    lastSyncedAt: now,
+                },
+            })
+        }
 
         let processed = 0
-
-        /* ---------------- STEP 2: UPSERT ROWS ---------------- */
         const batchSize = 50
+
+        /* ---------------- STEP 2: UPSERT WM ROWS ---------------- */
 
         for (let i = 0; i < rows.length; i += batchSize) {
             const batch = rows.slice(i, i + batchSize)
 
             await Promise.all(
-
                 batch.map(async (row) => {
-                    console.log("SALARY STATUS API:", row.salaryStatus)
                     const normalizedMonth = normalizeMonth(row.month)
                     const normalizedSrNo = Number(row.srNo)
 
@@ -122,27 +146,22 @@ export async function POST(req: NextRequest) {
                         return
                     }
 
-                    // 🧪 DEBUG LOG
-                    if (process.env.NODE_ENV === "development") {
-                        console.log("ROW DEBUG:", {
-                            original: row,
-                            normalizedMonth,
-                            normalizedSrNo,
-                            normalizedSiteName,
-                        })
-                    }
-
                     try {
                         await prisma.financeSheetRecord.upsert({
                             where: {
-                                month_srNo_siteName: {
+                                portal_month_srNo_siteName: {
+                                    portal: PORTAL,
                                     month: normalizedMonth,
                                     srNo: normalizedSrNo,
                                     siteName: normalizedSiteName,
                                 },
                             },
                             update: {
-                                billAmount: row.billAmount ? Number(row.billAmount) : null,
+                                portal: PORTAL,
+                                billAmount:
+                                    row.billAmount !== null && row.billAmount !== undefined
+                                        ? Number(row.billAmount)
+                                        : null,
                                 prepared: normalizeYesNo(row.prepared),
                                 prepareDate: cleanDate(row.prepareDate),
                                 dispatched: normalizeYesNo(row.dispatched),
@@ -150,22 +169,24 @@ export async function POST(req: NextRequest) {
                                 paymentCheque: normalizeYesNo(row.paymentCheque),
                                 receivedDate: cleanDate(row.receivedDate),
                                 paymentReceivedDays:
-                                    row.paymentReceivedDays != null
+                                    row.paymentReceivedDays !== null &&
+                                        row.paymentReceivedDays !== undefined
                                         ? Number(row.paymentReceivedDays)
                                         : null,
-                                salaryStatus: row.salaryStatus
-                                    ? String(row.salaryStatus).trim().toLowerCase() === "paid"
-                                        ? "Paid"
-                                        : "Unpaid"
-                                    : null,
+                                salaryStatus: cleanSalaryStatus(row.salaryStatus),
+                                source: "google-sheet-appscript",
                                 isActive: true,
                                 lastSyncedAt: now,
                             },
                             create: {
+                                portal: PORTAL,
                                 month: normalizedMonth,
                                 srNo: normalizedSrNo,
                                 siteName: normalizedSiteName,
-                                billAmount: row.billAmount ? Number(row.billAmount) : null,
+                                billAmount:
+                                    row.billAmount !== null && row.billAmount !== undefined
+                                        ? Number(row.billAmount)
+                                        : null,
                                 prepared: normalizeYesNo(row.prepared),
                                 prepareDate: cleanDate(row.prepareDate),
                                 dispatched: normalizeYesNo(row.dispatched),
@@ -173,14 +194,11 @@ export async function POST(req: NextRequest) {
                                 paymentCheque: normalizeYesNo(row.paymentCheque),
                                 receivedDate: cleanDate(row.receivedDate),
                                 paymentReceivedDays:
-                                    row.paymentReceivedDays != null
+                                    row.paymentReceivedDays !== null &&
+                                        row.paymentReceivedDays !== undefined
                                         ? Number(row.paymentReceivedDays)
                                         : null,
-                                salaryStatus: row.salaryStatus
-                                    ? String(row.salaryStatus).trim().toLowerCase() === "paid"
-                                        ? "Paid"
-                                        : "Unpaid"
-                                    : null,
+                                salaryStatus: cleanSalaryStatus(row.salaryStatus),
                                 source: "google-sheet-appscript",
                                 isActive: true,
                                 lastSyncedAt: now,
@@ -189,27 +207,26 @@ export async function POST(req: NextRequest) {
 
                         processed++
                     } catch (err) {
-                        console.error("❌ ROW FAILED:", row, err)
+                        console.error("ROW FAILED:", row, err)
                     }
                 })
             )
         }
 
-        /* ---------------- RESPONSE ---------------- */
-
         return NextResponse.json({
             success: true,
+            portal: PORTAL,
             processed,
             monthsSynced: months.length,
         })
     } catch (error: any) {
-        console.error("🔥 FULL ERROR:", error)
+        console.error("FULL ERROR:", error)
 
         return NextResponse.json(
             {
                 success: false,
                 message: error?.message || "Unknown error",
-                stack: error?.stack || null,   // 👈 VERY IMPORTANT
+                stack: error?.stack || null,
             },
             { status: 500 }
         )

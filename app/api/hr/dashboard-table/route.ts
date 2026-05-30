@@ -97,6 +97,7 @@ export async function GET(req: Request) {
                         ? new Date(item.cutoffDate).toISOString().split("T")[0]
                         : "",
                     remarks: item.remarks ?? "",
+                    priority: item.priority ?? "",
                 }
             })
 

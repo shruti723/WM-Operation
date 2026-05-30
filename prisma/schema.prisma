@@ -23,13 +23,13 @@ wmSentMessages WmManpowerChat[] @relation("WmUserChats")
 fmNotifications FmNotification[] @relation("FmUserNotifications")
 wmNotifications WmNotification[] @relation("WmUserNotifications")
 
+fmRaisedIssues FmRaisedIssue[]
+fmIssueHistories FmRaisedIssueHistory[]
+
 dailySiteReports  DailySiteReport[]
 travelVisitPlans  TravelVisitPlan[]
 costLeakReports   CostLeakReport[]
 costSavingReports CostSavingReport[]
-
-fmRaisedIssues FmRaisedIssue[]
-fmIssueHistories FmRaisedIssueHistory[]
 
 amitojCommandTargets AmitojCommandTarget[]
 amitojSiteControls   AmitojSiteControl[]
@@ -149,7 +149,7 @@ model WmManpowerSubmissionItem {
   deployed           Int?
   shortage           Int?
   needed             Int? @default(0)
-
+priority String?
   responsible        String?
   cutoffDate         DateTime?
   remarks            String?
@@ -268,6 +268,9 @@ model ChecklistIssue {
 
 model FinanceSheetRecord {
   id                     String    @id @default(cuid())
+
+  portal                 String    @default("FM") // FM or WM
+
   month                  String
   srNo                   Int
   siteName               String
@@ -281,14 +284,13 @@ model FinanceSheetRecord {
   paymentReceivedDays    Int?
 
   salaryDisbursementDate String?
-
   salaryStatus           String?
 
   source                 String?
   isActive               Boolean   @default(true)
   lastSyncedAt           DateTime?
 
-  @@unique([month, srNo, siteName], name: "month_srNo_siteName")
+  @@unique([portal, month, srNo, siteName], name: "portal_month_srNo_siteName")
   @@map("financeSheetRecord")
 }
 
@@ -298,22 +300,23 @@ fmadmin
   fmlevel1
   fmlevel2
   fmlevel3
-  account1
-  account2
+  site_supervisor
   wmadmin
    wmlevel1
   wmlevel2
   wmlevel3
   admin
-  level1
-  level2
-  level3
+level1
+level2
+level3
 Ravi
 Suyesh
 Mahendra
 Lakhan
 Deepak
 Amitoj
+account1
+account2
 }
 
 enum PaymentStatus {
@@ -458,6 +461,89 @@ model OperationReport {
   submissionId String?   // optional link to checklist
   createdAt   DateTime @default(now())
 }
+model FmRaisedIssue {
+  id String @id @default(cuid())
+
+  issueNumber String @unique
+
+  // ✅ REMOVE RELATION
+  siteName String
+
+  issueTitle String?
+
+  observedIssue String
+
+  presentState String?
+
+  priority String? @default("MEDIUM")
+
+  conveyedToSupervisor Boolean @default(false)
+  supervisorAction String?
+  supervisorCutoffDate DateTime?
+
+  conveyedToHeadOffice Boolean @default(false)
+  headOfficeAction String?
+  headOfficeCutoffDate DateTime?
+
+  issueResolved Boolean @default(false)
+
+  resolutionRemark String?
+  resolutionDate DateTime?
+
+  currentStatus FmIssueStatus @default(PENDING)
+
+  isDeleted Boolean @default(false)
+
+  createdById String
+  createdBy User @relation(fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  images FmRaisedIssueImage[]
+  histories FmRaisedIssueHistory[]
+
+  @@map("FmRaisedIssue")
+
+  @@index([currentStatus])
+  @@index([createdAt])
+  @@index([createdById])
+}
+model FmRaisedIssueImage {
+  id String @id @default(cuid())
+
+  issueId String
+  issue FmRaisedIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  imageUrl String
+
+  createdAt DateTime @default(now())
+
+  @@map("FmRaisedIssueImage")
+}
+model FmRaisedIssueHistory {
+  id String @id @default(cuid())
+
+  issueId String
+  issue FmRaisedIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  actionType String
+  actionRemark String?
+
+  actionById String
+  actionBy User @relation(fields: [actionById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("FmRaisedIssueHistory")
+}
+enum FmIssueStatus {
+  PENDING
+  SUPERVISOR_NOTIFIED
+  HEAD_OFFICE_NOTIFIED
+  RESOLVED
+  ESCALATED
+}
 
 model DailySiteReport {
   id                      String   @id @default(cuid())
@@ -577,90 +663,6 @@ enum TrafficStatus {
   YELLOW
   RED
 }
-model FmRaisedIssue {
-  id String @id @default(cuid())
-
-  issueNumber String @unique
-
-  // ✅ REMOVE RELATION
-  siteName String
-
-  issueTitle String?
-
-  observedIssue String
-
-  presentState String?
-
-  priority String? @default("MEDIUM")
-
-  conveyedToSupervisor Boolean @default(false)
-  supervisorAction String?
-  supervisorCutoffDate DateTime?
-
-  conveyedToHeadOffice Boolean @default(false)
-  headOfficeAction String?
-  headOfficeCutoffDate DateTime?
-
-  issueResolved Boolean @default(false)
-
-  resolutionRemark String?
-  resolutionDate DateTime?
-
-  currentStatus FmIssueStatus @default(PENDING)
-
-  isDeleted Boolean @default(false)
-
-  createdById String
-  createdBy User @relation(fields: [createdById], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  images FmRaisedIssueImage[]
-  histories FmRaisedIssueHistory[]
-
-  @@map("FmRaisedIssue")
-
-  @@index([currentStatus])
-  @@index([createdAt])
-  @@index([createdById])
-}
-model FmRaisedIssueImage {
-  id String @id @default(cuid())
-
-  issueId String
-  issue FmRaisedIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
-
-  imageUrl String
-
-  createdAt DateTime @default(now())
-
-  @@map("FmRaisedIssueImage")
-}
-model FmRaisedIssueHistory {
-  id String @id @default(cuid())
-
-  issueId String
-  issue FmRaisedIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
-
-  actionType String
-  actionRemark String?
-
-  actionById String
-  actionBy User @relation(fields: [actionById], references: [id])
-
-  createdAt DateTime @default(now())
-
-  @@map("FmRaisedIssueHistory")
-}
-enum FmIssueStatus {
-  PENDING
-  SUPERVISOR_NOTIFIED
-  HEAD_OFFICE_NOTIFIED
-  RESOLVED
-  ESCALATED
-}
-
 model AmitojCommandTarget {
   id              String   @id @default(cuid())
 

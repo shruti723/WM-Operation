@@ -23,8 +23,10 @@ export default function PaymentPage() {
     const [filters, setFilters] = useState({
         search: "",
         month: "All",
-        status: "All",   // Paid / Pending / High Delay
-        delay: "All"     // 0-7 / 8-15 / 15+
+        status: "All",
+        delay: "All",
+        fromDate: "",
+        toDate: "",
     })
     const PAGE_SIZE = 15
     const [page, setPage] = useState(1)
@@ -75,6 +77,20 @@ export default function PaymentPage() {
             // Month
             if (filters.month !== "All" && row.month !== filters.month)
                 return false
+
+            // Date Range - based on dispatch date
+            const rowDate = row.dispatchDate ? new Date(row.dispatchDate) : null
+
+            const from = filters.fromDate
+                ? new Date(filters.fromDate + "T00:00:00")
+                : null
+
+            const to = filters.toDate
+                ? new Date(filters.toDate + "T23:59:59")
+                : null
+
+            if (from && (!rowDate || rowDate < from)) return false
+            if (to && (!rowDate || rowDate > to)) return false
 
 
             // Delay
@@ -176,7 +192,7 @@ export default function PaymentPage() {
 
 
 
-    const totalPages = Math.ceil(finalData.length / PAGE_SIZE)
+    const totalPages = Math.max(1, Math.ceil(finalData.length / PAGE_SIZE))
 
     const paginatedData = useMemo(() => {
         const start = (page - 1) * PAGE_SIZE
@@ -186,10 +202,10 @@ export default function PaymentPage() {
     if (loading) return <div className="p-6">Loading...</div>
 
     return (
-        <div className="p-6 space-y-6">
+        <div className="w-full max-w-full space-y-6 p-4 sm:p-6">
 
             {/* FILTER */}
-            <div className="flex flex-wrap gap-3 bg-white p-4 rounded-xl border shadow-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-3 bg-white p-4 rounded-xl border shadow-sm">
 
                 {/* Search */}
                 <input
@@ -198,7 +214,7 @@ export default function PaymentPage() {
                     onChange={(e) =>
                         setFilters(prev => ({ ...prev, search: e.target.value }))
                     }
-                    className="border px-3 py-2 rounded-md"
+                    className="border px-3 py-2 rounded-md w-full lg:w-auto"
                 />
 
                 {/* Month */}
@@ -207,7 +223,7 @@ export default function PaymentPage() {
                     onChange={(e) =>
                         setFilters(prev => ({ ...prev, month: e.target.value }))
                     }
-                    className="border px-3 py-2 rounded-md"
+                    className="border px-3 py-2 rounded-md w-full lg:w-auto"
                 >
                     <option value="All">All Months</option>
                     {[...new Set(data.map(d => d.month))]
@@ -220,13 +236,39 @@ export default function PaymentPage() {
                         ))}
                 </select>
 
+                {/* From Date */}
+                <input
+                    type="date"
+                    value={filters.fromDate}
+                    onChange={(e) =>
+                        setFilters(prev => ({
+                            ...prev,
+                            fromDate: e.target.value,
+                        }))
+                    }
+                    className="border px-3 py-2 rounded-md w-full lg:w-auto"
+                />
+
+                {/* To Date */}
+                <input
+                    type="date"
+                    value={filters.toDate}
+                    onChange={(e) =>
+                        setFilters(prev => ({
+                            ...prev,
+                            toDate: e.target.value,
+                        }))
+                    }
+                    className="border px-3 py-2 rounded-md w-full lg:w-auto"
+                />
+
                 {/* Status */}
                 <select
                     value={filters.status}
                     onChange={(e) =>
                         setFilters(prev => ({ ...prev, status: e.target.value }))
                     }
-                    className="border px-3 py-2 rounded-md"
+                    className="border px-3 py-2 rounded-md w-full lg:w-auto"
                 >
                     <option value="All">All Status</option>
                     <option value="Paid">Paid</option>
@@ -240,7 +282,7 @@ export default function PaymentPage() {
                     onChange={(e) =>
                         setFilters(prev => ({ ...prev, delay: e.target.value }))
                     }
-                    className="border px-3 py-2 rounded-md"
+                    className="border px-3 py-2 rounded-md w-full lg:w-auto"
                 >
                     <option value="All">All Delay</option>
                     <option value="0-7">0-7 Days</option>
@@ -255,10 +297,12 @@ export default function PaymentPage() {
                             search: "",
                             month: "All",
                             status: "All",
-                            delay: "All"
+                            delay: "All",
+                            fromDate: "",
+                            toDate: "",
                         })
                     }
-                    className="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200"
+                    className="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 w-full lg:w-auto"
                 >
                     Clear
                 </button>
@@ -266,15 +310,15 @@ export default function PaymentPage() {
             </div>
 
             {/* CARDS */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Card title="Total Billing" value={formatCurrency(summary.total)} />
                 <Card title="Collected" value={formatCurrency(summary.collected)} />
                 <Card title="Pending" value={formatCurrency(summary.pending)} />
             </div>
 
             {/* TABLE */}
-            <div className="bg-white rounded-xl shadow-sm border overflow-x-auto">
-                <table className="min-w-full text-sm">
+            <div className="bg-white rounded-xl shadow-sm border overflow-x-auto max-w-full">
+                <table className="min-w-[700px] w-full text-sm">
                     <thead className="bg-gray-100 text-gray-600">
                         <tr>
                             <th className="p-3 text-left">Site</th>
@@ -305,7 +349,7 @@ export default function PaymentPage() {
                 </table>
 
             </div>
-            <div className="flex justify-between items-center mt-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center mt-4">
                 <p className="text-sm">
                     Showing {paginatedData.length} of {finalData.length}
                 </p>
