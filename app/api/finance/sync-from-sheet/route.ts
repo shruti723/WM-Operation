@@ -4,17 +4,18 @@ import { prisma } from "@/lib/db"
 /* ---------------- TYPES ---------------- */
 
 type IncomingRow = {
+    id?: string
     month: string
     srNo: number
     siteName: string
-    billAmount: number | null
+    billAmount: number | string | null
     prepared: string
     prepareDate: string | null
     dispatched: string
     dispatchDate: string | null
     paymentCheque: string
     receivedDate: string | null
-    paymentReceivedDays: number | null
+    paymentReceivedDays: number | string | null
     salaryStatus: string | null
 }
 
@@ -73,6 +74,15 @@ function cleanSalaryStatus(value: unknown): string | null {
     return "Unpaid"
 }
 
+function cleanNumber(value: unknown): number | null {
+    if (value === null || value === undefined || value === "") return null
+
+    const cleaned = String(value).replace(/,/g, "").trim()
+    const n = Number(cleaned)
+
+    return isNaN(n) ? null : n
+}
+
 /* ---------------- MAIN API ---------------- */
 
 export async function POST(req: NextRequest) {
@@ -94,6 +104,11 @@ export async function POST(req: NextRequest) {
         const months = Array.isArray(body.months)
             ? body.months.map((m) => normalizeMonth(m)).filter(Boolean)
             : []
+
+        console.log("FINANCE SYNC STARTED")
+        console.log("ROWS RECEIVED:", rows.length)
+        console.log("MONTHS RECEIVED:", months)
+        console.log("FIRST ROW RECEIVED:", rows[0])
 
         if (!rows.length) {
             return NextResponse.json(
@@ -126,6 +141,10 @@ export async function POST(req: NextRequest) {
         }
 
         let processed = 0
+        let skipped = 0
+        let failed = 0
+        const failedRows: any[] = []
+
         const batchSize = 50
 
         /* ---------------- STEP 2: UPSERT WM ROWS ---------------- */
@@ -143,8 +162,20 @@ export async function POST(req: NextRequest) {
                         .toUpperCase()
 
                     if (!normalizedMonth || !normalizedSrNo || !normalizedSiteName) {
+                        skipped++
+
+                        console.log("SKIPPED ROW:", {
+                            row,
+                            normalizedMonth,
+                            normalizedSrNo,
+                            normalizedSiteName,
+                        })
+
                         return
                     }
+
+                    const billAmount = cleanNumber(row.billAmount)
+                    const paymentReceivedDays = cleanNumber(row.paymentReceivedDays)
 
                     try {
                         await prisma.financeSheetRecord.upsert({
@@ -158,21 +189,14 @@ export async function POST(req: NextRequest) {
                             },
                             update: {
                                 portal: PORTAL,
-                                billAmount:
-                                    row.billAmount !== null && row.billAmount !== undefined
-                                        ? Number(row.billAmount)
-                                        : null,
+                                billAmount,
                                 prepared: normalizeYesNo(row.prepared),
                                 prepareDate: cleanDate(row.prepareDate),
                                 dispatched: normalizeYesNo(row.dispatched),
                                 dispatchDate: cleanDate(row.dispatchDate),
                                 paymentCheque: normalizeYesNo(row.paymentCheque),
                                 receivedDate: cleanDate(row.receivedDate),
-                                paymentReceivedDays:
-                                    row.paymentReceivedDays !== null &&
-                                        row.paymentReceivedDays !== undefined
-                                        ? Number(row.paymentReceivedDays)
-                                        : null,
+                                paymentReceivedDays,
                                 salaryStatus: cleanSalaryStatus(row.salaryStatus),
                                 source: "google-sheet-appscript",
                                 isActive: true,
@@ -183,21 +207,14 @@ export async function POST(req: NextRequest) {
                                 month: normalizedMonth,
                                 srNo: normalizedSrNo,
                                 siteName: normalizedSiteName,
-                                billAmount:
-                                    row.billAmount !== null && row.billAmount !== undefined
-                                        ? Number(row.billAmount)
-                                        : null,
+                                billAmount,
                                 prepared: normalizeYesNo(row.prepared),
                                 prepareDate: cleanDate(row.prepareDate),
                                 dispatched: normalizeYesNo(row.dispatched),
                                 dispatchDate: cleanDate(row.dispatchDate),
                                 paymentCheque: normalizeYesNo(row.paymentCheque),
                                 receivedDate: cleanDate(row.receivedDate),
-                                paymentReceivedDays:
-                                    row.paymentReceivedDays !== null &&
-                                        row.paymentReceivedDays !== undefined
-                                        ? Number(row.paymentReceivedDays)
-                                        : null,
+                                paymentReceivedDays,
                                 salaryStatus: cleanSalaryStatus(row.salaryStatus),
                                 source: "google-sheet-appscript",
                                 isActive: true,
@@ -206,18 +223,40 @@ export async function POST(req: NextRequest) {
                         })
 
                         processed++
-                    } catch (err) {
-                        console.error("ROW FAILED:", row, err)
+                    } catch (err: any) {
+                        failed++
+
+                        console.error("ROW FAILED:", {
+                            row,
+                            error: err?.message || err,
+                        })
+
+                        failedRows.push({
+                            row,
+                            error: err?.message || String(err),
+                        })
                     }
                 })
             )
         }
 
+        console.log("FINANCE SYNC COMPLETED:", {
+            totalReceived: rows.length,
+            processed,
+            skipped,
+            failed,
+            monthsSynced: months.length,
+        })
+
         return NextResponse.json({
             success: true,
             portal: PORTAL,
+            totalReceived: rows.length,
             processed,
+            skipped,
+            failed,
             monthsSynced: months.length,
+            sampleFailedRows: failedRows.slice(0, 5),
         })
     } catch (error: any) {
         console.error("FULL ERROR:", error)
